@@ -1,7 +1,36 @@
 // src/pages/ContactPage.jsx
-import React from 'react';
+import React, { useState } from 'react';
 
 function ContactPage() {
+  const [status, setStatus] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    setStatus('Sending...');
+
+    try {
+      const response = await fetch('/.netlify/functions/submit-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setStatus('Message sent successfully!');
+        form.reset();
+      } else {
+        throw new Error('Failed to send message.');
+      }
+    } catch (error) {
+      setStatus('An error occurred. Please try again.');
+      console.error(error);
+    }
+  };
+
   return (
     <main className="py-20 md:py-24">
       <section id="contact" className="container mx-auto px-6 text-center max-w-4xl">
@@ -10,7 +39,7 @@ function ContactPage() {
           Ready to create your cinematic memories? Reach out to us today!
         </p>
 
-        <form id="contact-form" className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 mb-12 text-left">
+        <form onSubmit={handleSubmit} className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 mb-12 text-left">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
               <label htmlFor="name" className="block text-gray-700 text-base font-medium mb-3">Your Name</label>
@@ -39,6 +68,7 @@ function ContactPage() {
             <button type="submit" className="btn-polaroid">Send Message</button>
           </div>
         </form>
+        {status && <p className="text-center text-lg font-medium">{status}</p>}
       </section>
     </main>
   );
