@@ -150,7 +150,7 @@ const Footer = ({ setPage }) => {
                 <div className="xl:grid xl:grid-cols-3 xl:gap-8">
                     <div className="space-y-8">
                         <Studio37Logo className="h-20 w-auto" />
-                        <p className="text-sm leading-6 text-gray-600">Capturing timeless moments with a modern eye. Based in sunny California.</p>
+                        <p className="text-sm leading-6 text-gray-600">Life is a movie let us capture your highlight reel</p>
                         <div className="flex space-x-6">
                             {socials.map((item) => (<a key={item.name} href={item.href} className="text-gray-400 hover:text-gray-500"><span className="sr-only">{item.name}</span><item.icon className="h-6 w-6" aria-hidden="true" /></a>))}
                         </div>
