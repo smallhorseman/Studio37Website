@@ -7,28 +7,39 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    const data = new FormData(form);
 
     setStatus('Sending...');
 
     try {
-      // This uses Netlify's built-in form handling if you name your form in netlify.toml
-      // Or you can point this to a Netlify function.
-      const response = await fetch('/', {
+      // IMPORTANT: Replace "YOUR_FORM_ID" with your actual Formspree form ID
+      const response = await fetch('https://formspree.io/f/xpwjarde', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(data).toString(),
+        body: data,
+        headers: {
+            'Accept': 'application/json'
+        }
       });
 
       if (response.ok) {
         setStatus('Thank you! Your message has been sent.');
         form.reset();
       } else {
+        // Formspree returns error details in the response body
+        const errorData = await response.json();
+        if (Object.hasOwn(errorData, 'errors')) {
+          setStatus(errorData["errors"].map(error => error["message"]).join(", "));
+        } else {
+          setStatus('Sorry, there was an error sending your message.');
+        }
         throw new Error('Network response was not ok.');
       }
     } catch (error) {
-      setStatus('Sorry, there was an error sending your message. Please try again later.');
+      // The status is already set in the `if/else` block, 
+      // but we can set a generic one here if the fetch itself fails.
+      if (!status.includes('Thank you')) {
+        setStatus('Sorry, there was an error sending your message. Please try again later.');
+      }
       console.error(error);
     }
   };
@@ -49,13 +60,9 @@ export default function ContactPage() {
         </FadeIn>
         <div className="mx-auto mt-16 max-w-xl sm:mt-20">
           <form
-            name="contact"
-            method="POST"
-            data-netlify="true"
             onSubmit={handleSubmit}
             className="space-y-6"
           >
-            <input type="hidden" name="form-name" value="contact" />
             <div>
               <label htmlFor="name" className="block text-sm font-semibold leading-6 text-[#36454F]">
                 Full Name
