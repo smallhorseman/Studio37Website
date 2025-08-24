@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import ContactPage from './pages/ContactPage';
 import BlogPage from './pages/BlogPage';
 import BlogPost1 from './pages/BlogPost1';
-import AboutPage from './pages/AboutPage'; // Import the new AboutPage
+import AboutPage from './pages/AboutPage';
+import ServicesPage from './pages/ServicesPage';
+import PackagesPage from './pages/PackagesPage';
+import PortfolioPage from './pages/PortfolioPage'; // Import the new PortfolioPage
 
 // Helper Components & Hooks (Exported so other pages can use it)
 export const FadeIn = ({ children }) => {
@@ -351,10 +354,10 @@ function App() {
     const renderPage = () => {
         switch (page) {
             case 'home': return <HomePage setPage={setPage} />;
-            case 'services': return <PlaceholderPage title="Our Services" />;
-            case 'packages': return <PlaceholderPage title="Our Packages" />;
-            case 'portfolio': return <PlaceholderPage title="Our Portfolio" />;
-            case 'about': return <AboutPage />; // <-- UPDATED
+            case 'services': return <ServicesPage setPage={setPage} />;
+            case 'packages': return <PackagesPage setPage={setPage} />;
+            case 'portfolio': return <PortfolioPage />; // <-- UPDATED
+            case 'about': return <AboutPage />;
             case 'blog': return <BlogPage setPage={setPage} />;
             case 'contact': return <ContactPage />;
             case 'portrait-photography-houston-parks': return <BlogPost1 setPage={setPage} />;
