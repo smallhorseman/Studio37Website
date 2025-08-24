@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ContactPage from './pages/ContactPage'; // Import the new ContactPage
 
 // Helper Components & Hooks
 // -----------------------------------------------------------------------------
 
 /**
  * A component that fades in its children when they scroll into view.
+ * Exported so other pages can use it.
  */
-const FadeIn = ({ children }) => {
+export const FadeIn = ({ children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
 
@@ -428,7 +430,7 @@ function App() {
             case 'portfolio': return <PlaceholderPage title="Our Portfolio" />;
             case 'about': return <PlaceholderPage title="About Us" />;
             case 'blog': return <PlaceholderPage title="Our Blog" />;
-            case 'contact': return <PlaceholderPage title="Contact Us" />;
+            case 'contact': return <ContactPage />; // <-- UPDATED
             // Individual Service Pages
             case 'portraits': return <PlaceholderPage title="Portrait Photography" />;
             case 'events': return <PlaceholderPage title="Event Photography" />;
