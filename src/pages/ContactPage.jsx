@@ -25,22 +25,19 @@ export default function ContactPage() {
         setStatus('Thank you! Your message has been sent.');
         form.reset();
       } else {
-        // Formspree returns error details in the response body
         const errorData = await response.json();
-        if (Object.hasOwn(errorData, 'errors')) {
-          setStatus(errorData["errors"].map(error => error["message"]).join(", "));
+        if (errorData.errors) {
+          // Show the specific error message from Formspree
+          setStatus(errorData.errors.map(error => error.message).join(', '));
         } else {
+          // Fallback for other types of errors
           setStatus('Sorry, there was an error sending your message.');
         }
-        throw new Error('Network response was not ok.');
       }
     } catch (error) {
-      // The status is already set in the `if/else` block, 
-      // but we can set a generic one here if the fetch itself fails.
-      if (!status.includes('Thank you')) {
-        setStatus('Sorry, there was an error sending your message. Please try again later.');
-      }
-      console.error(error);
+      // This will catch network errors (e.g., user is offline)
+      setStatus('Sorry, there was a network error. Please check your connection and try again.');
+      console.error('Form submission error:', error);
     }
   };
 
