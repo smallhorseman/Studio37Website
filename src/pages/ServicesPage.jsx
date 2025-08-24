@@ -20,6 +20,12 @@ const services = [
       'Showcase your work in the best possible light. We provide clean, creative, and high-impact photography for artists and businesses. Whether for e-commerce, catalogs, or promotional materials, our meticulous approach ensures your products and artwork look stunning and professional.',
     imageUrl: 'https://placehold.co/800x600/D2B48C/FFFDF6?text=Products',
   },
+  {
+    name: 'Professional Services',
+    description:
+      'We offer comprehensive packages for brands and businesses, including headshots, product photography, and visual content strategy. Let us help you build a compelling visual identity that connects with your audience and elevates your brand.',
+    imageUrl: 'https://placehold.co/800x600/A9A9A9/FFFDF6?text=Professional',
+  },
 ];
 
 export default function ServicesPage({ setPage }) {
