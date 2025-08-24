@@ -1,3 +1,4 @@
+// src/pages/HomePage.jsx
 import Hero from '../components/Hero';
 import ServicesHighlight from '../components/ServicesHighlight';
 import PackagesHighlight from '../components/PackagesHighlight';
