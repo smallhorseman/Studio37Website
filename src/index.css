@@ -1,3 +1,134 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  Combined styles for Studio 37 Website
+*/
+
+/* General Body and Typography */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f9f9f9;
+    color: #222;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Hero Section Background */
+.hero-background {
+    background-image: url('https://live.staticflickr.com/65535/54694721468_2e1203b0d6_b.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 70vh;
+}
+
+/* Standard Button Style */
+.btn-primary {
+    display: inline-block;
+    background-color: #1a202c;
+    color: white;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease-in-out;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    background-color: #4a5568;
+    transform: scale(1.05);
+}
+
+/* Polaroid Button Style */
+.btn-polaroid {
+    background-color: white;
+    color: #222;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1.25rem 2.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+    display: inline-block;
+    text-decoration: none;
+    transform: rotate(var(--btn-rotate, 0deg));
+}
+
+/* Full Rainbow Hover Effect */
+.btn-polaroid:hover {
+    box-shadow: 0 0 25px 8px rgba(255, 0, 0, 0.6), /* Red */
+                 0 0 25px 16px rgba(255, 127, 0, 0.6), /* Orange */
+                 0 0 25px 24px rgba(255, 255, 0, 0.6), /* Yellow */
+                 0 0 25px 32px rgba(0, 255, 0, 0.6), /* Green */
+                 0 0 25px 40px rgba(0, 0, 255, 0.6), /* Blue */
+                 0 0 25px 48px rgba(75, 0, 130, 0.6), /* Indigo */
+                 0 0 25px 56px rgba(143, 0, 255, 0.6); /* Violet */
+    transform: rotate(var(--btn-rotate, 0deg)) scale(1.05);
+}
+
+/* Blog Post Card Style */
+.post-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out;
+}
+
+.post-card:hover {
+    transform: translateY(-0.5rem);
+}
+
+/* Default Vite Styles (from App.css) */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
