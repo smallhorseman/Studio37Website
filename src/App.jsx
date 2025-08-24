@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ContactPage from './pages/ContactPage';
 import BlogPage from './pages/BlogPage';
 import BlogPost1 from './pages/BlogPost1';
+import AboutPage from './pages/AboutPage'; // Import the new AboutPage
 
 // Helper Components & Hooks (Exported so other pages can use it)
 export const FadeIn = ({ children }) => {
@@ -353,7 +354,7 @@ function App() {
             case 'services': return <PlaceholderPage title="Our Services" />;
             case 'packages': return <PlaceholderPage title="Our Packages" />;
             case 'portfolio': return <PlaceholderPage title="Our Portfolio" />;
-            case 'about': return <PlaceholderPage title="About Us" />;
+            case 'about': return <AboutPage />; // <-- UPDATED
             case 'blog': return <BlogPage setPage={setPage} />;
             case 'contact': return <ContactPage />;
             case 'portrait-photography-houston-parks': return <BlogPost1 setPage={setPage} />;
