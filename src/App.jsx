@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ContactPage from './pages/ContactPage'; // Import the new ContactPage
+import ContactPage from './pages/ContactPage';
+import BlogPage from './pages/BlogPage';
+import BlogPost1 from './pages/BlogPost1';
 
-// Helper Components & Hooks
-// -----------------------------------------------------------------------------
-
-/**
- * A component that fades in its children when they scroll into view.
- * Exported so other pages can use it.
- */
+// Helper Components & Hooks (Exported so other pages can use it)
 export const FadeIn = ({ children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
@@ -40,38 +36,23 @@ export const FadeIn = ({ children }) => {
 };
 
 // SVG Logo Component
-// -----------------------------------------------------------------------------
 const Studio37Logo = ({ className, color = "#36454F" }) => (
     <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {/* Camera Body */}
             <path d="M85,45 L85,30 A5,5 0 0,0 80,25 L20,25 A5,5 0 0,0 15,30 L15,65 A5,5 0 0,0 20,70 L80,70 A5,5 0 0,0 85,65 L85,55" />
-            {/* Viewfinder */}
             <path d="M25,30 L25,20 L35,20 L35,30" />
-            {/* Lens */}
             <circle cx="50" cy="47" r="12" />
             <circle cx="50" cy="47" r="6" />
-            {/* Flash */}
             <rect x="68" y="30" width="10" height="5" />
-            {/* Slot */}
             <path d="M20,70 L80,70 L75,80 L25,80 Z" />
-            {/* Button */}
             <path d="M85,45 L90,45 L90,55 L85,55" />
         </g>
-        {/* Text */}
-        <text x="50" y="92" textAnchor="middle" fontFamily="monospace" fontSize="8" fill={color}>
-            studio 37
-        </text>
-         <text x="50" y="99" textAnchor="middle" fontFamily="monospace" fontSize="4" fill={color}>
-            Capture create. connect.
-        </text>
+        <text x="50" y="92" textAnchor="middle" fontFamily="monospace" fontSize="8" fill={color}>studio 37</text>
+        <text x="50" y="99" textAnchor="middle" fontFamily="monospace" fontSize="4" fill={color}>Capture create. connect.</text>
     </svg>
 );
 
-
 // Site-wide Layout Components
-// -----------------------------------------------------------------------------
-
 const navigation = [
     { name: 'Services', page: 'services' },
     { name: 'Packages', page: 'packages' },
@@ -82,13 +63,11 @@ const navigation = [
 
 const Header = ({ setPage }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
     const navigate = (page) => {
         setPage(page);
         setMobileMenuOpen(false);
         window.scrollTo(0, 0);
     };
-
     return (
         <header className="bg-[#FFFDF6] sticky top-0 z-40 shadow-sm">
             <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
@@ -190,7 +169,6 @@ const Footer = ({ setPage }) => {
                         </div>
                     </div>
                 </div>
-                 {/* SEO Section */}
                 <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24">
                     <h3 className="text-sm font-semibold leading-6 text-[#36454F]">Serving Houston and Southeast Texas</h3>
                     <p className="mt-4 text-xs leading-5 text-gray-500">
@@ -206,8 +184,6 @@ const Footer = ({ setPage }) => {
 };
 
 // Homepage Section Components
-// -----------------------------------------------------------------------------
-
 const Hero = ({ setPage }) => {
     return (
         <div className="bg-[#FFFDF6]">
@@ -271,40 +247,9 @@ const ServicesHighlight = ({ setPage }) => {
 };
 
 const portraitPackages = [
-    {
-        name: 'The Mini Reel',
-        duration: '15 Minute Session',
-        features: [
-            '15 Edited & Polished Photos',
-            '1 Free Polaroid Print On-Site',
-            '1 Minute Video Free of Charge',
-            'Option to Add Photo Book',
-        ],
-        price: '$150',
-    },
-    {
-        name: 'The Full Episode',
-        duration: '30 Minute Session',
-        features: [
-            '30 Edited & Polished Photos',
-            '1 Free Polaroid Print On-Site',
-            '1 Minute Video Free of Charge',
-            'Option to Add Photo Book',
-        ],
-        price: '$275',
-        highlight: true,
-    },
-    {
-        name: 'The Epic Saga',
-        duration: '1 Hour Session',
-        features: [
-            '60 Edited & Polished Photos',
-            '1 Free Polaroid Print On-Site',
-            '1 Minute Video Free of Charge',
-            'Option to Add Photo Book',
-        ],
-        price: '$500',
-    },
+    { name: 'The Mini Reel', duration: '15 Minute Session', features: ['15 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$150' },
+    { name: 'The Full Episode', duration: '30 Minute Session', features: ['30 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$275', highlight: true },
+    { name: 'The Epic Saga', duration: '1 Hour Session', features: ['60 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$500' },
 ];
 
 const PortraitPackages = ({ setPage }) => {
@@ -314,9 +259,7 @@ const PortraitPackages = ({ setPage }) => {
                 <FadeIn>
                     <div className="mx-auto max-w-2xl sm:text-center">
                         <h2 className="text-3xl font-bold tracking-tight text-[#36454F] sm:text-4xl font-serif">Portrait Packages</h2>
-                        <p className="mt-6 text-lg leading-8 text-gray-700">
-                            Perfect for individuals, couples, and families. Choose a package that tells your story.
-                        </p>
+                        <p className="mt-6 text-lg leading-8 text-gray-700">Perfect for individuals, couples, and families. Choose a package that tells your story.</p>
                     </div>
                 </FadeIn>
                 <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
@@ -325,21 +268,12 @@ const PortraitPackages = ({ setPage }) => {
                             <div className={`rounded-3xl p-8 ring-1 xl:p-10 ${pkg.highlight ? 'ring-2 ring-[#468289] bg-gray-50' : 'ring-gray-200'}`}>
                                 <h3 className="text-lg font-semibold leading-8 text-[#36454F]">{pkg.name}</h3>
                                 <p className="mt-4 text-sm leading-6 text-gray-600">{pkg.duration}</p>
-                                <p className="mt-6 flex items-baseline gap-x-1">
-                                    <span className="text-4xl font-bold tracking-tight text-[#36454F]">{pkg.price}</span>
-                                </p>
-                                <button
-                                    onClick={() => setPage('contact')}
-                                    className={`mt-6 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${pkg.highlight ? 'bg-[#468289] text-white hover:bg-[#36454F]' : 'bg-white text-[#468289] ring-1 ring-inset ring-[#468289] hover:bg-gray-50'}`}
-                                >
-                                    Book Now
-                                </button>
+                                <p className="mt-6 flex items-baseline gap-x-1"><span className="text-4xl font-bold tracking-tight text-[#36454F]">{pkg.price}</span></p>
+                                <button onClick={() => setPage('contact')} className={`mt-6 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${pkg.highlight ? 'bg-[#468289] text-white hover:bg-[#36454F]' : 'bg-white text-[#468289] ring-1 ring-inset ring-[#468289] hover:bg-gray-50'}`}>Book Now</button>
                                 <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600 xl:mt-10">
                                     {pkg.features.map((feature) => (
                                         <li key={feature} className="flex gap-x-3">
-                                            <svg className="h-6 w-5 flex-none text-[#468289]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" />
-                                            </svg>
+                                            <svg className="h-6 w-5 flex-none text-[#468289]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" /></svg>
                                             {feature}
                                         </li>
                                     ))}
@@ -353,7 +287,6 @@ const PortraitPackages = ({ setPage }) => {
     );
 };
 
-
 const PortfolioUnlock = () => {
     const [password, setPassword] = useState('');
     const [isUnlocked, setIsUnlocked] = useState(false);
@@ -364,11 +297,7 @@ const PortfolioUnlock = () => {
             <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:flex lg:items-center lg:justify-between lg:px-8">
                 <FadeIn>
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-[#36454F] sm:text-4xl font-serif">
-                            Unlock Our Full Portfolio
-                            <br />
-                            See the stories we've told.
-                        </h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-[#36454F] sm:text-4xl font-serif">Unlock Our Full Portfolio<br />See the stories we've told.</h2>
                         <p className="mt-6 text-lg leading-8 text-gray-700">Our full portfolio is available to prospective clients. Enter the password provided during your consultation to view our gallery of past work.</p>
                     </div>
                 </FadeIn>
@@ -394,8 +323,6 @@ const PortfolioUnlock = () => {
 };
 
 // Page Components
-// -----------------------------------------------------------------------------
-
 const HomePage = ({ setPage }) => (
     <>
         <Hero setPage={setPage} />
@@ -417,8 +344,6 @@ const PlaceholderPage = ({ title, children }) => (
 );
 
 // Main App Component
-// -----------------------------------------------------------------------------
-
 function App() {
     const [page, setPage] = useState('home');
 
@@ -429,8 +354,9 @@ function App() {
             case 'packages': return <PlaceholderPage title="Our Packages" />;
             case 'portfolio': return <PlaceholderPage title="Our Portfolio" />;
             case 'about': return <PlaceholderPage title="About Us" />;
-            case 'blog': return <PlaceholderPage title="Our Blog" />;
-            case 'contact': return <ContactPage />; // <-- UPDATED
+            case 'blog': return <BlogPage setPage={setPage} />;
+            case 'contact': return <ContactPage />;
+            case 'portrait-photography-houston-parks': return <BlogPost1 setPage={setPage} />;
             // Individual Service Pages
             case 'portraits': return <PlaceholderPage title="Portrait Photography" />;
             case 'events': return <PlaceholderPage title="Event Photography" />;
