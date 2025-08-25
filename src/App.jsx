@@ -216,10 +216,10 @@ const Hero = ({ setPage }) => {
 };
 
 const services = [
-    { name: 'Portrait Photography', page: 'portraits', description: 'Authentic portraits for individuals, families, and professionals.', imageUrl: 'https://placehold.co/600x600/468289/FFFDF6?text=Portrait', rotation: 'transform -rotate-2' },
-    { name: 'Event Photography', page: 'events', description: 'Dynamic coverage of your special events, from corporate to personal.', imageUrl: 'https://placehold.co/600x600/36454F/FFFDF6?text=Event', rotation: 'transform rotate-2' },
-    { name: 'Art & Product Photography', page: 'products', description: 'Creative shots of your products or artwork for e-commerce.', imageUrl: 'https://placehold.co/600x600/D2B48C/FFFDF6?text=Product', rotation: 'transform rotate-1' },
-    { name: 'Professional Services', page: 'packages', description: 'Comprehensive brand packages including photography and strategy.', imageUrl: 'https://placehold.co/600x600/A9A9A9/FFFDF6?text=Brand', rotation: 'transform -rotate-1' }
+    { name: 'Portrait Photography', page: 'portraits', description: 'Authentic portraits for individuals, families, and professionals.', imageUrl: 'https://tinyurl.com/ysfnsfmy' },
+    { name: 'Event Photography', page: 'events', description: 'Dynamic coverage of your special events, from corporate to personal.', imageUrl: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756085532/IMG_0324_convert.io_1_e3mxvp_e_gen_restore_e_improve_l_image_upload_My_Brand_IMG_2115_mtuowt_c_scale_fl_relative_w_0.20_o_80_fl_layer_apply_g_south_west_x_0.03_y_0.04_qvk9ki.jpg', rotation: 'transform rotate-2' },
+    { name: 'Art & Product Photography', page: 'products', description: 'Creative shots of your products or artwork for e-commerce.', imageUrl: 'https://res.cloudinary.com/dmjxho2rl/image/upload//l_image:upload:My Brand:IMG_2115_mtuowt/c_scale,fl_relative,h_0.44,o_40/fl_layer_apply,g_north,x_0.03,y_0.04/v1756083844/54617933737_4760a0cf8b_b_uygijd.jpg', rotation: 'transform rotate-1' },
+    { name: 'Professional Services', page: 'packages', description: 'Comprehensive brand packages including photography and strategy.', imageUrl: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756082735/54740994305_b99379cf95_h_ky7is7.jpg', rotation: 'transform -rotate-1' }
 ];
 
 const ServicesHighlight = ({ setPage }) => {
