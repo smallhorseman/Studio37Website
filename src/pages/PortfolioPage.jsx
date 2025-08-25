@@ -11,8 +11,8 @@ const portfolioImages = [
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077413/54681762735_f45c949a98_h_jadlln.jpg' },
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077261/54707332078_c4a60a9e45_k_per4mx.jpg' },
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756081262/Untitled_convert.io_jnf0gn_aclplu.jpg' },
-  { src: 'https://placehold.co/800x600/D2B48C/FFFDF6?text=Artwork+Photo' },
-  { src: 'https://placehold.co/600x800/A9A9A9/FFFDF6?text=Couple+Shoot' },
+  { src: 'https://shorturl.at/LZuvE' },
+  { src: 'https://shorturl.at/PfhKn' },
 ];
 
 export default function PortfolioPage() {
