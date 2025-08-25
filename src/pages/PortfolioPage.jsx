@@ -5,12 +5,12 @@ import "yet-another-react-lightbox/styles.css";
 
 // Sample images for the portfolio. Replace these with your actual photos.
 const portfolioImages = [
-  { src: 'https://placehold.co/800x600/468289/FFFDF6?text=Portrait+1' },
-  { src: 'https://placehold.co/600x800/36454F/FFFDF6?text=Event+1' },
-  { src: 'https://placehold.co/800x600/D2B48C/FFFDF6?text=Product+1' },
-  { src: 'https://placehold.co/600x800/A9A9A9/FFFDF6?text=Family+Portrait' },
-  { src: 'https://placehold.co/800x600/468289/FFFDF6?text=Candid+Moment' },
-  { src: 'https://placehold.co/600x800/36454F/FFFDF6?text=Wedding+Detail' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077326/54694193043_f9ae5338ca_k_p7pjaz.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756078425/IMG_4184_convert.io_5_sjszhb.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077375/54708498315_242445c364_k_q9qsvb.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077413/54681762735_f45c949a98_h_jadlln.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077261/54707332078_c4a60a9e45_k_per4mx.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756081262/Untitled_convert.io_jnf0gn_aclplu.jpg' },
   { src: 'https://placehold.co/800x600/D2B48C/FFFDF6?text=Artwork+Photo' },
   { src: 'https://placehold.co/600x800/A9A9A9/FFFDF6?text=Couple+Shoot' },
 ];
