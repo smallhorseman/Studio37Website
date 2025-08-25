@@ -5,7 +5,7 @@ import BlogPost1 from './pages/BlogPost1';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import PackagesPage from './pages/PackagesPage';
-import PortfolioPage from './pages/PortfolioPage'; // Import the new PortfolioPage
+import PortfolioPage from './pages/PortfolioPage';
 
 // Helper Components & Hooks (Exported so other pages can use it)
 export const FadeIn = ({ children }) => {
@@ -75,10 +75,13 @@ const Header = ({ setPage }) => {
     return (
         <header className="bg-[#FFFDF6] sticky top-0 z-40 shadow-sm">
             <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-                <div className="flex lg:flex-1">
-                    <button onClick={() => navigate('home')} className="-m-1.5 p-1.5">
+                <div className="flex lg:flex-1 items-center">
+                    <button onClick={() => navigate('home')} className="-m-1.5 p-1.5 flex items-center">
                         <span className="sr-only">Studio 37</span>
                         <Studio37Logo className="h-16 w-auto" />
+                        <div className="hidden lg:block ml-4">
+                            <p className="text-sm font-semibold text-[#36454F] tracking-wider">Life's a movie; let us capture your highlight reel.</p>
+                        </div>
                     </button>
                 </div>
                 <div className="flex lg:hidden">
@@ -150,7 +153,7 @@ const Footer = ({ setPage }) => {
                 <div className="xl:grid xl:grid-cols-3 xl:gap-8">
                     <div className="space-y-8">
                         <Studio37Logo className="h-20 w-auto" />
-                        <p className="text-sm leading-6 text-gray-600">Life is a movie let us capture your highlight reel</p>
+                        <p className="text-sm leading-6 text-gray-600">Life's a movie; let us capture your highlight reel.</p>
                         <div className="flex space-x-6">
                             {socials.map((item) => (<a key={item.name} href={item.href} className="text-gray-400 hover:text-gray-500"><span className="sr-only">{item.name}</span><item.icon className="h-6 w-6" aria-hidden="true" /></a>))}
                         </div>
@@ -356,7 +359,7 @@ function App() {
             case 'home': return <HomePage setPage={setPage} />;
             case 'services': return <ServicesPage setPage={setPage} />;
             case 'packages': return <PackagesPage setPage={setPage} />;
-            case 'portfolio': return <PortfolioPage />; // <-- UPDATED
+            case 'portfolio': return <PortfolioPage />;
             case 'about': return <AboutPage />;
             case 'blog': return <BlogPage setPage={setPage} />;
             case 'contact': return <ContactPage />;
