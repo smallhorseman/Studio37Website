@@ -6,6 +6,7 @@ import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import PackagesPage from './pages/PackagesPage';
 import PortfolioPage from './pages/PortfolioPage';
+import DashboardPage from './pages/DashboardPage'; // Import the new DashboardPage
 
 // Helper Components & Hooks (Exported so other pages can use it)
 export const FadeIn = ({ children }) => {
@@ -63,6 +64,7 @@ const navigation = [
     { name: 'Portfolio', page: 'portfolio' },
     { name: 'About', page: 'about' },
     { name: 'Blog', page: 'blog' },
+    { name: 'Dashboard', page: 'dashboard' }, // Added Dashboard link
 ];
 
 const Header = ({ setPage }) => {
@@ -363,6 +365,7 @@ function App() {
             case 'about': return <AboutPage />;
             case 'blog': return <BlogPage setPage={setPage} />;
             case 'contact': return <ContactPage />;
+            case 'dashboard': return <DashboardPage />; // Added Dashboard page
             case 'portrait-photography-houston-parks': return <BlogPost1 setPage={setPage} />;
             // Individual Service Pages
             case 'portraits': return <PlaceholderPage title="Portrait Photography" />;
