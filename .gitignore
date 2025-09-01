@@ -1,8 +1,12 @@
 # Dependencies
 node_modules/
 
+# Dependencies
+node_modules/
+packages/web/node_modules/
+
 # Secrets
-packages/api-tools/serviceAccountKey.json
+packages/api/serviceAccountKey.json
 
 # Environment variables
 .env

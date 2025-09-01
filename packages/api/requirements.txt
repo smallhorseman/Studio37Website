@@ -1,10 +1,7 @@
 Flask
-Flask-Cors
 gunicorn
 python-dotenv
 firebase-admin
 google-cloud-firestore
 google-generativeai
-beautifulsoup4
-selenium
-webdriver-manager
+Flask-Cors
