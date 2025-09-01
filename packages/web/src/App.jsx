@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
-
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
@@ -11,7 +10,6 @@ import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
-
 // Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -65,7 +63,7 @@ export default function App() {
     return (
       <ToolsLayout>
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<InternalDashboardPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/internal-dashboard" element={<InternalDashboardPage />} />
           <Route path="/admin" element={<AdminUpdatePage />} />

@@ -8,24 +8,29 @@ export default function InternalDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchGscData = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_URL}/api/get-gsc-data`);
-            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            const token = localStorage.getItem('jwt_token');
+            if (!token) throw new Error("No login token found. Please log in.");
+
+            const response = await fetch(`${API_URL}/api/get-gsc-data`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to fetch GSC data');
             setGscData(data);
-        } catch (error) {
-            setError(error.message);
+        } catch (err) {
+            setError(err.message);
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchGscData();
-    }, [fetchGscData]);
+        fetchData();
+    }, [fetchData]);
 
     return (
         <FadeIn>
@@ -34,7 +39,7 @@ export default function InternalDashboardPage() {
                 <div className="bg-white p-4 rounded-lg shadow">
                     <h2 className="text-xl font-bold">Google Search Console Data</h2>
                     {loading && <p>Loading GSC data...</p>}
-                    {error && <p className="text-red-500">Error: {error}</p>}
+                    {error && <p className="text-red-500 font-semibold">Error: {error}</p>}
                     {gscData && <pre className="overflow-x-auto p-2 bg-gray-100 rounded mt-2">{JSON.stringify(gscData, null, 2)}</pre>}
                 </div>
             </div>
