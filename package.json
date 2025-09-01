@@ -1,5 +1,5 @@
 {
-  "name": "studio37-monorepo",
+  "name": "studio37website",
   "private": true,
   "workspaces": [
     "packages/*"
