@@ -22,13 +22,19 @@ def login():
     # IMPORTANT: Replace this with a real database check
     if auth.get('username') == 'admin' and auth.get('password') == 'password123':
         secret_key = os.getenv('JWT_SECRET')
-        if not secret_key: return jsonify({"message": "Server configuration error"}), 500
-        
-        token = jwt.encode({
+        if not secret_key:
+            return jsonify({"message": "Server configuration error"}), 500
+
+        # Use utcnow() for JWT 'exp' claim and ensure correct type for PyJWT >=2.x
+        exp_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        payload = {
             'user': auth.get('username'),
-            'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
-        }, secret_key, algorithm="HS256")
-        
+            'exp': exp_time
+        }
+        token = jwt.encode(payload, secret_key, algorithm="HS256")
+        # PyJWT >=2.x returns a str, but older versions return bytes
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
         return jsonify({'token': token})
 
     return jsonify({"message": "Invalid credentials"}), 401
