@@ -1,11 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import the navigate hook
-import { FadeIn } from '../components/FadeIn';  // 2. Corrected import with {}
-
-// --- All your homepage sections go here ---
+import { useNavigate } from 'react-router-dom';
+import { FadeIn } from '../components/FadeIn';
 
 const Hero = () => {
-    const navigate = useNavigate(); // 3. Initialize the navigate function
+    const navigate = useNavigate();
 
     return (
         <div className="bg-[#FFFDF6]">
@@ -19,7 +17,6 @@ const Hero = () => {
                             <h1 className="text-4xl font-bold tracking-tight text-[#36454F] sm:text-6xl font-serif">Timeless Images, Modern Vision.</h1>
                             <p className="mt-6 text-lg leading-8 text-gray-700">Your premier Houston photographer for portrait, event, and product sessions that capture your story with a blend of vintage warmth and cutting-edge quality.</p>
                             <div className="mt-10 flex items-center justify-center gap-x-6">
-                                {/* 4. Use navigate for button clicks */}
                                 <button onClick={() => navigate('/contact')} className="rounded-md bg-[#468289] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#36454F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Book a Consultation</button>
                                 <button onClick={() => navigate('/portfolio')} className="text-sm font-semibold leading-6 text-[#36454F]">View Our Work <span aria-hidden="true">→</span></button>
                             </div>
@@ -31,17 +28,10 @@ const Hero = () => {
     );
 };
 
-// ... and so on for ServicesHighlight, PortraitPackages, etc.
-
-// --- The main export for the page ---
-
 export default function HomePage() {
   return (
     <>
       <Hero />
-      {/* <ServicesHighlight /> */}
-      {/* <PortraitPackages /> */}
-      {/* <PortfolioUnlock /> */}
     </>
   );
 }

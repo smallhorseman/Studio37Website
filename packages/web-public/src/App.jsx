@@ -1,10 +1,8 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-
-// UPDATED: Import your custom logo
 import Studio37Logo from './components/Studio37Logo';
 
-// --- Import all your pages ---
+// Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -13,6 +11,8 @@ import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
+
+// Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
@@ -22,7 +22,6 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 
-// UPDATED: ToolsLayout now uses the logo
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
@@ -44,19 +43,18 @@ const ToolsLayout = ({ children }) => (
   </div>
 );
 
-// UPDATED: PublicSiteLayout now uses the logo
 const PublicSiteLayout = ({ children }) => (
   <div>
-    <nav style={{ padding: '1rem 2rem', backgroundColor: '#2d3748', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
+    <nav style={{ padding: '1rem 2rem', backgroundColor: '#D2B48C', display: 'flex', gap: '20px', alignItems: 'center' }}>
       <Link to="/" style={{ marginRight: 'auto' }}>
-        <Studio37Logo className="h-10 w-auto" color="white" />
+        <Studio37Logo className="h-10 w-auto" color="#36454F" />
       </Link>
-      <Link to="/about">About</Link>
-      <Link to="/services">Services</Link>
-      <Link to="/packages">Packages</Link>
-      <Link to="/portfolio">Portfolio</Link>
-      <Link to="/blog">Blog</Link>
-      <Link to="/contact">Contact</Link>
+      <Link to="/about" style={{ color: '#36454F' }}>About</Link>
+      <Link to="/services" style={{ color: '#36454F' }}>Services</Link>
+      <Link to="/packages" style={{ color: '#36454F' }}>Packages</Link>
+      <Link to="/portfolio" style={{ color: '#36454F' }}>Portfolio</Link>
+      <Link to="/blog" style={{ color: '#36454F' }}>Blog</Link>
+      <Link to="/contact" style={{ color: '#36454F' }}>Contact</Link>
     </nav>
     <main>{children}</main>
   </div>
