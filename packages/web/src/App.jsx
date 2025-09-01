@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
+
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
@@ -10,6 +11,7 @@ import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
+
 // Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -23,7 +25,7 @@ import ContactPage from './pages/ContactPage';
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
-        <div className="container mx-auto flex justify-between items-center">
+      <div className="container mx-auto flex justify-between items-center">
         <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
         <div className="space-x-4">
           <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>

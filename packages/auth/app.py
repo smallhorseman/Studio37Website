@@ -9,15 +9,12 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# This health check endpoint is missing from your currently deployed code
 @app.route('/')
 def index():
-    """A simple endpoint to check if the auth API is running."""
     return jsonify({"status": "ok", "message": "Studio37 Auth API is running."})
 
 @app.route('/login', methods=['POST'])
 def login():
-    """Handles user authentication and issues a JWT."""
     auth = request.json
     if not auth or not auth.get('username') or not auth.get('password'):
         return jsonify({"message": "Username and password are required"}), 400
@@ -25,8 +22,7 @@ def login():
     # IMPORTANT: Replace this with a real database check
     if auth.get('username') == 'admin' and auth.get('password') == 'password123':
         secret_key = os.getenv('JWT_SECRET')
-        if not secret_key:
-            return jsonify({"message": "Server configuration error"}), 500
+        if not secret_key: return jsonify({"message": "Server configuration error"}), 500
         
         token = jwt.encode({
             'user': auth.get('username'),
