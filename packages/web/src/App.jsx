@@ -1,8 +1,8 @@
 import React from 'react';
 import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
 
-// This path is now correct because we created the 'context' folder.
-import { AuthProvider, useAuth } from './context/AuthContext.js'; 
+// This is now correct. The file exists at this path.
+import { AuthProvider, useAuth } from './AuthContext.js'; 
 
 import Studio37Logo from './components/Studio37Logo.jsx';
 import CRMPage from './pages/CRMPage.jsx';
@@ -20,6 +20,8 @@ import PortfolioPage from './pages/PortfolioPage.jsx';
 import BlogPage from './pages/BlogPage.jsx';
 import BlogPostPage from './pages/BlogPostPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
+
+// --- No other changes are needed below this line ---
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuth();
