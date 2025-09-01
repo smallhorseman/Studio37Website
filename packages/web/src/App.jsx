@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
 
 // This is now correct. The file exists at this path.
-import { AuthProvider, useAuth } from './AuthContext.js'; 
+import { AuthProvider, useAuth } from './auth/AuthContext.js'; // Correct path
 
 import Studio37Logo from './components/Studio37Logo.jsx';
 import CRMPage from './pages/CRMPage.jsx';
