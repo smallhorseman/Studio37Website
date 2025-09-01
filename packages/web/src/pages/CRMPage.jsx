@@ -13,7 +13,7 @@ export default function CRMPage() {
         setError(null);
         try {
             const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in again.");
+            if (!token) throw new Error("No login token found. Please log in.");
 
             const response = await fetch(`${API_URL}/api/crm/contacts`, {
                 headers: { 'Authorization': `Bearer ${token}` }

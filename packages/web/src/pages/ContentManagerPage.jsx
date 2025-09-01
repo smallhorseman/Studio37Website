@@ -36,8 +36,8 @@ export default function ContentManagerPage() {
         fetchPosts();
     }, [fetchPosts]);
 
-    // ... handleSavePost and handleDeletePost would also need to include the token header
-
+    // Note: handleSavePost and handleDeletePost would also need to include the token header
+    
     if (loading) return <div className="p-8">Loading CMS content...</div>;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
     
@@ -45,7 +45,15 @@ export default function ContentManagerPage() {
         <FadeIn>
             <div className="p-8">
                 <h1 className="text-3xl font-bold mb-6">Content Manager</h1>
-                {/* ... rest of your CMS JSX ... */}
+                 <div className="bg-white p-4 rounded-lg shadow">
+                    <ul>
+                        {posts.map(post => (
+                            <li key={post.id} className="py-2 border-b">
+                                <p className="font-semibold">{post.title}</p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
         </FadeIn>
     );

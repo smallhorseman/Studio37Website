@@ -12,36 +12,22 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
-    event.preventDefault(); // 1. Prevent the page from reloading
+    event.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // 2. Send the username and password to your auth backend
       const response = await fetch(`${AUTH_API_URL}/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        // Handle login errors from the server
-        throw new Error(data.message || 'Login failed!');
-      }
-
-      // 3. If login is successful, get the token from the response
-      const { token } = data;
-
-      // 4. Store the token in the browser's local storage
-      localStorage.setItem('jwt_token', token);
-
-      // 5. Redirect the user to the main tools dashboard
-      navigate('/internal-dashboard');
-
+      if (!response.ok) throw new Error(data.message || 'Login failed!');
+      
+      localStorage.setItem('jwt_token', data.token);
+      navigate('/internal-dashboard'); // Redirect after successful login
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,47 +38,21 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 max-w-md w-full bg-white rounded-lg shadow-md">
-        <div className="flex justify-center mb-6">
-          <Studio37Logo className="h-24 w-auto" />
-        </div>
+        <div className="flex justify-center mb-6"><Studio37Logo className="h-24 w-auto" /></div>
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Tools Login</h2>
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-              Username
-            </label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
-            />
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">Username</label>
+            <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-              Password
-            </label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="password123"
-            />
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Password</label>
+            <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password123" />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-          <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full disabled:bg-gray-400"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
+          <button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full disabled:bg-gray-400">
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
       </div>
     </div>

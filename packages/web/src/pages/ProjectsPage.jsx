@@ -12,24 +12,14 @@ export default function ProjectsPage() {
         setLoading(true);
         setError(null);
         try {
-            // 1. Get the token that was saved during login
             const token = localStorage.getItem('jwt_token');
-            if (!token) {
-                throw new Error("You are not logged in.");
-            }
+            if (!token) throw new Error("No login token found. Please log in.");
 
-            // 2. Send the token in the 'Authorization' header
             const response = await fetch(`${API_URL}/api/projects`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-
             const data = await response.json();
-            if (!response.ok) {
-                // This will show a more helpful error like "Token is invalid!"
-                throw new Error(data.message || 'Failed to fetch projects');
-            }
+            if (!response.ok) throw new Error(data.message || 'Failed to fetch projects');
             setProjects(data);
         } catch (error) {
             setError(error.message);

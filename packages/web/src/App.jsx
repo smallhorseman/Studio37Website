@@ -22,7 +22,6 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 
-// --- NEW: Protected Route Component ---
 // This component checks for a login token. If it doesn't exist, it redirects to the login page.
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('jwt_token');
@@ -75,10 +74,7 @@ export default function App() {
     return (
       <ToolsLayout>
         <Routes>
-          {/* The Login page is public */}
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* All other tool pages are now protected */}
           <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
