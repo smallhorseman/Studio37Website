@@ -1,17 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// Get the API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const AUTH_API_URL = 'https://auth-3778.onrender.com';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // Initialize state from localStorage so it persists across reloads
-  const [token, setToken] = useState(localStorage.getItem('jwt_token'));
+  const [token, setToken] = = useState(localStorage.getItem('jwt_token'));
 
   useEffect(() => {
-    // This effect syncs the state with localStorage
     if (token) {
       localStorage.setItem('jwt_token', token);
     } else {
@@ -21,13 +18,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Use the environment variable for the endpoint
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const response = await axios.post(`${AUTH_API_URL}/api/auth/login`, {
         email,
         password,
       });
       const { token: newToken } = response.data;
-      setToken(newToken); // This will trigger the useEffect to save to localStorage
+      setToken(newToken);
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error.response?.data?.message || error.message);
@@ -36,11 +32,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setToken(null); // This will trigger the useEffect to remove from localStorage
+    setToken(null);
   };
 
   const value = { token, login, logout };
 
+  // THE FIX: This 'return' statement is CRITICAL
   return (
     <AuthContext.Provider value={value}>
       {children}
