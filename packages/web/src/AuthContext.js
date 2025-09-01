@@ -1,13 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// Use the VITE_AUTH_URL for the auth service
-const AUTH_API_URL = import.meta.env.VITE_AUTH_URL || 'http://localhost:5001';
+// NEW: The dedicated URL for our authentication microservice
+const AUTH_API_URL = 'https://auth-3778.onrender.com'; // The live auth server
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem('jwt_token'));
+  // Initialize state from localStorage so it persists across reloads
+  const [token, setToken] = useState(localStorage.getItem('jwt_token'));
 
   useEffect(() => {
     // This effect syncs the state with localStorage
@@ -20,12 +21,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // THE CHANGE: We now make the login request to the dedicated AUTH_API_URL
       const response = await axios.post(`${AUTH_API_URL}/api/auth/login`, {
         email,
         password,
       });
       const { token: newToken } = response.data;
-      setToken(newToken);
+      setToken(newToken); // This will trigger the useEffect to save to localStorage
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error.response?.data?.message || error.message);
@@ -34,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setToken(null);
+    setToken(null); // This will trigger the useEffect to remove from localStorage
   };
 
   const value = { token, login, logout };
@@ -53,4 +55,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

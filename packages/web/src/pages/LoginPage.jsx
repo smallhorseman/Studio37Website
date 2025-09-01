@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext'; // Import our useAuth hook
 import Studio37Logo from '../components/Studio37Logo';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_URL;
-
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  // The form state remains the same
+  const [email, setEmail] = useState(''); // Changed from username to email for consistency
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Get the login function from our context
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
@@ -17,24 +20,25 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch(`${AUTH_API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      // Call the login function from our AuthContext
+      const result = await login(email, password);
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login failed!');
-      
-      localStorage.setItem('jwt_token', data.token);
-      navigate('/internal-dashboard'); // Redirect after successful login
+      if (result.success) {
+        navigate('/internal-dashboard'); // Redirect on success
+      } else {
+        // Use the error message provided by the context
+        setError(result.message || 'An unknown error occurred.');
+      }
     } catch (err) {
-      setError(err.message);
+      // Catch any unexpected errors during the process
+      setError('Failed to log in. Please try again.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  // The JSX is mostly the same, just updated to use 'email'
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 max-w-md w-full bg-white rounded-lg shadow-md">
@@ -42,15 +46,31 @@ export default function LoginPage() {
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Tools Login</h2>
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">Username</label>
-            <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" />
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">Email</label>
+            <input 
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+              id="email" 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="user@example.com" 
+              required
+            />
           </div>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Password</label>
-            <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password123" />
+            <input 
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" 
+              id="password" 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="******************" 
+              required
+            />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-          <button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full disabled:bg-gray-400">
+          <button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full disabled:bg-gray-400 focus:outline-none focus:shadow-outline">
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>

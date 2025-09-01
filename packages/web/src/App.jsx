@@ -1,141 +1,115 @@
 import React from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
 
-// We will need to re-create these files in the `src/pages` folder.
-// For now, we'll define them as simple placeholders here.
-const HomePage = () => <div>HomePage Content</div>;
-const ServicesPage = () => <div>ServicesPage Content</div>;
-const PackagesPage = () => <div>PackagesPage Content</div>;
-const PortfolioPage = () => <div>PortfolioPage Content</div>;
-const AboutPage = () => <div>AboutPage Content</div>;
-const BlogPage = () => <div>BlogPage Content</div>;
-const BlogPost1 = () => <div>BlogPost1 Content</div>;
-const ContactPage = () => <div>ContactPage Content</div>;
-const DashboardPage = () => <div>DashboardPage Content</div>;
+// This is now correct. The file exists at this path.
+import { AuthProvider, useAuth } from './AuthContext.js'; 
 
+import Studio37Logo from './components/Studio37Logo.jsx';
+import CRMPage from './pages/CRMPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
+import ContentManagerPage from './pages/ContentManagerPage.jsx';
+import InternalDashboardPage from './pages/InternalDashboardPage.jsx';
+import AdminUpdatePage from './pages/AdminUpdatePage.jsx';
+import TodoPage from './pages/TodoPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import HomePage from './pages/HomePage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import ServicesPage from './pages/ServicesPage.jsx';
+import PackagesPage from './pages/PackagesPage.jsx';
+import PortfolioPage from './pages/PortfolioPage.jsx';
+import BlogPage from './pages/BlogPage.jsx';
+import BlogPostPage from './pages/BlogPostPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
 
-// Helper: Scrolls to top on page change
-const ScrollToTop = () => {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return null;
+// --- No other changes are needed below this line ---
+
+const ProtectedRoute = ({ children }) => {
+  const { token } = useAuth();
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 };
 
-// SVG Logo Component
-const Studio37Logo = ({ className, color = "#36454F" }) => (
-    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M85,45 L85,30 A5,5 0 0,0 80,25 L20,25 A5,5 0 0,0 15,30 L15,65 A5,5 0 0,0 20,70 L80,70 A5,5 0 0,0 85,65 L85,55" />
-            <path d="M25,30 L25,20 L35,20 L35,30" />
-            <circle cx="50" cy="47" r="12" />
-            <circle cx="50" cy="47" r="6" />
-            <rect x="68" y="30" width="10" height="5" />
-            <path d="M20,70 L80,70 L75,80 L25,80 Z" />
-            <path d="M85,45 L90,45 L90,55 L85,55" />
-        </g>
-        <text x="50" y="92" textAnchor="middle" fontFamily="monospace" fontSize="8" fill={color}>studio 37</text>
-        <text x="50" y="99" textAnchor="middle" fontFamily="monospace" fontSize="4" fill={color}>Capture create. connect.</text>
-    </svg>
+const ToolsLayout = ({ children }) => (
+  <div className="min-h-screen bg-gray-50">
+    <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
+        <div className="space-x-4">
+          <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
+          <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
+          <Link to="/projects" className="px-2 py-1 rounded hover:bg-gray-700">Projects</Link>
+          <Link to="/cms" className="px-2 py-1 rounded hover:bg-gray-700">CMS</Link>
+          <Link to="/todos" className="font-bold text-yellow-400 px-2 py-1 rounded hover:bg-gray-700">To-Do</Link>
+          <Link to="/admin" className="bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-500">Admin</Link>
+        </div>
+      </div>
+    </nav>
+    <main>{children}</main>
+  </div>
 );
 
-// Site-wide Layout Components
-const navigation = [
-    { name: 'Services', href: '/services' },
-    { name: 'Packages', href: '/packages' },
-    { name: 'Portfolio', href: '/portfolio' },
-    { name: 'About', href: '/about' },
-    { name: 'Blog', href: '/blog' },
-];
+const PublicSiteLayout = ({ children }) => (
+ <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
+    <nav className="p-4 sm:px-8 flex justify-between items-center">
+      <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
+      <div className="hidden sm:flex items-center gap-6">
+        <Link to="/about" className="hover:text-warm-tan">About</Link>
+        <Link to="/services" className="hover:text-warm-tan">Services</Link>
+        <Link to="/portfolio" className="hover:text-warm-tan">Portfolio</Link>
+        <Link to="/blog" className="hover:text-warm-tan">Blog</Link>
+        <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
+      </div>
+    </nav>
+    <main>{children}</main>
+  </div>
+);
 
-const Header = () => {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const AppRoutes = () => {
+  const hostname = window.location.hostname;
+  const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
+
+  if (isToolsSite) {
     return (
-        <header className="bg-[#FFFDF6] sticky top-0 z-40 shadow-sm">
-            <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-                <div className="flex lg:flex-1">
-                    <Link to="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
-                        <span className="sr-only">Studio 37</span>
-                        <Studio37Logo className="h-16 w-auto" />
-                    </Link>
-                </div>
-                <div className="flex lg:hidden">
-                    <button type="button" className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700" onClick={() => setMobileMenuOpen(true)}>
-                        <span className="sr-only">Open main menu</span>
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                    </button>
-                </div>
-                <div className="hidden lg:flex lg:gap-x-12">
-                    {navigation.map((item) => (
-                        <Link key={item.name} to={item.href} className="text-sm font-semibold leading-6 text-[#36454F] hover:text-gray-600 tracking-wider">
-                            {item.name}
-                        </Link>
-                    ))}
-                </div>
-                <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-                    <Link to="/contact" className="text-sm font-semibold leading-6 text-[#36454F]">
-                        Contact Us <span aria-hidden="true">&rarr;</span>
-                    </Link>
-                </div>
-            </nav>
-            {mobileMenuOpen && (
-                 <div className="lg:hidden" role="dialog" aria-modal="true">
-                    <div className="fixed inset-0 z-50" />
-                    <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-[#FFFDF6] px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
-                        <div className="flex items-center justify-between">
-                            <Link to="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
-                                <span className="sr-only">Studio 37</span>
-                                <Studio37Logo className="h-16 w-auto" />
-                            </Link>
-                            <button type="button" className="-m-2.5 rounded-md p-2.5 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
-                                <span className="sr-only">Close menu</span>
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                        <div className="mt-6 flow-root">
-                            <div className="-my-6 divide-y divide-gray-500/10">
-                                <div className="space-y-2 py-6">
-                                    {navigation.map((item) => (
-                                        <Link key={item.name} to={item.href} onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-[#36454F] hover:bg-gray-50">
-                                            {item.name}
-                                        </Link>
-                                    ))}
-                                </div>
-                                <div className="py-6">
-                                    <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-[#36454F] hover:bg-gray-50">
-                                        Contact Us
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </header>
+      <ToolsLayout>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
+          <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
+          <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+          <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
+          <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+        </Routes>
+      </ToolsLayout>
     );
-};
+  } else {
+    return (
+      <PublicSiteLayout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+        </Routes>
+      </PublicSiteLayout>
+    );
+  }
+}
 
 export default function App() {
-    return (
-        <>
-            <ScrollToTop />
-            <Header />
-            <main>
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/services" element={<ServicesPage />} />
-                    <Route path="/packages" element={<PackagesPage />} />
-                    <Route path="/portfolio" element={<PortfolioPage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/blog" element={<BlogPage />} />
-                    <Route path="/blog/post-1" element={<BlogPost1 />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                </Routes>
-            </main>
-            {/* We can add the Footer component back in later */}
-        </>
-    );
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
+
