@@ -4,17 +4,21 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  // Look for 'jwt_token' on initial load
+  const [token, setToken] = useState(localStorage.getItem('jwt_token') || null);
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
+      // NOTE: Make sure this login URL is correct for your setup.
+      // It might be your Render URL, not localhost.
+      const response = await axios.post('https://auth-3778.onrender.com/login', {
         email,
         password,
       });
       const { token } = response.data;
       setToken(token);
-      localStorage.setItem('token', token);
+      // **THE FIX:** Save the token under the key 'jwt_token'
+      localStorage.setItem('jwt_token', token);
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -24,7 +28,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setToken(null);
-    localStorage.removeItem('token');
+    // **THE FIX:** Remove the 'jwt_token' upon logout
+    localStorage.removeItem('jwt_token');
   };
 
   return (
@@ -37,3 +42,4 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
+

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FadeIn } from '../components/FadeIn';
 
 export default function AdminUpdatePage() {
   const [clicks, setClicks] = useState('');
@@ -23,16 +22,26 @@ export default function AdminUpdatePage() {
     };
 
     try {
-      // Find your backend's public URL in the PORTS tab
+      // **THE FIX:** Get the token using the correct key, 'jwt_token'
+      const token = localStorage.getItem('jwt_token');
+
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+      
       const backendUrl = 'https://sem37-api.onrender.com';
       const response = await fetch(`${backendUrl}/api/update-gsc-data`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(newData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update data on the server.');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update data on the server.');
       }
 
       const result = await response.json();
@@ -47,7 +56,7 @@ export default function AdminUpdatePage() {
   return (
     <div className="bg-gray-100 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <FadeIn>
+        <>
           <div className="mx-auto max-w-2xl lg:text-center">
             <h2 className="text-base font-semibold leading-7 text-indigo-600">Admin Panel</h2>
             <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
@@ -82,8 +91,9 @@ export default function AdminUpdatePage() {
             </div>
             {status && <p className="text-center text-gray-600 mt-4">{status}</p>}
           </form>
-        </FadeIn>
+        </>
       </div>
     </div>
   );
 }
+
