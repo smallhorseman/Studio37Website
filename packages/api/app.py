@@ -21,8 +21,10 @@ if not os.path.exists(SERVICE_ACCOUNT_FILE):
 else:
     try:
         cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
-        firebase_admin.initialize_app(cred, name='api-service')
-        db = firestore.client()
+        # Initialize a specifically named app to avoid conflicts
+        api_app = firebase_admin.initialize_app(cred, name='api-service')
+        # Tell Firestore to use that specific app
+        db = firestore.client(app=api_app)
         print("--- API Firebase Connection: SUCCESS ---")
     except Exception as e:
         print(f"--- API Firebase Connection: FAILED. Error: {e} ---")
@@ -56,7 +58,7 @@ def token_required(f):
             secret_key = os.getenv('JWT_SECRET')
             jwt.decode(token, secret_key, algorithms=["HS256"])
         except Exception as e:
-            return jsonify({'message': f'Token is invalid! {e}'}), 401
+            return jsonify({'message': f'Token is invalid or expired! {e}'}), 401
 
         return f(*args, **kwargs)
     return decorated
@@ -69,12 +71,6 @@ def index():
 
 
 # --- CMS ENDPOINTS ---
-@app.route('/api/cms/posts', methods=['POST'])
-@token_required
-def create_post():
-    # ... function logic ...
-    pass
-
 @app.route('/api/cms/posts', methods=['GET'])
 @token_required
 def get_all_posts():
@@ -118,6 +114,16 @@ def get_gsc_data():
         return jsonify(doc.to_dict() if doc.exists else {"message": "No GSC data found"}), 200
     except Exception as e: return jsonify({"error": str(e)}), 500
 
+@app.route('/api/update-gsc-data', methods=['POST'])
+@token_required
+def update_gsc_data():
+    if not db: return jsonify({"error": "Database not connected"}), 500
+    try:
+        data = request.get_json()
+        db.collection('sem37_data').document('gsc_main').set(data, merge=True)
+        return jsonify({"message": "GSC data updated successfully"}), 200
+    except Exception as e: return jsonify({"error": str(e)}), 500
+
 
 # --- GEMINI SEO ANALYZER ENDPOINT ---
 @app.route('/api/gemini-seo-analysis', methods=['GET'])
@@ -125,7 +131,7 @@ def get_gsc_data():
 def get_gemini_seo_analysis():
     domain = request.args.get('domain')
     if not domain: return jsonify({"error": "A 'domain' is required."}), 400
-    # ... your Gemini prompt logic ...
+    # Add your full Gemini prompt and logic here
     return jsonify({"message": f"Analysis for {domain} would be generated here."}), 200
 
 
