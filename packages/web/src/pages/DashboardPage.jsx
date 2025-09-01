@@ -14,9 +14,14 @@ export default function DashboardPage() {
         setError(null);
         setAnalysis(null);
         try {
-            const response = await fetch(`${API_URL}/api/gemini-seo-analysis?domain=${domain}`);
-            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            const token = localStorage.getItem('jwt_token');
+            if (!token) throw new Error("No login token found. Please log in again.");
+
+            const response = await fetch(`${API_URL}/api/gemini-seo-analysis?domain=${domain}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Analysis failed');
             setAnalysis(data);
         } catch (error) {
             setError(error.message);
