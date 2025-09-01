@@ -17,9 +17,7 @@ CORS(app)
 # --- Firebase Initialization ---
 db = None
 SERVICE_ACCOUNT_FILE = 'serviceAccountKey.json'
-if not os.path.exists(SERVICE_ACCOUNT_FILE):
-    print(f"--- FATAL ERROR: Firebase credentials ('{SERVICE_ACCOUNT_FILE}') not found. ---")
-else:
+if os.path.exists(SERVICE_ACCOUNT_FILE):
     try:
         cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
         api_app = firebase_admin.initialize_app(cred, name='api-service')
@@ -27,6 +25,8 @@ else:
         print("--- API Firebase Connection: SUCCESS ---")
     except Exception as e:
         print(f"--- API Firebase Connection: FAILED. Error: {e} ---")
+else:
+    print(f"--- FATAL ERROR: Firebase credentials ('{SERVICE_ACCOUNT_FILE}') not found. ---")
 
 # --- Gemini API Initialization ---
 try:
@@ -81,6 +81,13 @@ def get_all_posts():
     posts = [doc.to_dict() | {'id': doc.id} for doc in db.collection('cms_posts').stream()]
     return jsonify(posts), 200
 
+@app.route('/api/cms/posts/<post_id>', methods=['GET'])
+@token_required
+def get_post(post_id):
+    if not db: return jsonify({"error": "Database not connected"}), 500
+    doc = db.collection('cms_posts').document(post_id).get()
+    return jsonify(doc.to_dict() | {'id': doc.id}) if doc.exists else (jsonify({"error": "Post not found"}), 404)
+
 @app.route('/api/cms/posts/<post_id>', methods=['PUT'])
 @token_required
 def update_post(post_id):
@@ -120,6 +127,13 @@ def get_all_projects():
     projects = [doc.to_dict() | {'id': doc.id} for doc in db.collection('projects').stream()]
     return jsonify(projects), 200
 
+@app.route('/api/projects/<project_id>', methods=['GET'])
+@token_required
+def get_project(project_id):
+    if not db: return jsonify({"error": "Database not connected"}), 500
+    doc = db.collection('projects').document(project_id).get()
+    return jsonify(doc.to_dict() | {'id': doc.id}) if doc.exists else (jsonify({"error": "Project not found"}), 404)
+
 @app.route('/api/projects/<project_id>', methods=['PUT'])
 @token_required
 def update_project(project_id):
@@ -158,7 +172,14 @@ def get_all_contacts():
     if not db: return jsonify({"error": "Database not connected"}), 500
     contacts = [doc.to_dict() | {'id': doc.id} for doc in db.collection('crm_contacts').stream()]
     return jsonify(contacts), 200
-    
+
+@app.route('/api/crm/contacts/<contact_id>', methods=['GET'])
+@token_required
+def get_contact(contact_id):
+    if not db: return jsonify({"error": "Database not connected"}), 500
+    doc = db.collection('crm_contacts').document(contact_id).get()
+    return jsonify(doc.to_dict() | {'id': doc.id}) if doc.exists else (jsonify({"error": "Contact not found"}), 404)
+
 @app.route('/api/crm/contacts/<contact_id>', methods=['PUT'])
 @token_required
 def update_contact(contact_id):
@@ -179,7 +200,7 @@ def delete_contact(contact_id):
         return jsonify({"message": "Contact deleted successfully"}), 200
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# --- GSC DATA ENDPOINTS ---
+# --- GSC & GEMINI ENDPOINTS ---
 @app.route('/api/get-gsc-data', methods=['GET'])
 @token_required
 def get_gsc_data():
@@ -188,7 +209,16 @@ def get_gsc_data():
     doc = doc_ref.get()
     return jsonify(doc.to_dict() if doc.exists else {"message": "No GSC data found"}), 200
 
-# --- GEMINI SEO ANALYZER ENDPOINT ---
+@app.route('/api/update-gsc-data', methods=['POST'])
+@token_required
+def update_gsc_data():
+    if not db: return jsonify({"error": "Database not connected"}), 500
+    try:
+        data = request.get_json()
+        db.collection('sem37_data').document('gsc_main').set(data, merge=True)
+        return jsonify({"message": "GSC data updated successfully"}), 200
+    except Exception as e: return jsonify({"error": str(e)}), 500
+
 @app.route('/api/gemini-seo-analysis', methods=['GET'])
 @token_required
 def get_gemini_seo_analysis():
@@ -198,7 +228,6 @@ def get_gemini_seo_analysis():
     prompt = f"You are a world-class SEO analyst. Provide a plausible, deeply researched estimate of key performance indicators for the domain: '{domain}'. Your response MUST be a single, minified JSON object with these exact keys: 'organicKeywords', 'monthlySEOClicks', 'monthlySEOClickChange', 'paidKeywords', 'monthlyPPCClicks', 'monthlyAdsBudget', 'trafficHistory' (an array of 12 objects with 'month' and 'organicTraffic' keys)."
     try:
         response = model.generate_content(prompt)
-        # Clean up the response to ensure it's valid JSON
         raw_text = response.text.strip().replace('`', '')
         if raw_text.startswith('json'):
             raw_text = raw_text[4:].strip()
