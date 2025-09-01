@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
-
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
@@ -11,7 +10,6 @@ import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
-
 // Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -25,10 +23,8 @@ import ContactPage from './pages/ContactPage';
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/">
-          <Studio37Logo className="h-10 w-auto" color="white" />
-        </Link>
+        <div className="container mx-auto flex justify-between items-center">
+        <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
         <div className="space-x-4">
           <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
           <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
@@ -44,17 +40,16 @@ const ToolsLayout = ({ children }) => (
 );
 
 const PublicSiteLayout = ({ children }) => (
-  <div>
-    <nav style={{ padding: '1rem 2rem', backgroundColor: '#D2B48C', display: 'flex', gap: '20px', alignItems: 'center' }}>
-      <Link to="/" style={{ marginRight: 'auto' }}>
-        <Studio37Logo className="h-10 w-auto" color="#36454F" />
-      </Link>
-      <Link to="/about" style={{ color: '#36454F' }}>About</Link>
-      <Link to="/services" style={{ color: '#36454F' }}>Services</Link>
-      <Link to="/packages" style={{ color: '#36454F' }}>Packages</Link>
-      <Link to="/portfolio" style={{ color: '#36454F' }}>Portfolio</Link>
-      <Link to="/blog" style={{ color: '#36454F' }}>Blog</Link>
-      <Link to="/contact" style={{ color: '#36454F' }}>Contact</Link>
+  <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
+    <nav className="p-4 sm:px-8 flex justify-between items-center">
+      <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
+      <div className="hidden sm:flex items-center gap-6">
+        <Link to="/about" className="hover:text-warm-tan">About</Link>
+        <Link to="/services" className="hover:text-warm-tan">Services</Link>
+        <Link to="/portfolio" className="hover:text-warm-tan">Portfolio</Link>
+        <Link to="/blog" className="hover:text-warm-tan">Blog</Link>
+        <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
+      </div>
     </nav>
     <main>{children}</main>
   </div>
