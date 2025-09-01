@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext.js'; // <-- IMPORT THE ENGINE
-import Studio37Logo from './components/Studio37Logo.jsx';
 
-// Import all your page components...
+// === ATTENTION: THIS IS THE SECTION TO FIX ===
+// The paths below are likely still wrong. We will fix them in Step 2.
+import { AuthProvider, useAuth } from './AuthContext.js';
+import Studio37Logo from './components/Studio37Logo.jsx';
 import CRMPage from './pages/CRMPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ContentManagerPage from './pages/ContentManagerPage.jsx';
@@ -19,52 +21,55 @@ import PortfolioPage from './pages/PortfolioPage.jsx';
 import BlogPage from './pages/BlogPage.jsx';
 import BlogPostPage from './pages/BlogPostPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
+// === END OF SECTION TO FIX ===
 
+// This component correctly uses the Auth context to protect your tool pages
 const ProtectedRoute = ({ children }) => {
-  const { token } = useAuth(); // Now we use the context for a reliable check
+  const { token } = useAuth();
   if (!token) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
-// ... (Your Layout components remain the same) ...
+// ... Your ToolsLayout and PublicSiteLayout components are perfect, no changes needed ...
 const ToolsLayout = ({ children }) => (
-  <div className="min-h-screen bg-gray-50">
-    <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
-        <div className="space-x-4">
-          <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
-          <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
-          <Link to="/projects" className="px-2 py-1 rounded hover:bg-gray-700">Projects</Link>
-          <Link to="/cms" className="px-2 py-1 rounded hover:bg-gray-700">CMS</Link>
-          <Link to="/todos" className="font-bold text-yellow-400 px-2 py-1 rounded hover:bg-gray-700">To-Do</Link>
-          <Link to="/admin" className="bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-500">Admin</Link>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
+        <div className="container mx-auto flex justify-between items-center">
+          <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
+          <div className="space-x-4">
+            <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
+            <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
+            <Link to="/projects" className="px-2 py-1 rounded hover:bg-gray-700">Projects</Link>
+            <Link to="/cms" className="px-2 py-1 rounded hover:bg-gray-700">CMS</Link>
+            <Link to="/todos" className="font-bold text-yellow-400 px-2 py-1 rounded hover:bg-gray-700">To-Do</Link>
+            <Link to="/admin" className="bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-500">Admin</Link>
+          </div>
         </div>
-      </div>
-    </nav>
-    <main>{children}</main>
-  </div>
-);
+      </nav>
+      <main>{children}</main>
+    </div>
+  );
 
 const PublicSiteLayout = ({ children }) => (
- <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
-    <nav className="p-4 sm:px-8 flex justify-between items-center">
-      <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
-      <div className="hidden sm:flex items-center gap-6">
-        <Link to="/about" className="hover:text-warm-tan">About</Link>
-        <Link to="/services" className="hover:text-warm-tan">Services</Link>
-        <Link to="/portfolio" className="hover:text-warm-tan">Portfolio</Link>
-        <Link to="/blog" className="hover:text-warm-tan">Blog</Link>
-        <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
-      </div>
-    </nav>
-    <main>{children}</main>
-  </div>
-);
+   <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
+      <nav className="p-4 sm:px-8 flex justify-between items-center">
+        <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
+        <div className="hidden sm:flex items-center gap-6">
+          <Link to="/about" className="hover:text-warm-tan">About</Link>
+          <Link to="/services" className="hover:text-warm-tan">Services</Link>
+          <Link to="/portfolio" className="hover:text-warm-tan">Portfolio</Link>
+          <Link to="/blog" className="hover:text-warm-tan">Blog</Link>
+          <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
+        </div>
+      </nav>
+      <main>{children}</main>
+    </div>
+  );
 
 
+// This component correctly determines which layout to show
 const AppRoutes = () => {
   const hostname = window.location.hostname;
   const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
@@ -102,7 +107,7 @@ const AppRoutes = () => {
   }
 }
 
-// The main App component now provides the AuthContext to everything else
+// The main App component now correctly provides the AuthContext to everything else
 export default function App() {
   return (
     <BrowserRouter>
@@ -112,4 +117,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
