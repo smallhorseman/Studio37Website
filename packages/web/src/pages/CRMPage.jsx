@@ -1,28 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from '../apiClient.js'; // Import our new API client
 
 export default function CRMPage() {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // This function is now much cleaner!
     const fetchContacts = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in.");
-
-            const response = await fetch(`${API_URL}/api/crm/contacts`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch contacts');
-            setContacts(data);
+            // The apiClient automatically adds the auth token and base URL.
+            const response = await apiClient.get('/crm/contacts');
+            // With Axios, the JSON data is directly on the `data` property.
+            setContacts(response.data);
         } catch (error) {
-            setError(error.message);
+            // The apiClient also provides better error details.
+            setError(error.response?.data?.message || error.message);
         } finally {
             setLoading(false);
         }

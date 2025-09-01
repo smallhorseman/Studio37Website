@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FadeIn } from '../components/FadeIn';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from '../apiClient.js'; // Import our new API client
 
 export default function DashboardPage() {
     const [domain, setDomain] = useState('studio37.cc');
@@ -14,17 +13,14 @@ export default function DashboardPage() {
         setError(null);
         setAnalysis(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in again.");
-
-            const response = await fetch(`${API_URL}/api/gemini-seo-analysis?domain=${domain}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            // The apiClient automatically adds the token and base URL.
+            // It also has a clean way to handle query parameters.
+            const response = await apiClient.get('/gemini-seo-analysis', {
+                params: { domain } // This becomes ?domain=studio37.cc
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Analysis failed');
-            setAnalysis(data);
+            setAnalysis(response.data);
         } catch (error) {
-            setError(error.message);
+            setError(error.response?.data?.message || error.message);
         } finally {
             setLoading(false);
         }
