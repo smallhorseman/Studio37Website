@@ -1,5 +1,7 @@
 import React from 'react';
-import Studio37Logo from '../components/Studio37Logo'; // Corrected: No curly braces
+
+// UPDATED: Import your custom logo
+import Studio37Logo from '../components/Studio37Logo';
 
 export default function LoginPage() {
   return (
