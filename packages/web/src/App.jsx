@@ -1,6 +1,7 @@
 import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
+
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
@@ -10,6 +11,7 @@ import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
+
 // Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -19,6 +21,16 @@ import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
+
+// --- NEW: Protected Route Component ---
+// This component checks for a login token. If it doesn't exist, it redirects to the login page.
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('jwt_token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
@@ -63,14 +75,17 @@ export default function App() {
     return (
       <ToolsLayout>
         <Routes>
-          <Route path="/" element={<InternalDashboardPage />} />
+          {/* The Login page is public */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/internal-dashboard" element={<InternalDashboardPage />} />
-          <Route path="/admin" element={<AdminUpdatePage />} />
-          <Route path="/crm" element={<CRMPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/cms" element={<ContentManagerPage />} />
-          <Route path="/todos" element={<TodoPage />} />
+          
+          {/* All other tool pages are now protected */}
+          <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
+          <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
+          <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+          <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
+          <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
         </Routes>
       </ToolsLayout>
     );
