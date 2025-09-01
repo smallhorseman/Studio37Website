@@ -1,67 +1,45 @@
-import React, { useState } from 'react';
+// packages/web-public/src/App.jsx
 
-// Import newly created components
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
+import React from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
 
-// Import all other page components
-import ServicesPage from './pages/ServicesPage';
-import PackagesPage from './pages/PackagesPage';
-import PortfolioPage from './pages/PortfolioPage';
-import AboutPage from './pages/AboutPage';
-import BlogPage from './pages/BlogPage';
-import BlogPost1 from './pages/BlogPost1';
-import ContactPage from './pages/ContactPage';
+// Import all our final page components
+import DashboardPage from './pages/DashboardPage';
+import InternalDashboardPage from './pages/InternalDashboardPage';
+import AdminUpdatePage from './pages/AdminUpdatePage';
+import CRMPage from './pages/CRMPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ContentManagerPage from './pages/ContentManagerPage'; // <-- UPDATED: Correct component name
+import TodoPage from './pages/TodoPage';
 
-// We'll create this placeholder page for routes under construction
-const PlaceholderPage = ({ title }) => (
-    <div className="bg-[#FFFDF6] px-6 py-24 sm:py-32 lg:px-8 min-h-screen">
-        <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight text-[#36454F] sm:text-6xl font-serif">{title}</h2>
-            <p className="mt-6 text-lg leading-8 text-gray-700">
-                This page is currently under construction. Please check back soon for updates!
-            </p>
+export default function App() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
+        <div className="container mx-auto flex justify-between items-center">
+            <Link to="/" className="text-xl font-bold hover:text-gray-300">Studio 37 Tools</Link>
+            <div className="space-x-4">
+                <Link to="/" className="px-2 py-1 rounded hover:bg-gray-700">Analyzer</Link>
+                <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
+                <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
+                <Link to="/projects" className="px-2 py-1 rounded hover:bg-gray-700">Projects</Link>
+                <Link to="/cms" className="px-2 py-1 rounded hover:bg-gray-700">CMS</Link>
+                <Link to="/todos" className="font-bold text-yellow-400 px-2 py-1 rounded hover:bg-gray-700">To-Do</Link>
+                <Link to="/admin" className="bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-500">Admin</Link>
+            </div>
         </div>
+      </nav>
+      <main>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/internal-dashboard" element={<InternalDashboardPage />} />
+          <Route path="/admin" element={<AdminUpdatePage />} />
+          <Route path="/crm" element={<CRMPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/cms" element={<ContentManagerPage />} /> {/* <-- UPDATED: Correct component name */}
+          <Route path="/todos" element={<TodoPage />} />
+        </Routes>
+      </main>
     </div>
-);
-
-
-function App() {
-    const [page, setPage] = useState('home');
-
-    const renderPage = () => {
-        switch (page) {
-            case 'home': return <HomePage setPage={setPage} />;
-            case 'services': return <ServicesPage setPage={setPage} />;
-            case 'packages': return <PackagesPage setPage={setPage} />;
-            case 'portfolio': return <PortfolioPage />;
-            case 'about': return <AboutPage />;
-            case 'blog': return <BlogPage setPage={setPage} />;
-            case 'contact': return <ContactPage />;
-            case 'portrait-photography-houston-parks': return <BlogPost1 setPage={setPage} />;
-            
-            // Placeholders for service-specific pages
-            case 'portraits': return <PlaceholderPage title="Portrait Photography" />;
-            case 'events': return <PlaceholderPage title="Event Photography" />;
-            case 'products': return <PlaceholderPage title="Art & Product Photography" />;
-            
-            default: return <HomePage setPage={setPage} />;
-        }
-    };
-
-    return (
-        <>
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;600;700&display=swap');
-                body { font-family: 'Inter', sans-serif; background-color: #FFFDF6; }
-                .font-serif { font-family: 'DM Serif Display', serif; }
-            `}</style>
-            <Header setPage={setPage} />
-            <main>{renderPage()}</main>
-            <Footer setPage={setPage} />
-        </>
-    );
+  );
 }
-
-export default App;

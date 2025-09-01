@@ -1,34 +1,38 @@
+// packages/web-public/src/components/FadeIn.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 
 export const FadeIn = ({ children }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef(null);
+  const [isVisible, setVisible] = useState(false);
+  const domRef = useRef();
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setVisible(true);
+        // No need to keep observing the same element
+        observer.unobserve(domRef.current);
+      }
+    });
 
-    if (ref.current) observer.observe(ref.current);
+    const currentRef = domRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
     return () => {
-      if (ref.current) observer.unobserve(ref.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
     };
   }, []);
 
   return (
     <div
-      ref={ref}
-      className={`transition-all duration-1000 ease-in ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      ref={domRef}
+      className={`transition-opacity duration-1000 ease-in ${isVisible ? 'opacity-100' : 'opacity-0'}`}
     >
       {children}
     </div>
   );
 };
-
-export default FadeIn;

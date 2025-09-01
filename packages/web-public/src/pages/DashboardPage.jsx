@@ -1,124 +1,142 @@
-import React, { useState, useEffect } from 'react';
-import { FadeIn } from '../App'; // Assuming FadeIn is exported from App.jsx
+// packages/web-public/src/pages/DashboardPage.jsx
 
-// Helper component for displaying stats
-const StatCard = ({ label, value }) => (
-  <div className="bg-white p-6 rounded-lg shadow-md text-center">
-    <dt className="text-sm font-medium text-gray-500 truncate">{label}</dt>
-    <dd className="mt-1 text-3xl font-semibold text-[#36454F]">{value}</dd>
-  </div>
-);
+import React, { useState, useCallback } from 'react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from 'recharts';
+import { FadeIn } from '../components/FadeIn'; // Corrected import path
+
+// Helper for showing positive/negative change
+const ChangeIndicator = ({ value }) => {
+  const isPositive = value >= 0;
+  return (
+    <span className={isPositive ? 'text-green-500' : 'text-red-500'}>
+      {isPositive ? '▲' : '▼'} {Math.abs(value).toLocaleString()}
+    </span>
+  );
+};
 
 export default function DashboardPage() {
+  const [inputDomain, setInputDomain] = useState('studio37.cc');
+  const [queriedDomain, setQueriedDomain] = useState('');
   const [domainStats, setDomainStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDomainStats = async () => {
-      const domainToQuery = 'studio37.cc';
-      // IMPORTANT: This is your actual SpyFu API key from the curl command.
-      const apiKey = 'Basic Y2VvQHBvbnlib3kud2luOjE5IUFsZWJlc3Q='; 
-      
-      // Using a proxy to prevent CORS errors in the browser.
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.spyfu.com/apis/domain_stats_api/v2/getLatestDomainStats?domain=${domainToQuery}&countryCode=US`)}`;
-
-      try {
-        const response = await fetch(proxyUrl, {
-          method: 'GET',
-          headers: {
-            // We are adding your specific Authorization key here.
-            'Authorization': apiKey,
-            'accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Network response was not ok, status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        // Check if the proxy returned an error from the target server
-        if (data.contents && data.contents.includes("error")) {
-             try {
-                const errorJson = JSON.parse(data.contents);
-                throw new Error(`API Error: ${errorJson.error.message}`);
-             } catch(e) {
-                throw new Error('An unknown API error occurred. The response might not be valid JSON.');
-             }
-        }
-
-        const contents = JSON.parse(data.contents);
-
-        if (contents.results && contents.results.length > 0) {
-          setDomainStats(contents.results[0]);
-        } else {
-          setDomainStats(null); // No results found
-        }
-      } catch (e) {
-        setError(e.message);
-        console.error("Failed to fetch domain stats:", e);
-      } finally {
-        setLoading(false);
+  const fetchDomainStats = useCallback(async (domain) => {
+    if (!domain) return;
+    setLoading(true);
+    setDomainStats(null);
+    setError(null);
+    setQueriedDomain(domain);
+    try {
+      const backendUrl = 'https://sem37-api.onrender.com';
+      const response = await fetch(`${backendUrl}/api/gemini-seo-analysis?domain=${domain}`);
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
       }
-    };
-
-    fetchDomainStats();
+      const data = await response.json();
+      setDomainStats(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  const handleAnalyzeClick = () => {
+    fetchDomainStats(inputDomain);
+  };
+
+  const pieData = domainStats ? [
+    { name: 'Organic', value: domainStats.monthlySEOClicks },
+    { name: 'Paid', value: domainStats.monthlyPPCClicks },
+  ] : [];
+
+  const totalTraffic = (domainStats?.monthlySEOClicks || 0) + (domainStats?.monthlyPPCClicks || 0);
+  const organicPercentage = totalTraffic > 0 ? ((domainStats?.monthlySEOClicks || 0) / totalTraffic) * 100 : 0;
+
+  const COLORS = ['#10B981', '#3B82F6'];
+
   return (
-    <div className="bg-[#FFFDF6] py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
         <FadeIn>
-          <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-[#D2B48C] tracking-widest">SEO DASHBOARD</h2>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-[#36454F] sm:text-4xl font-serif">
-              Website Performance Overview
-            </p>
-            <p className="mt-6 text-lg leading-8 text-gray-700">
-              Tracking key SEO and PPC metrics for studio37.cc. This data helps us understand our visibility on Google.
-            </p>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">AI-Powered Website Insights</h1>
+            <p className="mt-2 text-gray-600">Enter a domain to generate a performance overview.</p>
+            <div className="mt-6 mx-auto max-w-lg flex gap-x-2">
+              <input type="text" value={inputDomain} onChange={(e) => setInputDomain(e.target.value)} placeholder="e.g., apple.com" className="flex-auto rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-500"/>
+              <button onClick={handleAnalyzeClick} disabled={loading} className="flex-none rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 disabled:opacity-50">
+                {loading ? 'Analyzing...' : 'Analyze'}
+              </button>
+            </div>
           </div>
         </FadeIn>
-
-        <div className="mx-auto mt-16 max-w-4xl">
-          {loading && <p className="text-center">Loading domain stats...</p>}
-          {error && <p className="text-center text-red-600">Error: {error}. Please check your API key and ensure the domain is correct.</p>}
-          {domainStats && (
-            <FadeIn>
-              <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                <StatCard 
-                  label="Estimated Monthly SEO Clicks" 
-                  value={Math.round(domainStats.monthlyOrganicClicks).toLocaleString()} 
-                />
-                <StatCard 
-                  label="Organic Keywords" 
-                  value={domainStats.totalOrganicResults.toLocaleString()} 
-                />
-                <StatCard 
-                  label="Estimated SEO Value" 
-                  value={`$${Math.round(domainStats.monthlyOrganicValue).toLocaleString()}`} 
-                />
-                <StatCard 
-                  label="Estimated Monthly PPC Clicks" 
-                  value={Math.round(domainStats.monthlyPaidClicks).toLocaleString()} 
-                />
-                <StatCard 
-                  label="Paid Keywords" 
-                  value={domainStats.totalAdsPurchased.toLocaleString()} 
-                />
-                <StatCard 
-                  label="Estimated Ad Budget" 
-                  value={`$${Math.round(domainStats.monthlyBudget).toLocaleString()}`} 
-                />
-              </dl>
-            </FadeIn>
-          )}
-           {!loading && !domainStats && !error && (
-             <p className="text-center text-gray-600">No data available for this domain. This could be due to the domain being new or having low search visibility.</p>
-           )}
-        </div>
+        
+        {error && <p className="text-center text-red-600 mt-4">Error: {error}</p>}
+        {domainStats && (
+          <FadeIn>
+            <h2 className="text-xl font-semibold text-center mb-6">Showing Results for: <span className="font-bold text-indigo-600">{queriedDomain}</span></h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="font-semibold text-gray-700">Organic Keywords (SEO)</h3>
+                <p className="text-4xl font-bold text-gray-800 mt-4">{domainStats.organicKeywords.toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Organic Keywords</p>
+                <div className="mt-6">
+                  <p className="text-2xl font-bold">{domainStats.monthlySEOClicks.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">Est Monthly SEO Clicks</p>
+                </div>
+                <div className="mt-4">
+                  <p className="text-xl font-bold"><ChangeIndicator value={domainStats.monthlySEOClickChange} /></p>
+                  <p className="text-sm text-gray-500">Est Monthly SEO Click Change</p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="font-semibold text-gray-700">Traffic from Google</h3>
+                <div className="relative h-48 w-48 mx-auto mt-4">
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
+                        {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <span className="text-3xl font-bold">{Math.round(organicPercentage)}%</span>
+                    <span className="text-sm text-gray-500">Organic</span>
+                  </div>
+                </div>
+                <div className="h-40 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={domainStats.trafficHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="organicTraffic" stroke="#10B981" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="font-semibold text-gray-700">Paid Search (PPC)</h3>
+                 <p className="text-4xl font-bold text-gray-800 mt-4">{domainStats.paidKeywords.toLocaleString()}</p>
+                 <p className="text-sm text-gray-500">Paid Keywords</p>
+                <div className="mt-6">
+                   <p className="text-2xl font-bold">{domainStats.monthlyPPCClicks.toLocaleString()}</p>
+                   <p className="text-sm text-gray-500">Est Monthly PPC Clicks</p>
+                </div>
+                <div className="mt-4">
+                   <p className="text-xl font-bold">${domainStats.monthlyAdsBudget.toLocaleString()}</p>
+                   <p className="text-sm text-gray-500">Est Monthly Google Ads Budget</p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        )}
       </div>
     </div>
   );
