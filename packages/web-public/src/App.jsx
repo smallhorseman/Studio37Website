@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 
-// --- Import all your tool pages ---
+// --- Import all your TOOL pages ---
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -9,16 +9,16 @@ import ContentManagerPage from './pages/ContentManagerPage';
 import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
-import LoginPage from './pages/LoginPage'; // Assuming this is for tools
+import LoginPage from './pages/LoginPage';
 
-// --- NEW: Import your PUBLIC website pages ---
+// --- Import all your PUBLIC pages ---
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import PackagesPage from './pages/PackagesPage';
 import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
-import BlogPost1 from './pages/BlogPost1'; // Example blog post
+import BlogPostPage from './pages/BlogPostPage'; // Renamed for dynamic posts
 import ContactPage from './pages/ContactPage';
 
 
@@ -42,7 +42,7 @@ const ToolsLayout = ({ children }) => (
   </div>
 );
 
-// --- UPDATED: Layout component for the PUBLIC SITE ---
+// --- Layout component for the PUBLIC SITE ---
 const PublicSiteLayout = ({ children }) => (
   <div>
     <nav style={{ padding: '1rem 2rem', backgroundColor: '#2d3748', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -60,6 +60,7 @@ const PublicSiteLayout = ({ children }) => (
 
 
 export default function App() {
+  // Main logic to switch between sites based on the URL
   const hostname = window.location.hostname;
   const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
 
@@ -80,7 +81,7 @@ export default function App() {
       </ToolsLayout>
     );
   } else {
-    // --- UPDATED: Render the PUBLIC WEBSITE ---
+    // --- Render the PUBLIC WEBSITE ---
     return (
       <PublicSiteLayout>
         <Routes>
@@ -90,7 +91,7 @@ export default function App() {
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/post1" element={<BlogPost1 />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Routes>
       </PublicSiteLayout>

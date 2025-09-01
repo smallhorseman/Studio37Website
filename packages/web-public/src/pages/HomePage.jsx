@@ -1,9 +1,12 @@
 import React from 'react';
-import FadeIn from '../components/FadeIn';
+import { useNavigate } from 'react-router-dom'; // 1. Import the navigate hook
+import { FadeIn } from '../components/FadeIn';  // 2. Corrected import with {}
 
 // --- All your homepage sections go here ---
 
-const Hero = ({ setPage }) => {
+const Hero = () => {
+    const navigate = useNavigate(); // 3. Initialize the navigate function
+
     return (
         <div className="bg-[#FFFDF6]">
             <div className="relative isolate px-6 pt-14 lg:px-8">
@@ -16,8 +19,9 @@ const Hero = ({ setPage }) => {
                             <h1 className="text-4xl font-bold tracking-tight text-[#36454F] sm:text-6xl font-serif">Timeless Images, Modern Vision.</h1>
                             <p className="mt-6 text-lg leading-8 text-gray-700">Your premier Houston photographer for portrait, event, and product sessions that capture your story with a blend of vintage warmth and cutting-edge quality.</p>
                             <div className="mt-10 flex items-center justify-center gap-x-6">
-                                <button onClick={() => setPage('contact')} className="rounded-md bg-[#468289] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#36454F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Book a Consultation</button>
-                                <button onClick={() => setPage('portfolio')} className="text-sm font-semibold leading-6 text-[#36454F]">View Our Work <span aria-hidden="true">→</span></button>
+                                {/* 4. Use navigate for button clicks */}
+                                <button onClick={() => navigate('/contact')} className="rounded-md bg-[#468289] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#36454F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Book a Consultation</button>
+                                <button onClick={() => navigate('/portfolio')} className="text-sm font-semibold leading-6 text-[#36454F]">View Our Work <span aria-hidden="true">→</span></button>
                             </div>
                         </div>
                     </FadeIn>
@@ -31,12 +35,12 @@ const Hero = ({ setPage }) => {
 
 // --- The main export for the page ---
 
-export default function HomePage({ setPage }) {
+export default function HomePage() {
   return (
     <>
-      <Hero setPage={setPage} />
-      {/* <ServicesHighlight setPage={setPage} /> */}
-      {/* <PortraitPackages setPage={setPage} /> */}
+      <Hero />
+      {/* <ServicesHighlight /> */}
+      {/* <PortraitPackages /> */}
       {/* <PortfolioUnlock /> */}
     </>
   );

@@ -1,7 +1,10 @@
 import React from 'react';
-import { FadeIn } from '../App'; // We'll export FadeIn from App.jsx
+import { useNavigate } from 'react-router-dom';     // 1. Import the navigate hook
+import { FadeIn } from '../components/FadeIn';       // 2. Corrected import path
 
-export default function BlogPost1({ setPage }) {
+export default function BlogPost1() {
+  const navigate = useNavigate(); // 3. Initialize the navigate function
+
   return (
     <div className="bg-white px-6 py-32 lg:px-8">
       <div className="mx-auto max-w-3xl text-base leading-7 text-gray-700">
@@ -58,7 +61,7 @@ export default function BlogPost1({ setPage }) {
             <figure className="mt-10">
               <img
                 className="aspect-video w-full rounded-xl bg-gray-50 object-cover"
-                src="https://placehold.co/800x450/D2B48C/FFFDF6?text=Huntsville+State+Park"
+                src="https://res.cloudinary.com/dmjxho2rl/image/upload/v1724213253/IMG_4275_1_b3zb2s.jpg"
                 alt="Huntsville State Park"
               />
               <figcaption className="mt-4 flex gap-x-2 text-sm leading-6 text-gray-500">
@@ -79,7 +82,8 @@ export default function BlogPost1({ setPage }) {
               While national and state parks are fantastic venues, it's important to remember that they are protected natural areas. Many parks require photographers to obtain a permit for commercial sessions, especially for larger setups that could be considered event photography. We handle all the necessary permits and location scouting for our clients to ensure a seamless and enjoyable experience.
             </p>
             <div className="mt-16">
-              <button onClick={() => setPage('blog')} className="text-sm font-semibold leading-6 text-[#468289]">
+              {/* 4. Use navigate for the back button */}
+              <button onClick={() => navigate('/blog')} className="text-sm font-semibold leading-6 text-[#468289]">
                 &larr; Back to Blog
               </button>
             </div>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { FadeIn } from '../App'; // Assuming FadeIn is exported from App.jsx
+import { FadeIn } from '../components/FadeIn'; // Corrected import path
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 
-// Sample images for the portfolio. Replace these with your actual photos.
+// Sample images for the portfolio.
 const portfolioImages = [
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077326/54694193043_f9ae5338ca_k_p7pjaz.jpg' },
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756078425/IMG_4184_convert.io_5_sjszhb.jpg' },
@@ -11,8 +11,8 @@ const portfolioImages = [
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077413/54681762735_f45c949a98_h_jadlln.jpg' },
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077261/54707332078_c4a60a9e45_k_per4mx.jpg' },
   { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756081262/Untitled_convert.io_jnf0gn_aclplu.jpg' },
-  { src: 'https://shorturl.at/LZuvE' },
-  { src: 'https://shorturl.at/PfhKn' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1724213264/IMG_4281_1_vq6zsv.jpg' },
+  { src: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1724213260/IMG_4279_1_gacggr.jpg' },
 ];
 
 export default function PortfolioPage() {

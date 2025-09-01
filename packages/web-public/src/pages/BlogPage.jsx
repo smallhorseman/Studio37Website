@@ -1,20 +1,23 @@
 import React from 'react';
-import { FadeIn } from '../App'; // We'll export FadeIn from App.jsx
+import { useNavigate } from 'react-router-dom';      // 1. Import the navigate hook
+import { FadeIn } from '../components/FadeIn';        // 2. Corrected import path for FadeIn
 
-// In a real app, you'd fetch this data from a CMS. For now, it's a simple array.
+// In a real app, you'd fetch this data from a CMS.
 const blogPosts = [
   {
     slug: 'portrait-photography-houston-parks',
     title: "The Ultimate Guide to Portrait Photography in Houston's Northern Parks",
     date: 'August 24, 2025',
     excerpt: "Discover the stunning landscapes of our local state parks and national forests, the perfect backdrop for your next portrait session.",
-    imageUrl: 'https://placehold.co/600x400/468289/FFFDF6?text=Sam+Houston+Forest',
+    imageUrl: 'https://res.cloudinary.com/dmjxho2rl/image/upload/v1756077326/54694193043_f9ae5338ca_k_p7pjaz.jpg',
     category: 'Photography Tips',
   },
-  // You can add more blog post objects here as you write them
+  // Add more blog post objects here
 ];
 
-export default function BlogPage({ setPage }) {
+export default function BlogPage() { // 3. Removed the setPage prop
+  const navigate = useNavigate(); // 4. Initialize the navigate function
+
   return (
     <div className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -52,7 +55,8 @@ export default function BlogPage({ setPage }) {
                   </div>
                   <div className="group relative">
                     <h3 className="mt-3 text-lg font-semibold leading-6 text-[#36454F] group-hover:text-gray-600 font-serif">
-                      <button onClick={() => setPage(post.slug)} className="text-left">
+                      {/* 5. Use navigate for button clicks with the post's slug */}
+                      <button onClick={() => navigate(`/blog/${post.slug}`)} className="text-left">
                         <span className="absolute inset-0" />
                         {post.title}
                       </button>
