@@ -1,36 +1,34 @@
 import React from 'react';
-import { Routes, Route, Link, Navigate } from 'react-router-dom';
-import Studio37Logo from './components/Studio37Logo';
+import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
+import { AuthProvider, useAuth } from './AuthContext.js'; // <-- IMPORT THE ENGINE
+import Studio37Logo from './components/Studio37Logo.jsx';
 
-// Tool Pages
-import DashboardPage from './pages/DashboardPage';
-import CRMPage from './pages/CRMPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ContentManagerPage from './pages/ContentManagerPage';
-import InternalDashboardPage from './pages/InternalDashboardPage';
-import AdminUpdatePage from './pages/AdminUpdatePage';
-import TodoPage from './pages/TodoPage';
-import LoginPage from './pages/LoginPage';
+// Import all your page components...
+import CRMPage from './pages/CRMPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
+import ContentManagerPage from './pages/ContentManagerPage.jsx';
+import InternalDashboardPage from './pages/InternalDashboardPage.jsx';
+import AdminUpdatePage from './pages/AdminUpdatePage.jsx';
+import TodoPage from './pages/TodoPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import HomePage from './pages/HomePage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import ServicesPage from './pages/ServicesPage.jsx';
+import PackagesPage from './pages/PackagesPage.jsx';
+import PortfolioPage from './pages/PortfolioPage.jsx';
+import BlogPage from './pages/BlogPage.jsx';
+import BlogPostPage from './pages/BlogPostPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
 
-// Public Pages
-import HomePage from './pages/HomePage';
-import AboutPage from './pages/AboutPage';
-import ServicesPage from './pages/ServicesPage';
-import PackagesPage from './pages/PackagesPage';
-import PortfolioPage from './pages/PortfolioPage';
-import BlogPage from './pages/BlogPage';
-import BlogPostPage from './pages/BlogPostPage';
-import ContactPage from './pages/ContactPage';
-
-// This component checks for a login token. If it doesn't exist, it redirects to the login page.
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('jwt_token');
+  const { token } = useAuth(); // Now we use the context for a reliable check
   if (!token) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
+// ... (Your Layout components remain the same) ...
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
@@ -51,7 +49,7 @@ const ToolsLayout = ({ children }) => (
 );
 
 const PublicSiteLayout = ({ children }) => (
-  <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
+ <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
     <nav className="p-4 sm:px-8 flex justify-between items-center">
       <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
       <div className="hidden sm:flex items-center gap-6">
@@ -66,7 +64,8 @@ const PublicSiteLayout = ({ children }) => (
   </div>
 );
 
-export default function App() {
+
+const AppRoutes = () => {
   const hostname = window.location.hostname;
   const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
 
@@ -102,3 +101,15 @@ export default function App() {
     );
   }
 }
+
+// The main App component now provides the AuthContext to everything else
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
