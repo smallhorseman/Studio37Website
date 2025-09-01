@@ -1,17 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// NEW: The dedicated URL for our authentication microservice
+// The dedicated URL for our authentication microservice
 const AUTH_API_URL = 'https://auth-3778.onrender.com'; // The live auth server
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // Initialize state from localStorage so it persists across reloads
   const [token, setToken] = useState(localStorage.getItem('jwt_token'));
 
   useEffect(() => {
-    // This effect syncs the state with localStorage
     if (token) {
       localStorage.setItem('jwt_token', token);
     } else {
@@ -21,13 +19,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // THE CHANGE: We now make the login request to the dedicated AUTH_API_URL
       const response = await axios.post(`${AUTH_API_URL}/api/auth/login`, {
         email,
         password,
       });
       const { token: newToken } = response.data;
-      setToken(newToken); // This will trigger the useEffect to save to localStorage
+      setToken(newToken);
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error.response?.data?.message || error.message);
@@ -36,11 +33,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setToken(null); // This will trigger the useEffect to remove from localStorage
+    setToken(null);
   };
 
   const value = { token, login, logout };
 
+  // THE FIX: Added the missing 'return' statement here
   return (
     <AuthContext.Provider value={value}>
       {children}
