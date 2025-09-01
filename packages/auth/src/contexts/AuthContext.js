@@ -1,45 +1,57 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+
+// Get the API URL from environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // Look for 'jwt_token' on initial load
-  const [token, setToken] = useState(localStorage.getItem('jwt_token') || null);
+  // Initialize state from localStorage so it persists across reloads
+  const [token, setToken] = useState(localStorage.getItem('jwt_token'));
+
+  useEffect(() => {
+    // This effect syncs the state with localStorage
+    if (token) {
+      localStorage.setItem('jwt_token', token);
+    } else {
+      localStorage.removeItem('jwt_token');
+    }
+  }, [token]);
 
   const login = async (email, password) => {
     try {
-      // NOTE: Make sure this login URL is correct for your setup.
-      // It might be your Render URL, not localhost.
-      const response = await axios.post('https://auth-3778.onrender.com/login', {
+      // Use the environment variable for the endpoint
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
       });
-      const { token } = response.data;
-      setToken(token);
-      // **THE FIX:** Save the token under the key 'jwt_token'
-      localStorage.setItem('jwt_token', token);
-      return true;
+      const { token: newToken } = response.data;
+      setToken(newToken); // This will trigger the useEffect to save to localStorage
+      return { success: true };
     } catch (error) {
-      console.error('Login failed:', error);
-      return false;
+      console.error('Login failed:', error.response?.data?.message || error.message);
+      return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
   };
 
   const logout = () => {
-    setToken(null);
-    // **THE FIX:** Remove the 'jwt_token' upon logout
-    localStorage.removeItem('jwt_token');
+    setToken(null); // This will trigger the useEffect to remove from localStorage
   };
 
+  const value = { token, login, logout };
+
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
-
