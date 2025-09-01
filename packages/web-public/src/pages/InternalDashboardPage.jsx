@@ -1,38 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
-import gscData from '../data/gsc-data.json'; // Imports the data directly!
 
-const StatCard = ({ label, value }) => (
-  <div className="bg-white p-6 rounded-lg shadow-md text-center">
-    <dt className="text-sm font-medium text-gray-500 truncate">{label}</dt>
-    <dd className="mt-1 text-3xl font-semibold text-gray-900">{value}</dd>
-  </div>
-);
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function InternalDashboardPage() {
-  return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    const [gscData, setGscData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchGscData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${API_URL}/api/get-gsc-data`);
+            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            const data = await response.json();
+            setGscData(data);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchGscData();
+    }, [fetchGscData]);
+
+    return (
         <FadeIn>
-          <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-indigo-600">INTERNAL DASHBOARD</h2>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Google Search Console Performance
-            </p>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Real data for studio37.cc, updated from the Admin Panel. Last updated: <span className="font-semibold">{gscData.lastUpdated}</span>
-            </p>
-          </div>
-          <div className="mx-auto mt-16 max-w-4xl">
-            <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
-              <StatCard label="Total Clicks" value={gscData.totalClicks.toLocaleString()} />
-              <StatCard label="Total Impressions" value={gscData.totalImpressions.toLocaleString()} />
-              <StatCard label="Average CTR" value={gscData.averageCtr} />
-              <StatCard label="Average Position" value={gscData.averagePosition} />
-            </dl>
-          </div>
+            <div className="p-8">
+                <h1 className="text-3xl font-bold mb-6">Internal Dashboard</h1>
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h2 className="text-xl font-bold">Google Search Console Data</h2>
+                    {loading && <p>Loading GSC data...</p>}
+                    {error && <p className="text-red-500">Error: {error}</p>}
+                    {gscData && <pre className="overflow-x-auto p-2 bg-gray-100 rounded mt-2">{JSON.stringify(gscData, null, 2)}</pre>}
+                </div>
+            </div>
         </FadeIn>
-      </div>
-    </div>
-  );
+    );
 }

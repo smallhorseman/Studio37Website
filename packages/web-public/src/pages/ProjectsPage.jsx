@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
-    // ... add state for creating a new project
+    const [error, setError] = useState(null);
 
     const fetchProjects = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const response = await fetch(`${API_URL}/api/projects`);
+            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
             const data = await response.json();
             setProjects(data);
         } catch (error) {
-            console.error("Failed to fetch projects:", error);
+            setError(error.message);
         } finally {
             setLoading(false);
         }
@@ -25,7 +27,8 @@ export default function ProjectsPage() {
         fetchProjects();
     }, [fetchProjects]);
 
-    if (loading) return <div>Loading projects...</div>;
+    if (loading) return <div className="p-8">Loading projects...</div>;
+    if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
     return (
         <FadeIn>
