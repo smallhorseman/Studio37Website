@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// The dedicated URL for our authentication microservice
 const AUTH_API_URL = 'https://auth-3778.onrender.com';
 
 const AuthContext = createContext(null);
@@ -38,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = { token, login, logout };
 
-  // THE FIX: The missing 'return' statement
+  // THE FIX: Added the missing 'return' statement here
   return (
     <AuthContext.Provider value={value}>
       {children}
