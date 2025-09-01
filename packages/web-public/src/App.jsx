@@ -1,37 +1,40 @@
-// packages/web-public/src/App.jsx
-
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 
-// --- Import Your Tool Pages ---
+// --- Import all your tool pages ---
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ContentManagerPage from './pages/ContentManagerPage';
-// ... import other tool pages
+import InternalDashboardPage from './pages/InternalDashboardPage';
+import AdminUpdatePage from './pages/AdminUpdatePage';
+import TodoPage from './pages/TodoPage';
+import LoginPage from './pages/LoginPage'; // Assuming this is for tools
 
-// --- Import Your PUBLIC Website Pages (You'll need to create these) ---
-// Example:
-// import HomePage from './pages/HomePage';
-// import AboutPage from './pages/AboutPage';
-// import BlogPage from './pages/BlogPage';
+// --- NEW: Import your PUBLIC website pages ---
+import HomePage from './pages/HomePage';
+import AboutPage from './pages/AboutPage';
+import ServicesPage from './pages/ServicesPage';
+import PackagesPage from './pages/PackagesPage';
+import PortfolioPage from './pages/PortfolioPage';
+import BlogPage from './pages/BlogPage';
+import BlogPost1 from './pages/BlogPost1'; // Example blog post
+import ContactPage from './pages/ContactPage';
 
 
-// Simple placeholder components for the public site - replace with your real ones
-const HomePage = () => <div><h1>Welcome to Studio 37</h1><p>This is the PUBLIC home page.</p></div>;
-const AboutPage = () => <div><h1>About Us</h1></div>;
-
-
+// --- Layout component for the TOOLS ---
 const ToolsLayout = ({ children }) => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
       <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="text-xl font-bold hover:text-gray-300">Studio 37 Tools</Link>
           <div className="space-x-4">
-              <Link to="/" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
+              <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
               <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
               <Link to="/projects" className="px-2 py-1 rounded hover:bg-gray-700">Projects</Link>
               <Link to="/cms" className="px-2 py-1 rounded hover:bg-gray-700">CMS</Link>
+              <Link to="/todos" className="font-bold text-yellow-400 px-2 py-1 rounded hover:bg-gray-700">To-Do</Link>
+              <Link to="/admin" className="bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-500">Admin</Link>
           </div>
       </div>
     </nav>
@@ -39,11 +42,17 @@ const ToolsLayout = ({ children }) => (
   </div>
 );
 
+// --- UPDATED: Layout component for the PUBLIC SITE ---
 const PublicSiteLayout = ({ children }) => (
   <div>
-    <nav>
-      {/* Your PUBLIC website navigation goes here */}
-      <Link to="/">Home</Link> | <Link to="/about">About</Link>
+    <nav style={{ padding: '1rem 2rem', backgroundColor: '#2d3748', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
+      <Link to="/" style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.25rem' }}>Studio 37</Link>
+      <Link to="/about">About</Link>
+      <Link to="/services">Services</Link>
+      <Link to="/packages">Packages</Link>
+      <Link to="/portfolio">Portfolio</Link>
+      <Link to="/blog">Blog</Link>
+      <Link to="/contact">Contact</Link>
     </nav>
     <main>{children}</main>
   </div>
@@ -52,45 +61,37 @@ const PublicSiteLayout = ({ children }) => (
 
 export default function App() {
   const hostname = window.location.hostname;
-
-  // Check if the hostname is for the tools subdomain
-  // This also works for localhost during development
-  const isToolsSite = hostname.startsWith('tools.') || hostname === 'localhost';
+  const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
 
   if (isToolsSite) {
-    // --- RENDER THE INTERNAL TOOLS ---
+    // --- Render the INTERNAL TOOLS ---
     return (
       <ToolsLayout>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/internal-dashboard" element={<InternalDashboardPage />} />
+          <Route path="/admin" element={<AdminUpdatePage />} />
           <Route path="/crm" element={<CRMPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/cms" element={<ContentManagerPage />} />
-          {/* Add all other tool routes here */}
+          <Route path="/todos" element={<TodoPage />} />
         </Routes>
       </ToolsLayout>
     );
   } else {
-    // --- RENDER THE PUBLIC WEBSITE ---
+    // --- UPDATED: Render the PUBLIC WEBSITE ---
     return (
       <PublicSiteLayout>
-        {/* VVV --- ADD THIS TEST BANNER --- VVV */}
-        <div style={{
-            backgroundColor: 'red',
-            color: 'white',
-            padding: '15px',
-            textAlign: 'center',
-            fontSize: '20px',
-            fontWeight: 'bold',
-        }}>
-            PUBLIC SITE TEST - If you see this, the new code is live.
-        </div>
-        {/* ^^^ --- ADD THIS TEST BANNER --- ^^^ */}
-
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
-          {/* Add all other public routes here (e.g., /blog, /contact) */}
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/post1" element={<BlogPost1 />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Routes>
       </PublicSiteLayout>
     );
