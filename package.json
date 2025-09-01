@@ -1,0 +1,13 @@
+{
+  "name": "studio37-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:*\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
