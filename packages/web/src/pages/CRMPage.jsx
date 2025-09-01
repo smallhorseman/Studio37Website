@@ -12,9 +12,14 @@ export default function CRMPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_URL}/api/crm/contacts`);
-            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            const token = localStorage.getItem('jwt_token');
+            if (!token) throw new Error("No login token found. Please log in again.");
+
+            const response = await fetch(`${API_URL}/api/crm/contacts`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to fetch contacts');
             setContacts(data);
         } catch (error) {
             setError(error.message);
