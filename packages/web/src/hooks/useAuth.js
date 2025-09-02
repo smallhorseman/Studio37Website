@@ -7,13 +7,11 @@ import React, {
   useContext
 } from 'react';
 
-// Set VITE_AUTH_BASE_URL to https://auth-3778.onrender.com (or leave blank to use /auth proxy in dev)
+// Use VITE_AUTH_BASE_URL (e.g. https://auth-3778.onrender.com) or fall back to /auth (dev proxy)
 const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 
-// Single context
 const AuthContext = createContext(undefined);
 
-// One‑time fallback warning
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -53,7 +51,7 @@ function useProvideAuth() {
     }
   }, []);
 
-  // Cross‑tab token sync
+  // Cross-tab sync
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'token') setToken(e.newValue);
@@ -142,6 +140,8 @@ export function useAuth() {
 export function EnsureAuthProvider({ children }) {
   const ctx = useContext(AuthContext);
   if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
   return React.createElement(AuthProvider, null, children);
 }
 
