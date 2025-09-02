@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE } from '@/config/env';
+import { REMOTE_API_BASE, PROXY_API_BASE, isSameOrigin } from '@/config/env';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
@@ -56,3 +57,71 @@ api.interceptors.request.use(cfg => {
 });
 
 export { api };
+
+let forceProxy = false;
+
+async function tryFetch(base, path, options) {
+  const url = `${base}${path}`;
+  return fetch(url, options);
+}
+
+async function smartFetch(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+
+  // Always try remote first unless previously forced to proxy
+  const sequence = forceProxy
+    ? [PROXY_API_BASE, REMOTE_API_BASE]
+    : [REMOTE_API_BASE, PROXY_API_BASE];
+
+  let lastError;
+  for (const base of sequence) {
+    // Skip remote if cross-origin & we already forced proxy
+    if (base === REMOTE_API_BASE && forceProxy && !isSameOrigin(REMOTE_API_BASE)) continue;
+    try {
+      const res = await tryFetch(base, path, options);
+      // If CORS blocked, status may be 0 (network) or we may miss headers — treat non-accessible as failure
+      if (!res) throw new Error('No response object');
+      if (!res.ok) {
+        // 404 at remote with missing CORS headers also triggers fallback attempt
+        if (base === REMOTE_API_BASE && !isSameOrigin(REMOTE_API_BASE) && res.status === 404) {
+          // Continue to proxy; store error but don't break
+          lastError = new Error(`Remote 404 (possible CORS): ${res.status}`);
+          continue;
+        }
+        return res; // surface non-OK for caller to handle (other than forced fallback)
+      }
+      // Success
+      if (base === PROXY_API_BASE && !isSameOrigin(REMOTE_API_BASE)) {
+        forceProxy = true; // persist preference after a proxy success
+      }
+      return res;
+    } catch (e) {
+      lastError = e;
+      continue;
+    }
+  }
+  throw lastError || new Error('API fetch failed');
+}
+
+export const apiClient = {
+  async get(path, init = {}) {
+    const res = await smartFetch(path, { ...init, method: 'GET', credentials: init.credentials || 'include' });
+    return res;
+  },
+  async post(path, body, init = {}) {
+    const res = await smartFetch(path, {
+      ...init,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
+      body: JSON.stringify(body),
+      credentials: init.credentials || 'include'
+    });
+    return res;
+  }
+};
+
+// Helper to parse JSON safely
+export async function parseJson(res) {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
+}

@@ -1,20 +1,13 @@
 import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  createContext,
-  useContext
+  useState, useEffect, useCallback, useRef,
+  createContext, useContext
 } from 'react';
+import { REMOTE_AUTH_BASE, PROXY_AUTH_BASE, isSameOrigin } from '@config/env';
 
-// Primary remote auth service (set VITE_AUTH_BASE_URL), fallback proxy path
-const REMOTE_AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com').replace(/\/+$/, '');
-const PROXY_AUTH_BASE = '/auth'; // Netlify/Dev proxy target
-// Decide if remote is same-origin (no CORS needed)
+// Decide if remote is same-origin
 const REMOTE_IS_SAME_ORIGIN = (() => {
-  try {
-    return new URL(REMOTE_AUTH_BASE, window.location.href).origin === window.location.origin;
-  } catch { return false; }
+  try { return new URL(REMOTE_AUTH_BASE, window.location.href).origin === window.location.origin; }
+  catch { return false; }
 })();
 
 const AuthContext = createContext(undefined);
@@ -44,19 +37,16 @@ function fallbackAuth() {
 async function authFetch(path, options = {}, preferProxy = false) {
   const targets = [];
   if (preferProxy) targets.push(PROXY_AUTH_BASE);
-  // Try remote first unless we explicitly prefer proxy or remote is obviously cross-origin and already failed before
   targets.push(REMOTE_AUTH_BASE);
   if (!REMOTE_IS_SAME_ORIGIN && !preferProxy) targets.push(PROXY_AUTH_BASE);
 
   let lastErr;
   for (const base of targets) {
-    const url = `${base}${path}`;
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(`${base}${path}`, options);
       return { res, baseUsed: base };
     } catch (e) {
       lastErr = e;
-      // Network/CORS error -> try next base
     }
   }
   throw lastErr || new Error('Auth fetch failed');
@@ -69,7 +59,7 @@ function useProvideAuth() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
-  const failedRemoteRef = useRef(false); // remembers if remote failed (CORS)
+  const failedRemoteRef = useRef(false);
 
   // Initial token load
   useEffect(() => {
@@ -83,7 +73,7 @@ function useProvideAuth() {
 
   // Cross-tab sync
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'token') setToken(e.newValue); };
+    const handler = e => { if (e.key === 'token') setToken(e.newValue); };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
@@ -98,7 +88,6 @@ function useProvideAuth() {
         credentials: 'include',
         body: JSON.stringify({ username, password })
       };
-      // Prefer remote first unless already failed CORS earlier
       const { res, baseUsed } = await authFetch('/login', payload, failedRemoteRef.current);
       if (!res.ok) throw new Error(`Login failed (${res.status})`);
       const data = await res.json();
@@ -118,8 +107,7 @@ function useProvideAuth() {
 
   const logout = useCallback(async () => {
     try {
-      const options = { method: 'POST', credentials: 'include' };
-      await authFetch('/logout', options, failedRemoteRef.current).catch(() => {});
+      await authFetch('/logout', { method: 'POST', credentials: 'include' }, failedRemoteRef.current).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
@@ -127,7 +115,6 @@ function useProvideAuth() {
   }, []);
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
-
   const assertReadyAndAuthed = () => {
     if (!isReady) throw new Error('Auth not initialized');
     if (!isAuthenticated) throw new Error('Not authenticated');
@@ -140,27 +127,41 @@ function useProvideAuth() {
     const headers = { ...(init.headers || {}), Authorization: `Bearer ${token}` };
     const opts = { ...init, headers, credentials: init.credentials || 'include' };
 
-    // If absolute URL provided, just fetch it once
     if (isAbsolute) {
       const res = await fetch(pathOrUrl, opts);
       if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
       return res;
     }
-
-    // Relative API call to auth service with fallback
-    try {
-      const { res, baseUsed } = await authFetch(pathOrUrl, opts, failedRemoteRef.current);
-      if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
-      if (baseUsed === PROXY_AUTH_BASE) failedRemoteRef.current = true;
-      return res;
-    } catch (e) {
-      throw e;
-    }
+    const { res, baseUsed } = await authFetch(pathOrUrl, opts, failedRemoteRef.current);
+    if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
+    if (baseUsed === PROXY_AUTH_BASE) failedRemoteRef.current = true;
+    return res;
   }, [token, logout]);
 
   return {
-    token,
-    isAuthenticated,
+    token, isAuthenticated, isReady,
+    loading, authError, login, logout,
+    getAuthHeader, assertReadyAndAuthed, fetchWithAuth
+  };
+}
+
+export function AuthProvider({ children }) {
+  const value = useProvideAuth();
+  return React.createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  return ctx || fallbackAuth();
+}
+
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
+// NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
+// e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.
     isReady,
     loading,
     authError,
@@ -187,6 +188,5 @@ export function EnsureAuthProvider({ children }) {
   if (ctx) return children;
   return React.createElement(AuthProvider, null, children);
 }
-
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
 // e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.

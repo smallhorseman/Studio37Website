@@ -29,6 +29,7 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@api': path.resolve(__dirname, 'src/api'),
       '@components': path.resolve(__dirname, 'src/components'),
+      '@config': path.resolve(__dirname, 'src/config'), // added
     },
   },
   define: {
@@ -55,8 +56,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // NOTE: These proxies are LOCAL DEV ONLY. In production the frontend should call
-      // the external auth service at VITE_AUTH_BASE_URL (Render deployment of packages/auth).
+      // Ensure target services send proper CORS headers if accessed directly.
+      // Frontend has fallback to these relative paths when remote CORS blocks.
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET || 'https://sem37-api.onrender.com',
         changeOrigin: true,
