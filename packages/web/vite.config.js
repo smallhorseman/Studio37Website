@@ -73,3 +73,5 @@ export default defineConfig({
     },
   },
 });
+
+// Lean rebuild note: auth/tools proxies retained; remove if not needed in minimal mode.

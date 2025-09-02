@@ -1,6 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+/* Lean mode: all styling handled via inline utility classes */
 /* (All custom layout/styling now handled directly via Tailwind utility classes in components.)
    are injected via GlobalInlineStyles.jsx to avoid PostCSS parse errors. */

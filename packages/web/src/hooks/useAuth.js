@@ -1,43 +1,43 @@
-import React, {
-  useState, useEffect, useCallback, useRef,
-  createContext, useContext
-} from 'react';
-import { REMOTE_AUTH_BASE, PROXY_AUTH_BASE, isSameOrigin } from '@config/env';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-// Determine same-origin
-const REMOTE_IS_SAME_ORIGIN = (() => {
-  try { return new URL(REMOTE_AUTH_BASE, window.location.href).origin === window.location.origin; }
-  catch { return false; }
-})();
-
+// Lean stub auth: always unauthenticated until real service reattached.
 const AuthContext = createContext(undefined);
 
-// Fallback (no provider)
-let warned = false;
-function fallbackAuth() {
-  if (!warned && typeof window !== 'undefined') {
-    // eslint-disable-next-line no-console
-    console.warn('[auth] useAuth fallback: rendered outside <AuthProvider>.');
-    warned = true;
-  }
-  return {
+export function AuthProvider({ children }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
+
+  const value = {
     token: null,
     isAuthenticated: false,
-    isReady: true,
-    loading: false,
+    isReady: ready,
+    loading: !ready,
     authError: null,
     login: async () => false,
     logout: () => {},
     getAuthHeader: () => ({}),
-    assertReadyAndAuthed: () => false,
-    fetchWithAuth: async () => { throw new Error('No auth provider available'); },
+    fetchWithAuth: async () => { throw new Error('Auth disabled in lean mode'); }
   };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Fetch with remote→proxy fallback
-async function authFetch(path, options = {}, preferProxy = false) {
-  const targets = [];
-  if (preferProxy) targets.push(PROXY_AUTH_BASE);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    return {
+      token: null,
+      isAuthenticated: false,
+      isReady: true,
+      loading: false,
+      authError: null,
+      login: async () => false,
+      logout: () => {},
+      getAuthHeader: () => ({}),
+      fetchWithAuth: async () => { throw new Error('No provider'); }
+    };
+  }
+  return ctx;
+}
   targets.push(REMOTE_AUTH_BASE);
   if (!REMOTE_IS_SAME_ORIGIN && !preferProxy) targets.push(PROXY_AUTH_BASE);
 
