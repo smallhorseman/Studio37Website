@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from '
 import Studio37Logo from './components/Studio37Logo';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
