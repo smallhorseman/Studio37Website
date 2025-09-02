@@ -19,9 +19,10 @@ import ServicesPage from './pages/ServicesPage';
 import PackagesPage from './pages/PackagesPage';
 import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
+import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
 import ToolsPage from './pages/ToolsPage';
-import AboutPage from './pages/AboutPage';
+import BlogPostPage from './pages/BlogPostPage';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useAuth();
