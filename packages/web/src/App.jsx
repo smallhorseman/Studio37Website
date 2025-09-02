@@ -217,6 +217,14 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="login"
+                    element={
+                      <PageNarrow>
+                        <LoginPage />
+                      </PageNarrow>
+                    }
+                  />
+                  <Route
                     path="about"
                     element={
                       <PageWrapper>
