@@ -51,4 +51,3 @@ export default function LoginPage() {
     </div>
   );
 }
-app.use(cors());
