@@ -1,20 +1,27 @@
 import React from 'react';
-import { FadeIn } from '../components/FadeIn';
 
 export default function ContactPage() {
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <FadeIn>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Contact Us</h2>
-            <p className="mt-2 text-lg leading-8 text-gray-600">Have a project in mind? We'd love to hear from you.</p>
-            <div className="mt-10">
-              <a href="mailto:hello@studio37.cc" className="rounded-md bg-[#468289] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#36454F]">Email Us</a>
-            </div>
-          </div>
-        </FadeIn>
+    <>
+      <div className="page-header">
+        <h1 className="page-title">Contact</h1>
+        <p className="page-subtitle">Reach out for bookings & inquiries.</p>
       </div>
-    </div>
+      <form className="space-y-4 max-w-xl">
+        <div>
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <input className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-faded-teal" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <input type="email" className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-faded-teal" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Message</label>
+          <textarea rows={5} className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-faded-teal" />
+        </div>
+        <button type="submit" className="btn-primary">Send</button>
+      </form>
+    </>
   );
 }

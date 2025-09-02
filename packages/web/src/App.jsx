@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
+import GlobalInlineStyles from './components/GlobalInlineStyles';
 
 // Lazy loaded pages (public)
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -29,8 +30,8 @@ const TodoPage = lazy(() => import('./pages/TodoPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 // Reusable wrappers
-const PageWrapper = ({ children }) => <div className="page">{children}</div>;
-const PageNarrow = ({ children }) => <div className="page-narrow">{children}</div>;
+export const PageWrapper = ({ children }) => <div className="page">{children}</div>;
+export const PageNarrow = ({ children }) => <div className="page-narrow">{children}</div>;
 const NotFound = () => <PageWrapper>404 Not Found</PageWrapper>;
 
 // Protected route using Outlet (allows nesting)
@@ -114,6 +115,7 @@ export default function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
+          <GlobalInlineStyles />
           <Suspense fallback={<div className="loading-block"><p>Loading...</p></div>}>
             {isToolsSite ? (
               <Routes>

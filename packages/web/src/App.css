@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-.header { @apply h-20 flex items-center justify-between px-4 bg-vintage-cream; }
+/* Custom utility classes moved to GlobalInlineStyles (no @apply to avoid unknown rule warnings). */
 .logo { @apply h-12 w-auto; font-family: 'Gochi Hand', cursive; }
 
 /* Page utilities */
@@ -47,12 +47,12 @@
   .page, .page-narrow { @apply py-4 px-0 max-w-none; }
   body { background: #fff !important; }
 }
-.stack-md > * + * { @apply mt-4; }
-.stack-lg > * + * { @apply mt-6; }
-  @apply page text-center text-gray-500;
-}
-.link-inline {
-  @apply text-faded-teal hover:underline;
+
+/* Skeleton utilities */
+.skeleton { @apply animate-pulse bg-gray-200 dark:bg-soft-charcoal/40 rounded; }
+.skeleton-line { @apply h-4 w-full skeleton; }
+.skeleton-sm { @apply h-3 w-2/3 skeleton; }
+.skeleton-card { @apply p-4 border border-gray-200 rounded-lg animate-pulse; }
 }
 .badge {
   @apply inline-block rounded bg-faded-teal/10 px-2 py-0.5 text-xs font-medium text-faded-teal;

@@ -70,3 +70,11 @@ export const buildListFetcher = (endpoint) => async ({ signal, api }) => {
   const res = await api.get(endpoint, { signal });
   return res.data?.services || res.data?.packages || res.data?.items || res.data;
 };
+
+export const listFetcher = (endpoint, select) => async ({ signal }) => {
+  const res = await apiClient.get(endpoint, { signal });
+  const body = res.data;
+  if (select) return select(body);
+  // heuristic for plural collections
+  return body?.data || body?.items || body?.services || body?.packages || body;
+};
