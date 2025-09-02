@@ -7,18 +7,15 @@ import React, {
   useContext
 } from 'react';
 
-// Normalize base (can point to Render auth service or proxied /auth)
-const AUTH_BASE =
-  (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
-
+const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 const AuthContext = createContext(undefined);
 
-// One‑time console warning control
+// One-time warning guard
 let warned = false;
-function fallbackAuthObject() {
+function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
     // eslint-disable-next-line no-console
-    console.warn('[auth] useAuth used without <AuthProvider>. Fallback (unauthenticated) object returned.');
+    console.warn('[auth] useAuth fallback: component rendered outside <AuthProvider>.');
     warned = true;
   }
   return {
@@ -43,7 +40,7 @@ function useProvideAuth() {
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
 
-  // Bootstrap once
+  // Bootstrap
   useEffect(() => {
     if (!bootstrapped.current) {
       const stored = localStorage.getItem('token');
@@ -53,7 +50,7 @@ function useProvideAuth() {
     }
   }, []);
 
-  // Sync across tabs
+  // Cross-tab sync
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'token') setToken(e.newValue);
@@ -89,10 +86,7 @@ function useProvideAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${AUTH_BASE}/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      }).catch(() => {});
+      await fetch(`${AUTH_BASE}/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
@@ -109,10 +103,7 @@ function useProvideAuth() {
 
   const fetchWithAuth = useCallback(async (input, init = {}) => {
     if (!token) throw new Error('No auth token');
-    const headers = {
-      ...(init.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
+    const headers = { ...(init.headers || {}), Authorization: `Bearer ${token}` };
     const res = await fetch(input, { ...init, headers });
     if (res.status === 401) {
       logout();
@@ -140,7 +131,16 @@ export function AuthProvider({ children }) {
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
-// SAFE hook (modified)
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  return ctx || fallbackAuth();
+}
+
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
 export function useAuth() {
   const ctx = useContext(AuthContext);
   return ctx || fallbackAuthObject();
