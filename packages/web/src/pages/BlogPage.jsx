@@ -40,21 +40,28 @@ export default function BlogPage() {
           </div>
         </FadeIn>
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {posts.map((post) => (
-            <FadeIn key={post.id}>
-              <div onClick={() => navigate(`/blog/${post.id}`)} className="cursor-pointer group">
-                <PolaroidImage
-                  src={post.imageUrl}
-                  alt={post.title}
-                  caption={post.title}
-                />
-                <div className="mt-8 text-center">
-                  <p className="text-sm text-gray-500">{post.date}</p>
-                  <p className="mt-2 text-base leading-6 text-gray-600 group-hover:text-warm-tan">{post.excerpt}</p>
+          {posts.length === 0 ? (
+            <div className="col-span-1 text-center">
+              <h1 className="text-3xl font-handwriting mb-6">Blog</h1>
+              <p>Our blog posts will appear here soon.</p>
+            </div>
+          ) : (
+            posts.map((post) => (
+              <FadeIn key={post.id}>
+                <div onClick={() => navigate(`/blog/${post.id}`)} className="cursor-pointer group">
+                  <PolaroidImage
+                    src={post.imageUrl}
+                    alt={post.title}
+                    caption={post.title}
+                  />
+                  <div className="mt-8 text-center">
+                    <p className="text-sm text-gray-500">{post.date}</p>
+                    <p className="mt-2 text-base leading-6 text-gray-600 group-hover:text-warm-tan">{post.excerpt}</p>
+                  </div>
                 </div>
-              </div>
-            </FadeIn>
-          ))}
+              </FadeIn>
+            ))
+          )}
         </div>
       </div>
     </div>

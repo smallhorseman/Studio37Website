@@ -39,7 +39,13 @@ export default function PackagesPage() {
           </div>
         </FadeIn>
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-            {packages.map((pkg) => (
+            {packages.length === 0 ? (
+              <div className="col-span-1 text-center">
+                <h3 className="text-lg font-semibold leading-8 text-[#36454F]">No Packages Available</h3>
+                <p className="mt-4 text-sm leading-6 text-gray-600">Details about our packages will be available soon.</p>
+              </div>
+            ) : (
+              packages.map((pkg) => (
                 <FadeIn key={pkg.name}>
                     <div className={`rounded-3xl p-8 ring-1 xl:p-10 ${pkg.highlight ? 'ring-2 ring-[#468289] bg-gray-50' : 'ring-gray-200'}`}>
                         <h3 className="text-lg font-semibold leading-8 text-[#36454F]">{pkg.name}</h3>
@@ -58,7 +64,8 @@ export default function PackagesPage() {
                         </ul>
                     </div>
                 </FadeIn>
-            ))}
+            ))
+            }
         </div>
       </div>
     </div>

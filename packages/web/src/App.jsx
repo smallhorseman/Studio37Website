@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -22,6 +22,7 @@ import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
+import AdminPage from './pages/AdminPage';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useAuth();
@@ -64,33 +65,38 @@ export default function App() {
 
     if (isToolsSite) {
         return (
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route element={<ToolsLayout />}>
-                    <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                    <Route path="/internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                    <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
-                    <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-                    <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-                    <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
-                    <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
-                </Route>
-            </Routes>
+            <Router>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route element={<ToolsLayout />}>
+                        <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                        <Route path="/internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                        <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
+                        <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+                        <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+                        <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
+                        <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+                    </Route>
+                </Routes>
+            </Router>
         );
     } else {
         return (
-            <Routes>
-                <Route element={<PublicSiteLayout />}>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/services" element={<ServicesPage />} />
-                    <Route path="/packages" element={<PackagesPage />} />
-                    <Route path="/portfolio" element={<PortfolioPage />} />
-                    <Route path="/blog" element={<BlogPage />} />
-                    <Route path="/blog/:slug" element={<BlogPostPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                </Route>
-            </Routes>
+            <Router>
+                <PublicSiteLayout>
+                    <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/about" element={<AboutPage />} />
+                        <Route path="/services" element={<ServicesPage />} />
+                        <Route path="/packages" element={<PackagesPage />} />
+                        <Route path="/portfolio" element={<PortfolioPage />} />
+                        <Route path="/blog" element={<BlogPage />} />
+                        <Route path="/blog/:slug" element={<BlogPostPage />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/admin" element={<AdminPage />} />
+                    </Routes>
+                </PublicSiteLayout>
+            </Router>
         );
     }
 }
