@@ -92,6 +92,7 @@ export default function App() {
                         <Route path="/admin" element={<AdminPage />} />
                         <Route path="/admin/tools" element={<ToolsPage />} />
                         {/* Add more admin/tools routes as needed */}
+                        <Route path="*" element={<div className="p-8">404 Not Found</div>} />
                     </Routes>
                 </PublicSiteLayout>
             )}
