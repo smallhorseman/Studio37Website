@@ -7,13 +7,13 @@ import React, {
   useContext
 } from 'react';
 
-// Base URL for auth service (set VITE_AUTH_BASE_URL in production to Render auth service)
+// Normalized auth base URL (configure VITE_AUTH_BASE_URL in production)
 const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 
-// Single context instance
+// Single context
 const AuthContext = createContext(undefined);
 
-// One-time warning for fallback usage
+// One‑time fallback warning
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -43,7 +43,7 @@ function useProvideAuth() {
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
 
-  // Bootstrap stored token
+  // Initial token load
   useEffect(() => {
     if (!bootstrapped.current) {
       const stored = localStorage.getItem('token');
@@ -53,7 +53,7 @@ function useProvideAuth() {
     }
   }, []);
 
-  // Cross-tab sync
+  // Cross‑tab token sync
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'token') setToken(e.newValue);
@@ -129,21 +129,21 @@ function useProvideAuth() {
   };
 }
 
-// Provider
 export function AuthProvider({ children }) {
   const value = useProvideAuth();
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
-// Hook
 export function useAuth() {
   const ctx = useContext(AuthContext);
   return ctx || fallbackAuth();
 }
 
-// Defensive wrapper (optional use)
 export function EnsureAuthProvider({ children }) {
   const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
 if (ctx) return children;
 return React.createElement(AuthProvider, null, children);
   if (ctx) return children;
