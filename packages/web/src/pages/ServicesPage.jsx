@@ -17,7 +17,9 @@ export default function ServicesPage() {
             const response = await apiClient.get('/services');
             setServices(response.data);
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.status === 404
+                ? "Services not found. Please check back later."
+                : "An error occurred loading services.");
         } finally {
             setLoading(false);
         }
@@ -28,7 +30,7 @@ export default function ServicesPage() {
     }, [fetchServices]);
 
     if (loading) return <div className="py-24 sm:py-32">Loading services...</div>;
-    if (error) return <div className="py-24 sm:py-32 text-red-500">Error: {error}</div>;
+    if (error) return <div className="py-24 sm:py-32 text-red-500">{error}</div>;
 
     return (
         <div className="py-24 sm:py-32">
