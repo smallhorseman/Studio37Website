@@ -15,13 +15,6 @@ export default {
       fontFamily: {
         sans: ['system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
         serif: ['Georgia', 'serif'],
-        handwriting: ['"Gochi Hand"', 'cursive']
-      }
-    }
-  },
-  plugins: []
-};
-        serif: ['Georgia', 'serif'],
         handwriting: ['"Gochi Hand"', 'cursive'],
       },
       container: {
@@ -34,6 +27,13 @@ export default {
           xl: '1200px',
           '2xl': '1440px',
         },
+      },
+    },
+  },
+  plugins: [
+    // require('@tailwindcss/aspect-ratio'),
+  ],
+}
       },
     },
   },

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Lean stub auth: always unauthenticated until real service is reintroduced.
+// Lean stub auth
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
@@ -17,7 +17,6 @@ export function AuthProvider({ children }) {
     getAuthHeader: () => ({})
   };
 
-  // Replaced JSX with createElement to avoid parser issue
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
@@ -31,6 +30,7 @@ export function useAuth() {
     logout: () => {},
     getAuthHeader: () => ({})
   };
+}
 }
       authError: null,
       login: async () => false,
