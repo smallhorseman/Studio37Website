@@ -1,4 +1,3 @@
-// packages/web/src/AuthContext.js
 import { createContext, useContext, useState, useMemo } from 'react';
 
 const AuthContext = createContext(null);
@@ -6,29 +5,37 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Memoize the context value to prevent unnecessary re-renders
+  const login = (username, password) => {
+    if (username === 'admin' && password === 'password') {
+      setUser({ username: 'admin' });
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  const isAuthenticated = () => {
+    return !!user;
+  };
+
   const value = useMemo(
     () => ({
       user,
-      login: (username, password) => {
-        // Implement your login logic here
-        if (username === 'admin' && password === 'password') {
-          setUser({ username: 'admin' });
-          return true;
-        }
-        return false;
-      },
-      logout: () => {
-        setUser(null);
-      },
-      isAuthenticated: () => {
-        return !!user;
-      },
+      login,
+      logout,
+      isAuthenticated,
     }),
     [user]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
