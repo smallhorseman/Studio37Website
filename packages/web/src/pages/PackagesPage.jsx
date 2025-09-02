@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 
+const packages = [
+  { name: "Starter", description: "Basic package details." },
+  { name: "Pro", description: "Professional package details." },
+  // ...add more packages as needed
+];
+
 export default function PackagesPage() {
   const navigate = useNavigate();
-  const [packages, setPackages] = useState([]);
+  const [packageData, setPackageData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -14,7 +20,7 @@ export default function PackagesPage() {
     setError(null);
     try {
       const response = await apiClient.get('/packages');
-      setPackages(response.data);
+      setPackageData(response.data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,13 +45,13 @@ export default function PackagesPage() {
           </div>
         </FadeIn>
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-            {packages.length === 0 ? (
+            {packageData.length === 0 ? (
               <div className="col-span-1 text-center">
                 <h3 className="text-lg font-semibold leading-8 text-[#36454F]">No Packages Available</h3>
                 <p className="mt-4 text-sm leading-6 text-gray-600">Details about our packages will be available soon.</p>
               </div>
             ) : (
-              packages.map((pkg, idx) => (
+              packageData.map((pkg, idx) => (
                 <FadeIn key={idx}>
                     <div className={`rounded-3xl p-8 ring-1 xl:p-10 ${pkg.highlight ? 'ring-2 ring-[#468289] bg-gray-50' : 'ring-gray-200'}`}>
                         <h3 className="text-lg font-semibold leading-8 text-[#36454F]">{pkg.name}</h3>
@@ -65,7 +71,7 @@ export default function PackagesPage() {
                     </div>
                 </FadeIn>
             ))
-            }
+        }
         </div>
       </div>
     </div>
