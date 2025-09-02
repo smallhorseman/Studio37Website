@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import apiClient from '../api/apiClient';
+import apiClient from '../api/apiClient.js';
 import Studio37Logo from '../components/Studio37Logo';
 
 const AUTH_API_URL = import.meta.env.VITE_AUTH_URL;
@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use the login function from our AuthContext
+  const { login } = useAuth();
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -20,16 +20,18 @@ export default function LoginPage() {
     setError('');
 
     try {
+      // THE FIX: Use our apiClient to make an authenticated POST request.
+      // The token is attached automatically by the interceptor.
       const response = await apiClient.post(`${AUTH_API_URL}/login`, {
         username,
         password,
       });
 
-      if (!response.ok) throw new Error(response.data.message || 'Login failed!');
+      if (response.status !== 200) throw new Error(response.data.message || 'Login failed!');
 
       const data = response.data;
       localStorage.setItem('jwt_token', data.token);
-      login(data.token); // Store the token in the context
+      login(data.token);
       navigate('/internal-dashboard');
     } catch (err) {
       setError(err.message);

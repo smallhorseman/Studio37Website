@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 
 export default function ContentManagerPage() {
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -32,7 +34,9 @@ export default function ContentManagerPage() {
         }
     };
     
-    // Note: handleEditPost would open a modal or form with the post data
+    const handleEditPost = (postId) => {
+        navigate(`/admin-update-post/${postId}`);
+    };
 
     useEffect(() => {
         fetchPosts();
@@ -52,7 +56,7 @@ export default function ContentManagerPage() {
                                 <p className="font-semibold">{post.title}</p>
                                 <div className="space-x-2">
                                     <button 
-                                        // onClick={() => handleEditPost(post.id)} 
+                                        onClick={() => handleEditPost(post.id)} 
                                         className="px-3 py-1 text-sm font-semibold rounded-md bg-yellow-500 text-white hover:bg-yellow-600">
                                         Edit
                                     </button>

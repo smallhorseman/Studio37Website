@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import apiClient from '../api/apiClient.js';
 
-export default function AdminUpdatePage() {
+const AdminUpdatePage = () => {
   const [clicks, setClicks] = useState('');
   const [impressions, setImpressions] = useState('');
   const [ctr, setCtr] = useState('');

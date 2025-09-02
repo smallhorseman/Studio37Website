@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Studio37Logo from './Studio37Logo';
 
-// ... (keep the navigation array)
+const navigation = [
+    { name: 'Services', page: '/services' },
+    { name: 'Packages', page: '/packages' },
+    { name: 'Portfolio', page: '/portfolio' },
+    { name: 'About', page: '/about' },
+    { name: 'Blog', page: '/blog' },
+];
 
-const Header = ({ setPage }) => {
-    // ... (keep the existing component logic)
+const Header = () => {
+    const navigate = useNavigate();
 
     return (
         <header className="bg-[#FFFDF6] sticky top-0 z-40 shadow-sm">
-            <nav /* ... */ >
-                {/* ... keep the logo and mobile menu button ... */}
-                
+            <nav className="p-4 sm:px-8 flex justify-between items-center">
+                <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
                 <div className="hidden lg:flex lg:gap-x-12">
-                    {/* ... keep the navigation mapping ... */}
+                    {navigation.map((item) => (
+                        <Link key={item.name} to={item.page} className="text-sm font-semibold leading-6 text-[#36454F] hover:text-[#468289]">
+                            {item.name}
+                        </Link>
+                    ))}
                 </div>
-
-                {/* --- THIS IS THE MODIFIED PART --- */}
                 <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-                    <a 
-                        href="http://tools.studio37.cc" // This is the link to your future app
-                        target="_blank" // Opens in a new tab
+                    <a
+                        href="http://tools.studio37.cc"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-md bg-[#468289] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#36454F]"
                     >
@@ -27,7 +35,6 @@ const Header = ({ setPage }) => {
                     </a>
                 </div>
             </nav>
-            {/* ... keep the mobile menu dialog ... */}
         </header>
     );
 };

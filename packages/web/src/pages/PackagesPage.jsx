@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
-
-const portraitPackages = [
-    { name: 'The Mini Reel', duration: '15 Minute Session', features: ['15 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$150' },
-    { name: 'The Full Episode', duration: '30 Minute Session', features: ['30 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$275', highlight: true },
-    { name: 'The Epic Saga', duration: '1 Hour Session', features: ['60 Edited & Polished Photos', '1 Free Polaroid Print On-Site', '1 Minute Video Free of Charge', 'Option to Add Photo Book'], price: '$500' },
-];
 
 export default function PackagesPage() {
   const navigate = useNavigate();
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchPackages = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.get('/packages');
+      setPackages(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPackages();
+  }, [fetchPackages]);
+
+  if (loading) return <div className="p-8">Loading packages...</div>;
+  if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
   return (
     <div className="bg-[#FFFDF6] py-24 sm:py-32">
@@ -21,7 +39,7 @@ export default function PackagesPage() {
           </div>
         </FadeIn>
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-            {portraitPackages.map((pkg) => (
+            {packages.map((pkg) => (
                 <FadeIn key={pkg.name}>
                     <div className={`rounded-3xl p-8 ring-1 xl:p-10 ${pkg.highlight ? 'ring-2 ring-[#468289] bg-gray-50' : 'ring-gray-200'}`}>
                         <h3 className="text-lg font-semibold leading-8 text-[#36454F]">{pkg.name}</h3>

@@ -1,12 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Studio37Logo from './Studio37Logo';
 
 const navigation = [
-    { name: 'Services', page: 'services' },
-    { name: 'Packages', page: 'packages' },
-    { name: 'Portfolio', page: 'portfolio' },
-    { name: 'About', page: 'about' },
-    { name: 'Blog', page: 'blog' },
+    { name: 'Services', page: '/services' },
+    { name: 'Packages', page: '/packages' },
+    { name: 'Portfolio', page: '/portfolio' },
+    { name: 'About', page: '/about' },
+    { name: 'Blog', page: '/blog' },
 ];
 
 const socials = [
@@ -16,7 +17,12 @@ const socials = [
 ];
 
 const Footer = ({ setPage }) => {
-    const navigate = (page) => { setPage(page); window.scrollTo(0, 0); };
+    const navigate = useNavigate(); // <-- This is the hook we need
+    const handleNavigation = (page) => {
+        navigate(page);
+        window.scrollTo(0, 0);
+    };
+
     return (
         <footer className="bg-gray-50" aria-labelledby="footer-heading">
             <div className="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
@@ -30,10 +36,10 @@ const Footer = ({ setPage }) => {
                     </div>
                     <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
                         <div className="md:grid md:grid-cols-2 md:gap-8">
-                           <div>
+                            <div>
                                 <h3 className="text-sm font-semibold leading-6 text-[#36454F]">Navigation</h3>
                                 <ul role="list" className="mt-6 space-y-4">
-                                    {navigation.map((item) => (<li key={item.name}><button onClick={() => navigate(item.page)} className="text-sm leading-6 text-gray-600 hover:text-[#36454F]">{item.name}</button></li>))}
+                                    {navigation.map((item) => (<li key={item.name}><button onClick={() => handleNavigation(item.page)} className="text-sm leading-6 text-gray-600 hover:text-[#36454F]">{item.name}</button></li>))}
                                 </ul>
                             </div>
                             <div className="mt-10 md:mt-0">
