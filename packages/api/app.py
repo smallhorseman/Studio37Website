@@ -203,16 +203,29 @@ def generate_text():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Example endpoint for /api/services
+# --- SERVICES ENDPOINT ---
 @app.route('/api/services')
 def get_services():
-    return {"services": []}, 200
+    # Replace with your actual service data
+    return jsonify([
+        {"name": "Photography", "description": "Professional photography services."},
+        {"name": "Branding", "description": "Branding and identity services."},
+        {"name": "Real Estate", "description": "Real estate media and marketing."}
+    ]), 200
 
-# Example endpoint for /api/packages
+# --- PACKAGES ENDPOINT ---
 @app.route('/api/packages')
 def get_packages():
-    # Replace with your actual logic
-    return {"packages": []}, 200
+    # Replace with your actual package data
+    return jsonify([
+        {"name": "Starter", "price": "$100", "features": ["1 hour session", "10 edited photos"]},
+        {"name": "Pro", "price": "$250", "features": ["3 hour session", "30 edited photos", "branding consult"]}
+    ]), 200
+
+# Optional: catch-all for undefined routes (for debugging)
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Not found"}), 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=False)
