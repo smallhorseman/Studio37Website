@@ -32,6 +32,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: OPTIONAL_EXTERNALS,
+    include: ['lodash'] // added
   },
   server: {
     proxy: {
