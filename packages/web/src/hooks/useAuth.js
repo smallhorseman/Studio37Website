@@ -4,12 +4,12 @@ import React, {
   useCallback,
   useRef,
   createContext,
-  useContext,
+  useContext
 } from 'react';
 
 // Normalize base (can point to Render auth service or proxied /auth)
 const AUTH_BASE =
-  import.meta.env.VITE_AUTH_BASE_URL?.replace(/\/+$/, '') || '/auth';
+  (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 
 const AuthContext = createContext(undefined);
 
@@ -18,9 +18,7 @@ let warned = false;
 function fallbackAuthObject() {
   if (!warned && typeof window !== 'undefined') {
     // eslint-disable-next-line no-console
-    console.warn(
-      '[auth] useAuth used without <AuthProvider>. Using fallback (not authenticated).'
-    );
+    console.warn('[auth] useAuth used without <AuthProvider>. Fallback (unauthenticated) object returned.');
     warned = true;
   }
   return {
@@ -33,9 +31,7 @@ function fallbackAuthObject() {
     logout: () => {},
     getAuthHeader: () => ({}),
     assertReadyAndAuthed: () => false,
-    fetchWithAuth: async () => {
-      throw new Error('No auth provider available');
-    },
+    fetchWithAuth: async () => { throw new Error('No auth provider available'); },
   };
 }
 
@@ -59,55 +55,51 @@ function useProvideAuth() {
 
   // Sync across tabs
   useEffect(() => {
-    const handleStorage = (e) => {
+    const handler = (e) => {
       if (e.key === 'token') setToken(e.newValue);
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
   }, []);
 
-  const login = useCallback(
-    async (username, password) => {
-      setLoading(true);
-      setAuthError(null);
-      try {
-        const res = await fetch(`${AUTH_BASE}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ username, password }),
-        });
-        if (!res.ok) throw new Error(`Login failed (${res.status})`);
-        const data = await res.json();
-        const receivedToken = data.access_token || data.token;
-        if (!receivedToken) throw new Error('No token received');
-        localStorage.setItem('token', receivedToken);
-        setToken(receivedToken);
-        return true;
-      } catch (e) {
-        setAuthError(e.message);
-        return false;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [AUTH_BASE]
-  );
+  const login = useCallback(async (username, password) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const res = await fetch(`${AUTH_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) throw new Error(`Login failed (${res.status})`);
+      const data = await res.json();
+      const receivedToken = data.access_token || data.token;
+      if (!receivedToken) throw new Error('No token received');
+      localStorage.setItem('token', receivedToken);
+      setToken(receivedToken);
+      return true;
+    } catch (e) {
+      setAuthError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     try {
       await fetch(`${AUTH_BASE}/logout`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include'
       }).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
     }
-  }, [AUTH_BASE]);
+  }, []);
 
-  const getAuthHeader = () =>
-    token ? { Authorization: `Bearer ${token}` } : {};
+  const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
   const assertReadyAndAuthed = () => {
     if (!isReady) throw new Error('Auth not initialized');
@@ -115,22 +107,19 @@ function useProvideAuth() {
     return true;
   };
 
-  const fetchWithAuth = useCallback(
-    async (input, init = {}) => {
-      if (!token) throw new Error('No auth token');
-      const headers = {
-        ...(init.headers || {}),
-        Authorization: `Bearer ${token}`,
-      };
-      const res = await fetch(input, { ...init, headers });
-      if (res.status === 401) {
-        logout();
-        throw new Error('Unauthorized');
-      }
-      return res;
-    },
-    [token, logout]
-  );
+  const fetchWithAuth = useCallback(async (input, init = {}) => {
+    if (!token) throw new Error('No auth token');
+    const headers = {
+      ...(init.headers || {}),
+      Authorization: `Bearer ${token}`,
+    };
+    const res = await fetch(input, { ...init, headers });
+    if (res.status === 401) {
+      logout();
+      throw new Error('Unauthorized');
+    }
+    return res;
+  }, [token, logout]);
 
   return {
     token,
@@ -148,10 +137,21 @@ function useProvideAuth() {
 
 export function AuthProvider({ children }) {
   const value = useProvideAuth();
-  // Replaced JSX with createElement to avoid JSX transform requirement in .js file
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
+// SAFE hook (modified)
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  return ctx || fallbackAuthObject();
+}
+
+// Optional guard component to wrap legacy pages that might not be inside provider
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
 // SAFE hook (modified)
 export function useAuth() {
   const ctx = useContext(AuthContext);

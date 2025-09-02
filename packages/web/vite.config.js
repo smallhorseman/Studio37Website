@@ -22,6 +22,10 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
   },
+  esbuild: {
+    jsx: 'automatic', // ensure JSX syntax is allowed if it appears in .js
+    jsxDev: process.env.NODE_ENV !== 'production'
+  },
   build: {
     sourcemap: true,
     target: 'es2022',
