@@ -67,7 +67,7 @@ const PublicSiteLayout = () => (
 
 export default function App() {
     const hostname = window.location.hostname;
-    const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
+    const isToolsSite = hostname.includes('tools.');
 
     if (isToolsSite) {
         return (
