@@ -12,6 +12,7 @@ const REMOTE_IS_SAME_ORIGIN = (() => {
 
 const AuthContext = createContext(undefined);
 
+// One-time fallback warning
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -71,7 +72,7 @@ function useProvideAuth() {
     }
   }, []);
 
-  // Cross-tab sync
+  // Cross‑tab sync
   useEffect(() => {
     const handler = e => { if (e.key === 'token') setToken(e.newValue); };
     window.addEventListener('storage', handler);
@@ -139,9 +140,16 @@ function useProvideAuth() {
   }, [token, logout]);
 
   return {
-    token, isAuthenticated, isReady,
-    loading, authError, login, logout,
-    getAuthHeader, assertReadyAndAuthed, fetchWithAuth
+    token,
+    isAuthenticated,
+    isReady,
+    loading,
+    authError,
+    login,
+    logout,
+    getAuthHeader,
+    assertReadyAndAuthed,
+    fetchWithAuth
   };
 }
 
@@ -162,14 +170,6 @@ export function EnsureAuthProvider({ children }) {
 }
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
 // e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.
-    isReady,
-    loading,
-    authError,
-    login,
-    logout,
-    getAuthHeader,
-    assertReadyAndAuthed,
-    fetchWithAuth,
   };
 }
 
