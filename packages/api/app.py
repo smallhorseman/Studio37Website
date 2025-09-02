@@ -13,7 +13,7 @@ from scrapper import analyze_on_page_seo
 # --- Initialization ---
 load_dotenv()
 app = Flask(__name__)
-CORS(app, origins=["https://studio37.cc", "http://localhost:3000"])
+CORS(app, origins=["https://studio37.cc", "http://localhost:3000"], supports_credentials=True)
 
 # --- Firebase Initialization ---
 db = None
