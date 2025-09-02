@@ -7,13 +7,13 @@ import React, {
   useContext
 } from 'react';
 
-// Normalized auth base
+// Base URL for auth service (set VITE_AUTH_BASE_URL in production to Render auth service)
 const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 
 // Single context instance
 const AuthContext = createContext(undefined);
 
-// One-time warning
+// One-time warning for fallback usage
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -43,7 +43,7 @@ function useProvideAuth() {
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
 
-  // Initial load
+  // Bootstrap stored token
   useEffect(() => {
     if (!bootstrapped.current) {
       const stored = localStorage.getItem('token');
@@ -89,10 +89,7 @@ function useProvideAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${AUTH_BASE}/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      }).catch(() => {});
+      await fetch(`${AUTH_BASE}/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
@@ -144,9 +141,11 @@ export function useAuth() {
   return ctx || fallbackAuth();
 }
 
-// Ensure wrapper (optional)
+// Defensive wrapper (optional use)
 export function EnsureAuthProvider({ children }) {
   const ctx = useContext(AuthContext);
+if (ctx) return children;
+return React.createElement(AuthProvider, null, children);
   if (ctx) return children;
   return React.createElement(AuthProvider, null, children);
 }
