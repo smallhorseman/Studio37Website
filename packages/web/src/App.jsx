@@ -1,7 +1,8 @@
 import React from 'react';
 import { Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
-import { AuthProvider, useAuth } from './AuthContext';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
@@ -51,17 +52,9 @@ const ToolsLayout = () => (
 
 const PublicSiteLayout = () => (
     <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
-        <nav className="p-4 sm:px-8 flex justify-between items-center">
-            <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
-            <div className="hidden sm:flex items-center gap-6">
-                <Link to="/about" className="hover:text-warm-tan">About</Link>
-                <Link to="/services" className="hover:text-warm-tan">Services</Link>
-                <Link to="/portfolio" className="hover:text-warm-tan">Portfolio</Link>
-                <Link to="/blog" className="hover:text-warm-tan">Blog</Link>
-                <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
-            </div>
-        </nav>
+        <Header />
         <main><Outlet /></main>
+        <Footer />
     </div>
 );
 

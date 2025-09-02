@@ -7,7 +7,7 @@ export const PolaroidImage = ({ src, alt, caption, rotation, className }) => {
   return (
     <FadeIn>
       <div 
-        className={`bg-white p-4 pb-16 shadow-xl rounded-xl relative inline-block transition-transform hover:scale-105 hover:z-10 ${className}`}
+    className={`bg-white p-4 pb-16 shadow-lg rounded-xl relative inline-block transition-transform hover:scale-105 hover:z-10 ${className ? className : 'max-w-xs sm:max-w-sm lg:max-w-md'}`}
         style={style}
       >
         <img src={src} alt={alt} className="w-full h-auto object-cover rounded" />
