@@ -123,44 +123,6 @@ export function EnsureAuthProvider({ children }) {
   if (ctx) return children;
   return React.createElement(AuthProvider, null, children);
 }
-    assertReadyAndAuthed,
-    fetchWithAuth,
-  };
-}
-
-export function AuthProvider({ children }) {
-  const value = useProvideAuth();
-  return React.createElement(AuthContext.Provider, { value }, children);
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  return ctx || fallbackAuth();
-}
-
-export function EnsureAuthProvider({ children }) {
-  const ctx = useContext(AuthContext);
-  if (ctx) return children;
-  return React.createElement(AuthProvider, null, children);
-}
-}
 
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
 // e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.
-// SAFE hook (modified)
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  return ctx || fallbackAuthObject();
-}
-
-// Optional guard component to wrap legacy pages that might not be inside provider
-export function EnsureAuthProvider({ children }) {
-  const ctx = useContext(AuthContext);
-  if (ctx) return children;
-  return <AuthProvider>{children}</AuthProvider>;
-}
-export function EnsureAuthProvider({ children }) {
-  const ctx = useContext(AuthContext);
-  if (ctx) return children;
-  return <AuthProvider>{children}</AuthProvider>;
-}

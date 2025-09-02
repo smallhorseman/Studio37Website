@@ -10,4 +10,3 @@ export const LOGIN_URL = `${AUTH_BASE}/login`;
 export const LOGOUT_URL = `${AUTH_BASE}/logout`;
 
 export const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : new Date().toISOString();
-export const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : new Date().toISOString();
