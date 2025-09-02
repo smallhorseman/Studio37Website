@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { API_BASE } from '@/config/env';
 
 const apiClient = axios.create({
-  baseURL: 'https://sem37-api.onrender.com/api',
+  baseURL: API_BASE,
+  withCredentials: false,
 });
 
 // Attach token to requests if available

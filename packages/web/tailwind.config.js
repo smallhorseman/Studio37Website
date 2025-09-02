@@ -8,7 +8,8 @@ export default {
   safelist: [
     'bg-faded-teal','text-faded-teal','border-faded-teal',
     'bg-soft-charcoal','text-soft-charcoal',
-    'dark','dark:bg-soft-charcoal','dark:text-vintage-cream'
+    'dark','dark:bg-soft-charcoal','dark:text-vintage-cream',
+    'btn','btn-primary','btn-outline','btn-danger'
   ],
   theme: {
     extend: {

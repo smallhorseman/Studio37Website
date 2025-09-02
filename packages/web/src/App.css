@@ -2,16 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-.header {
-  @apply h-20 flex items-center justify-between px-4 bg-vintage-cream;
-}
+.header { @apply h-20 flex items-center justify-between px-4 bg-vintage-cream; }
+.logo { @apply h-12 w-auto; font-family: 'Gochi Hand', cursive; }
 
-.logo {
-  @apply h-12 w-auto;
-  font-family: 'Gochi Hand', cursive;
-}
-
-/* Added reusable page utilities */
+/* Page utilities */
 .page { @apply max-w-6xl mx-auto px-4 py-12; }
 .page-narrow { @apply max-w-3xl mx-auto px-4 py-12; }
 .page-header { @apply mb-8; }
@@ -29,12 +23,18 @@
 .badge { @apply inline-block rounded bg-faded-teal/10 px-2 py-0.5 text-xs font-medium text-faded-teal; }
 
 /* Buttons */
-.btn {
-  @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2;
-}
-.btn-primary {
-  @apply btn bg-faded-teal text-white hover:bg-soft-charcoal focus:ring-faded-teal;
-}
+.btn { @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2; }
+.btn-primary { @apply btn bg-faded-teal text-white hover:bg-soft-charcoal focus:ring-faded-teal; }
+.btn-outline { @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10; }
+.btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-600; }
+
+/* A11y */
+.sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
+
+/* Stacks */
+.stack-sm > * + * { @apply mt-2; }
+.stack-md > * + * { @apply mt-4; }
+.stack-lg > * + * { @apply mt-6; }
 .btn-outline {
   @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10;
 }
