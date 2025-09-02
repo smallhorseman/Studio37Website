@@ -1,15 +1,14 @@
 import { createContext, useContext, useState, useMemo } from 'react';
-import axios from 'axios';
+import apiClient from './api/apiClient';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('jwt_token'));
-  const AUTH_API_URL = 'https://auth-3778.onrender.com';
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${AUTH_API_URL}/api/auth/login`, {
+      const response = await apiClient.post('/auth/login', {
         email,
         password,
       });
