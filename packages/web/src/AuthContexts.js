@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = { token, login, logout };
 
+  // THE FIX: This 'return' statement is CRITICAL
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -51,4 +52,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

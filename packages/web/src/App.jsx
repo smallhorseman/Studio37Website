@@ -1,6 +1,9 @@
 import React from 'react';
 import { Routes, Route, Link, Navigate, BrowserRouter } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext.js'; 
+
+// This is now correct. The file exists at this path.
+import { AuthProvider } from './AuthContext.js'; // The file is in the same directory
+
 import Studio37Logo from './components/Studio37Logo.jsx';
 import CRMPage from './pages/CRMPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
@@ -17,6 +20,8 @@ import PortfolioPage from './pages/PortfolioPage.jsx';
 import BlogPage from './pages/BlogPage.jsx';
 import BlogPostPage from './pages/BlogPostPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
+
+// --- No other changes are needed below this line ---
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuth();
@@ -73,4 +78,38 @@ const AppRoutes = () => {
           <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
-          
+          <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+          <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
+          <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+        </Routes>
+      </ToolsLayout>
+    );
+  } else {
+    return (
+      <PublicSiteLayout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+        </Routes>
+      </PublicSiteLayout>
+    );
+  }
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
