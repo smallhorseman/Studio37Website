@@ -15,16 +15,16 @@ export default {
       fontFamily: {
         sans: ['system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
         serif: ['Georgia', 'serif'],
-        handwriting: ['"Gochi Hand"', 'cursive'],
+        handwriting: ['"Gochi Hand"', 'cursive']
       },
       container: {
         center: true,
-        padding: '1rem',
-        screens: {
-          sm: '640px',
-          md: '768px',
-          lg: '1024px',
-          xl: '1200px',
+        padding: '1rem'
+      }
+    }
+  },
+  plugins: []
+};
           '2xl': '1440px',
         },
       },
