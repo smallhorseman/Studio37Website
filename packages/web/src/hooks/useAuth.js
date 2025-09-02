@@ -12,6 +12,7 @@ const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/
 
 const AuthContext = createContext(undefined);
 
+// One-time fallback warning
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -142,7 +143,6 @@ export function EnsureAuthProvider({ children }) {
   if (ctx) return children;
   return React.createElement(AuthProvider, null, children);
 }
-  return React.createElement(AuthProvider, null, children);
 }
 
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
