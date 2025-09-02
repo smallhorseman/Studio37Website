@@ -6,7 +6,7 @@ import { PolaroidImage } from '../components/PolaroidImage';
 const Hero = () => {
     const navigate = useNavigate();
     return (
-        <div className="relative isolate px-6 pt-14 lg:px-8 text-center">
+        <div className="relative isolate px-6 pt-14 lg:px-8 text-center bg-gradient-to-b from-[#f7e9d7] to-vintage-cream">
             <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
                 <FadeIn>
                     <h1 className="text-4xl font-serif font-bold tracking-tight text-soft-charcoal sm:text-6xl">Timeless Images, Modern Vision.</h1>
