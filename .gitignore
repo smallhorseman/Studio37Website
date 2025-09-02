@@ -1,22 +1,21 @@
-# Dependencies
-node_modules/
+# Node.js
+/node_modules
+/web/dist
+/web/build
 
-# Dependencies
-node_modules/
-packages/web/node_modules/
-
-# Secrets
-packages/api/serviceAccountKey.json
+# Python
+/api/venv
+/api/__pycache__
 
 # Environment variables
 .env
+.env.development
+.env.production
 
-# Python cache
-__pycache__/
-*.pyc
+# Firebase key file
+serviceAccountKey.json
 
-
-app = Flask(__name__)
-CORS(app)
-
-# Define your routes below
+# Logs and other files
+*.log
+npm-debug.log*
+.DS_Store
