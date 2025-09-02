@@ -15,13 +15,10 @@ import LoginPage from './pages/LoginPage';
 
 // Public Pages
 import HomePage from './pages/HomePage';
-import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import PackagesPage from './pages/PackagesPage';
 import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
-import BlogPostPage from './pages/BlogPostPage';
-import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
 import ToolsPage from './pages/ToolsPage';
 
