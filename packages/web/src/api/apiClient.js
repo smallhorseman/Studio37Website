@@ -43,3 +43,16 @@ apiClient.interceptors.response.use(
 // apiClient.get('/packages') will request https://sem37-api.onrender.com/api/packages
 
 export default apiClient;
+
+const api = axios.create({
+  baseURL: API_BASE,
+  timeout: 15000,
+});
+
+api.interceptors.request.use(cfg => {
+  const token = localStorage.getItem('token');
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  return cfg;
+});
+
+export { api };

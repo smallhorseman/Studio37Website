@@ -1,18 +1,11 @@
 import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  createContext,
-  useContext
+  useState, useEffect, useCallback, useRef,
+  createContext, useContext
 } from 'react';
-
-// Use VITE_AUTH_BASE_URL (e.g. https://auth-3778.onrender.com) or fall back to /auth (dev proxy)
-const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
+import { AUTH_BASE } from '@/config/env';
 
 const AuthContext = createContext(undefined);
 
-// One-time fallback warning
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -54,9 +47,7 @@ function useProvideAuth() {
 
   // Cross-tab sync
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'token') setToken(e.newValue);
-    };
+    const handler = e => { if (e.key === 'token') setToken(e.newValue); };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
@@ -96,7 +87,6 @@ function useProvideAuth() {
   }, []);
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
-
   const assertReadyAndAuthed = () => {
     if (!isReady) throw new Error('Auth not initialized');
     if (!isAuthenticated) throw new Error('Not authenticated');
@@ -107,22 +97,32 @@ function useProvideAuth() {
     if (!token) throw new Error('No auth token');
     const headers = { ...(init.headers || {}), Authorization: `Bearer ${token}` };
     const res = await fetch(input, { ...init, headers });
-    if (res.status === 401) {
-      logout();
-      throw new Error('Unauthorized');
-    }
+    if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
     return res;
   }, [token, logout]);
 
   return {
-    token,
-    isAuthenticated,
-    isReady,
-    loading,
-    authError,
-    login,
-    logout,
-    getAuthHeader,
+    token, isAuthenticated, isReady,
+    loading, authError, login, logout,
+    getAuthHeader, assertReadyAndAuthed, fetchWithAuth
+  };
+}
+
+export function AuthProvider({ children }) {
+  const value = useProvideAuth();
+  return React.createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  return ctx || fallbackAuth();
+}
+
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return React.createElement(AuthProvider, null, children);
+}
     assertReadyAndAuthed,
     fetchWithAuth,
   };

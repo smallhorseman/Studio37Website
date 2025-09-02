@@ -34,6 +34,8 @@ export default defineConfig({
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'https://sem37-api.onrender.com'),
+    'import.meta.env.VITE_AUTH_BASE_URL': JSON.stringify(process.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com')
   },
   esbuild: {
     jsx: 'automatic', // ensure JSX syntax is allowed if it appears in .js
