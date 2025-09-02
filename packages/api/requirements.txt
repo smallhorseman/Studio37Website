@@ -9,3 +9,4 @@ PyJWT==2.8.0
 beautifulsoup4
 selenium
 webdriver_manager
+flask-cors
