@@ -23,6 +23,7 @@ import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
 import ToolsPage from './pages/ToolsPage';
 import BlogPostPage from './pages/BlogPostPage';
+import ContactPage from './pages/ContactPage';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useAuth();
