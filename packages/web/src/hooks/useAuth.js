@@ -7,7 +7,7 @@ import React, {
   useContext
 } from 'react';
 
-// Normalized auth base URL (configure VITE_AUTH_BASE_URL in production)
+// Set VITE_AUTH_BASE_URL to https://auth-3778.onrender.com (or leave blank to use /auth proxy in dev)
 const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE_URL || '/auth').replace(/\/+$/, '');
 
 // Single context
@@ -144,11 +144,6 @@ export function EnsureAuthProvider({ children }) {
   if (ctx) return children;
   return React.createElement(AuthProvider, null, children);
 }
-if (ctx) return children;
-return React.createElement(AuthProvider, null, children);
-  if (ctx) return children;
-  return React.createElement(AuthProvider, null, children);
-}
 
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
 // e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.
@@ -159,6 +154,11 @@ export function useAuth() {
 }
 
 // Optional guard component to wrap legacy pages that might not be inside provider
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return <AuthProvider>{children}</AuthProvider>;
+}
 export function EnsureAuthProvider({ children }) {
   const ctx = useContext(AuthContext);
   if (ctx) return children;
