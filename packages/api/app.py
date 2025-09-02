@@ -16,8 +16,8 @@ CORS(app)
 
 # --- Firebase Initialization ---
 db = None
-SERVICE_ACCOUNT_FILE = 'serviceAccountKey.json'
-if os.path.exists(SERVICE_ACCOUNT_FILE):
+SERVICE_ACCOUNT_FILE = os.getenv('FIREBASE_CREDENTIALS_PATH')
+if SERVICE_ACCOUNT_FILE and os.path.exists(SERVICE_ACCOUNT_FILE):
     try:
         cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
         api_app = firebase_admin.initialize_app(cred, name='api-service')
@@ -26,7 +26,7 @@ if os.path.exists(SERVICE_ACCOUNT_FILE):
     except Exception as e:
         print(f"--- API Firebase Connection: FAILED. Error: {e} ---")
 else:
-    print(f"--- FATAL ERROR: Firebase credentials ('{SERVICE_ACCOUNT_FILE}') not found. ---")
+    print(f"--- FATAL ERROR: Firebase credentials path not set or file not found. ---")
 
 # --- JWT Token Verification Decorator ---
 def token_required(f):
@@ -41,9 +41,31 @@ def token_required(f):
         try:
             secret_key = os.getenv('JWT_SECRET')
             jwt.decode(token, secret_key, algorithms=["HS256"])
-        except Exception as e: return jsonify({'message': f'Token is invalid or expired! {e}'}), 401
+        except Exception: return jsonify({'message': 'Token is invalid or expired!'}), 401
         return f(*args, **kwargs)
     return decorated
+
+# --- Generic CRUD Function ---
+def generic_crud(collection_name, doc_id=None, method='GET', data=None):
+    if not db: return {"error": "Database not connected"}, 500
+    try:
+        collection = db.collection(collection_name)
+        if method == 'POST':
+            data['dateCreated'] = firestore.SERVER_TIMESTAMP
+            collection.add(data)
+            return {"message": "Created successfully"}, 201
+        elif method == 'GET':
+            docs = [doc.to_dict() | {'id': doc.id} for doc in collection.stream()]
+            return docs, 200
+        elif method == 'PUT' and doc_id:
+            data['dateUpdated'] = firestore.SERVER_TIMESTAMP
+            collection.document(doc_id).update(data)
+            return {"message": "Updated successfully"}, 200
+        elif method == 'DELETE' and doc_id:
+            collection.document(doc_id).delete()
+            return {"message": "Deleted successfully"}, 200
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 # --- Health Check Endpoint ---
 @app.route('/')
@@ -51,121 +73,80 @@ def index():
     return jsonify({"status": "ok", "message": "Studio37 Data API is running."})
 
 # --- CMS ENDPOINTS (FULL CRUD) ---
-@app.route('/api/cms/posts', methods=['POST'])
+@app.route('/api/cms/posts', methods=['POST', 'GET'])
 @token_required
-def create_post():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateCreated'] = firestore.SERVER_TIMESTAMP
-        db.collection('cms_posts').add(data)
-        return jsonify({"message": "Post created successfully"}), 201
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_cms_posts():
+    if request.method == 'POST':
+        message, status = generic_crud('cms_posts', method='POST', data=request.get_json())
+    else:
+        message, status = generic_crud('cms_posts', method='GET')
+    return jsonify(message), status
 
-@app.route('/api/cms/posts', methods=['GET'])
+@app.route('/api/cms/posts/<post_id>', methods=['PUT', 'DELETE'])
 @token_required
-def get_all_posts():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    posts = [doc.to_dict() | {'id': doc.id} for doc in db.collection('cms_posts').stream()]
-    return jsonify(posts), 200
-
-@app.route('/api/cms/posts/<post_id>', methods=['PUT'])
-@token_required
-def update_post(post_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateUpdated'] = firestore.SERVER_TIMESTAMP
-        db.collection('cms_posts').document(post_id).update(data)
-        return jsonify({"message": "Post updated successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
-
-@app.route('/api/cms/posts/<post_id>', methods=['DELETE'])
-@token_required
-def delete_post(post_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        db.collection('cms_posts').document(post_id).delete()
-        return jsonify({"message": "Post deleted successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_cms_post(post_id):
+    if request.method == 'PUT':
+        message, status = generic_crud('cms_posts', doc_id=post_id, method='PUT', data=request.get_json())
+    else:
+        message, status = generic_crud('cms_posts', doc_id=post_id, method='DELETE')
+    return jsonify(message), status
 
 # --- PROJECT ENDPOINTS (FULL CRUD) ---
-@app.route('/api/projects', methods=['POST'])
+@app.route('/api/projects', methods=['POST', 'GET'])
 @token_required
-def create_project():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateCreated'] = firestore.SERVER_TIMESTAMP
-        db.collection('projects').add(data)
-        return jsonify({"message": "Project created successfully"}), 201
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_projects():
+    if request.method == 'POST':
+        message, status = generic_crud('projects', method='POST', data=request.get_json())
+    else:
+        message, status = generic_crud('projects', method='GET')
+    return jsonify(message), status
 
-@app.route('/api/projects', methods=['GET'])
+@app.route('/api/projects/<project_id>', methods=['PUT', 'DELETE'])
 @token_required
-def get_all_projects():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    projects = [doc.to_dict() | {'id': doc.id} for doc in db.collection('projects').stream()]
-    return jsonify(projects), 200
-
-@app.route('/api/projects/<project_id>', methods=['PUT'])
-@token_required
-def update_project(project_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateUpdated'] = firestore.SERVER_TIMESTAMP
-        db.collection('projects').document(project_id).update(data)
-        return jsonify({"message": "Project updated successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
-
-@app.route('/api/projects/<project_id>', methods=['DELETE'])
-@token_required
-def delete_project(project_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        db.collection('projects').document(project_id).delete()
-        return jsonify({"message": "Project deleted successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_project(project_id):
+    if request.method == 'PUT':
+        message, status = generic_crud('projects', doc_id=project_id, method='PUT', data=request.get_json())
+    else:
+        message, status = generic_crud('projects', doc_id=project_id, method='DELETE')
+    return jsonify(message), status
 
 # --- CRM ENDPOINTS (FULL CRUD) ---
-@app.route('/api/crm/contacts', methods=['POST'])
+@app.route('/api/crm/contacts', methods=['POST', 'GET'])
 @token_required
-def create_contact():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateCreated'] = firestore.SERVER_TIMESTAMP
-        db.collection('crm_contacts').add(data)
-        return jsonify({"message": "Contact created successfully"}), 201
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_crm_contacts():
+    if request.method == 'POST':
+        message, status = generic_crud('crm_contacts', method='POST', data=request.get_json())
+    else:
+        message, status = generic_crud('crm_contacts', method='GET')
+    return jsonify(message), status
 
-@app.route('/api/crm/contacts', methods=['GET'])
+@app.route('/api/crm/contacts/<contact_id>', methods=['PUT', 'DELETE'])
 @token_required
-def get_all_contacts():
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    contacts = [doc.to_dict() | {'id': doc.id} for doc in db.collection('crm_contacts').stream()]
-    return jsonify(contacts), 200
-    
-@app.route('/api/crm/contacts/<contact_id>', methods=['PUT'])
-@token_required
-def update_contact(contact_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        data = request.get_json()
-        data['dateUpdated'] = firestore.SERVER_TIMESTAMP
-        db.collection('crm_contacts').document(contact_id).update(data)
-        return jsonify({"message": "Contact updated successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_crm_contact(contact_id):
+    if request.method == 'PUT':
+        message, status = generic_crud('crm_contacts', doc_id=contact_id, method='PUT', data=request.get_json())
+    else:
+        message, status = generic_crud('crm_contacts', doc_id=contact_id, method='DELETE')
+    return jsonify(message), status
 
-@app.route('/api/crm/contacts/<contact_id>', methods=['DELETE'])
+# --- TASK ENDPOINTS (FULL CRUD) ---
+@app.route('/api/tasks', methods=['POST', 'GET'])
 @token_required
-def delete_contact(contact_id):
-    if not db: return jsonify({"error": "Database not connected"}), 500
-    try:
-        db.collection('crm_contacts').document(contact_id).delete()
-        return jsonify({"message": "Contact deleted successfully"}), 200
-    except Exception as e: return jsonify({"error": str(e)}), 500
+def handle_tasks():
+    if request.method == 'POST':
+        message, status = generic_crud('tasks', method='POST', data=request.get_json())
+    else:
+        message, status = generic_crud('tasks', method='GET')
+    return jsonify(message), status
+
+@app.route('/api/tasks/<task_id>', methods=['PUT', 'DELETE'])
+@token_required
+def handle_task(task_id):
+    if request.method == 'PUT':
+        message, status = generic_crud('tasks', doc_id=task_id, method='PUT', data=request.get_json())
+    else:
+        message, status = generic_crud('tasks', doc_id=task_id, method='DELETE')
+    return jsonify(message), status
 
 # --- GSC DATA ENDPOINTS ---
 @app.route('/api/get-gsc-data', methods=['GET'])
@@ -188,4 +169,4 @@ def update_gsc_data():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=False)
