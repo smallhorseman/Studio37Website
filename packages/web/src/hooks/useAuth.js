@@ -1,4 +1,4 @@
-import {
+import React, {
   useState,
   useEffect,
   useCallback,
@@ -104,7 +104,8 @@ function useProvideAuth() {
 
 export function AuthProvider({ children }) {
   const value = useProvideAuth();
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Replaced JSX with createElement to avoid JSX transform requirement in .js file
+  return React.createElement(AuthContext.Provider, { value }, children);
 }
 
 // Public hook
