@@ -2,21 +2,21 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-(function checkNodeVersion() {
-  const major = parseInt(process.versions.node.split('.')[0], 10);
-  const supported = [18, 20];
-  if (!supported.includes(major)) {
-    // Non‑fatal warning to help Netlify logs
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[build] Detected Node ${process.versions.node}. Recommended LTS versions: 18.x or 20.x. ` +
-      `Specify NODE_VERSION in Netlify settings or add an "engines" field in package.json.`
-    );
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@hooks': path.resolve(__dirname, 'src/hooks'),
+      '@api': path.resolve(__dirname, 'src/api'),
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@config': path.resolve(__dirname, 'src/config'),
+    },
+  },
+  build: {
+    target: 'es2022'
   }
-})();
-
-// List any missing / optional runtime-only deps here
-const OPTIONAL_EXTERNALS = [
+});
   '@netlify/blobs',
   // add more module ids reported as missing without installing them
 ];

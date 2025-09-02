@@ -12,11 +12,9 @@ export function AuthProvider({ children }) {
     isAuthenticated: false,
     isReady: ready,
     loading: !ready,
-    authError: null,
     login: async () => false,
     logout: () => {},
-    getAuthHeader: () => ({}),
-    fetchWithAuth: async () => { throw new Error('Auth disabled in lean mode'); }
+    getAuthHeader: () => ({})
   };
 
   // Replaced JSX with createElement to avoid parser issue
@@ -24,14 +22,16 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    // Fallback if hook used without provider
-    return {
-      token: null,
-      isAuthenticated: false,
-      isReady: true,
-      loading: false,
+  return useContext(AuthContext) || {
+    token: null,
+    isAuthenticated: false,
+    isReady: true,
+    loading: false,
+    login: async () => false,
+    logout: () => {},
+    getAuthHeader: () => ({})
+  };
+}
       authError: null,
       login: async () => false,
       logout: () => {},

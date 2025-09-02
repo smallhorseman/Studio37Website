@@ -1,12 +1,12 @@
-import { createRequire } from 'module';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
-const require = createRequire(import.meta.url);
-const isProd = process.env.NODE_ENV === 'production';
-
-function safeRequire(id) {
-  try {
+export default {
+  plugins: [
+    tailwindcss(),
+    autoprefixer()
+  ]
+};
     return require(id);
   } catch {
     return null;

@@ -3,43 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base layer without @apply (converted to plain CSS) */
 @layer base {
-  :root {
-    --brand-accent: #468289;
-    --brand-bg: #FFFDF6;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
+  html { scroll-behavior: smooth; }
   body {
-    background: #FFFDF6;
-    color: #36454F;
+    background:#FFFDF6;
+    color:#36454F;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  }
-
-  h1, h2, h3, h4 {
-    font-family: Georgia, serif;
-    color: #36454F;
-    font-weight: 600;
-  }
-
-  a {
-    transition: color .15s ease, background-color .15s ease, border-color .15s ease;
-  }
-
-  a:focus-visible {
-    outline: 2px solid #468289;
-    outline-offset: 2px;
-  }
-
-  img, svg, video {
-    display: block;
-    max-width: 100%;
-    height: auto;
   }
 }
