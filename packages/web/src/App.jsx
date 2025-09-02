@@ -108,6 +108,8 @@ export const ResourceSection = ({ title, hookResult, renderItem, emptyMessage = 
   );
 };
 
+// NOTE: useAuth now returns a safe fallback instead of throwing if no AuthProvider
+// This prevents "useAuth must be used within an AuthProvider" runtime crashes.
 // NOTE: Styles for .page, .card, buttons, skeletons now come solely from GlobalInlineStyles.
 // App.css only contains Tailwind layer directives to avoid @apply warnings.
 

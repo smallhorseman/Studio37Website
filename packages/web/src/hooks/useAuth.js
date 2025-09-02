@@ -11,7 +11,33 @@ import React, {
 const AUTH_BASE =
   import.meta.env.VITE_AUTH_BASE_URL?.replace(/\/+$/, '') || '/auth';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext(undefined);
+
+// One‑time console warning control
+let warned = false;
+function fallbackAuthObject() {
+  if (!warned && typeof window !== 'undefined') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[auth] useAuth used without <AuthProvider>. Using fallback (not authenticated).'
+    );
+    warned = true;
+  }
+  return {
+    token: null,
+    isAuthenticated: false,
+    isReady: true,
+    loading: false,
+    authError: null,
+    login: async () => false,
+    logout: () => {},
+    getAuthHeader: () => ({}),
+    assertReadyAndAuthed: () => false,
+    fetchWithAuth: async () => {
+      throw new Error('No auth provider available');
+    },
+  };
+}
 
 function useProvideAuth() {
   const bootstrapped = useRef(false);
@@ -126,11 +152,15 @@ export function AuthProvider({ children }) {
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
-// Public hook
+// SAFE hook (modified)
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return ctx;
+  return ctx || fallbackAuthObject();
+}
+
+// Optional guard component to wrap legacy pages that might not be inside provider
+export function EnsureAuthProvider({ children }) {
+  const ctx = useContext(AuthContext);
+  if (ctx) return children;
+  return <AuthProvider>{children}</AuthProvider>;
 }
