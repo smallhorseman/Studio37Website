@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
-import { PolaroidImage } from '../components/PolaroidImage';
+import { PolaroidImage } from "../components/PolaroidImage.jsx";
 
 export default function BlogPage() {
   const navigate = useNavigate();
