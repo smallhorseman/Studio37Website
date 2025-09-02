@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* All custom utility/style rules moved to GlobalInlineStyles to eliminate @apply lint errors */
+/* Custom utility classes are now injected via GlobalInlineStyles.jsx */
 .logo { @apply h-12 w-auto; font-family: 'Gochi Hand', cursive; }
 
 /* Page utilities */
