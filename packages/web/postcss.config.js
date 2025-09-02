@@ -1,14 +1,7 @@
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
-// Removed duplicate default export block
-function safeRequire(id) {
-  try {
-    return require(id);
-  } catch {
-    return null;
-  }
-}
+// Removed duplicate export default block to fix multiple default exports error.
 
 const postcssImport = safeRequire('postcss-import');
 const nesting = safeRequire('postcss-nesting');

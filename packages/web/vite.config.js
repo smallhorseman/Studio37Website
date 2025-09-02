@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Optional externals (can stay empty or list modules not to bundle)
+const OPTIONAL_EXTERNALS = ['@netlify/blobs'];
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -10,7 +13,7 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@api': path.resolve(__dirname, 'src/api'),
       '@components': path.resolve(__dirname, 'src/components'),
-      '@config': path.resolve(__dirname, 'src/config'), // added
+      '@config': path.resolve(__dirname, 'src/config'),
     },
   },
   define: {
@@ -20,7 +23,7 @@ export default defineConfig({
     'import.meta.env.VITE_AUTH_BASE_URL': JSON.stringify(process.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com')
   },
   esbuild: {
-    jsx: 'automatic', // ensure JSX syntax is allowed if it appears in .js
+    jsx: 'automatic',
     jsxDev: process.env.NODE_ENV !== 'production'
   },
   build: {
@@ -33,12 +36,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: OPTIONAL_EXTERNALS,
-    include: ['lodash'] // added
+    include: ['lodash']
   },
   server: {
     proxy: {
-      // Ensure target services send proper CORS headers if accessed directly.
-      // Frontend has fallback to these relative paths when remote CORS blocks.
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET || 'https://sem37-api.onrender.com',
         changeOrigin: true,
@@ -54,5 +55,4 @@ export default defineConfig({
     },
   },
 });
-
 // Lean rebuild note: auth/tools proxies retained; remove if not needed in minimal mode.

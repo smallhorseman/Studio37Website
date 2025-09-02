@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Lean stub auth
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
