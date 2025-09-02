@@ -45,8 +45,8 @@ export default function PackagesPage() {
                 <p className="mt-4 text-sm leading-6 text-gray-600">Details about our packages will be available soon.</p>
               </div>
             ) : (
-              packages.map((pkg) => (
-                <FadeIn key={pkg.name}>
+              packages.map((pkg, idx) => (
+                <FadeIn key={idx}>
                     <div className={`rounded-3xl p-8 ring-1 xl:p-10 ${pkg.highlight ? 'ring-2 ring-[#468289] bg-gray-50' : 'ring-gray-200'}`}>
                         <h3 className="text-lg font-semibold leading-8 text-[#36454F]">{pkg.name}</h3>
                         <p className="mt-4 text-sm leading-6 text-gray-600">{pkg.duration}</p>
