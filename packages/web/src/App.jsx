@@ -29,7 +29,10 @@ import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 
 const ProtectedRoute = ({ children }) => {
-    const { token } = useAuth();
+    const { token, isReady, loading } = useAuth();
+    if (!isReady || loading) {
+        return <div className="loading-block">Checking access...</div>;
+    }
     if (!token) {
         return <Navigate to="/login" replace />;
     }
