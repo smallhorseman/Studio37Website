@@ -28,7 +28,7 @@
 .btn-outline { @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10; }
 .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-600; }
 
-/* Accessibility helpers */
+/* A11y */
 .sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
 
 /* Stacks */

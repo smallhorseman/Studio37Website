@@ -28,6 +28,10 @@ import ToolsPage from './pages/ToolsPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 
+// Helper wrappers
+const wrap = (El, props = {}) => <div className="page"><El {...props} /></div>;
+const wrapNarrow = (El, props = {}) => <div className="page-narrow"><El {...props} /></div>;
+
 const ProtectedRoute = ({ children }) => {
     const { token, isReady, loading } = useAuth();
     if (!isReady || loading) {
@@ -76,7 +80,8 @@ export default function App() {
                 <Router>
                     {isToolsSite ? (
                         <Routes>
-                            <Route path="/login" element={<LoginPage />} />
+                            {/* Tools site (no wrapper to keep full-width app UI) */}
+                            <Route path="/login" element={wrapNarrow(LoginPage)} />
                             <Route element={<ToolsLayout />}>
                                 <Route index element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                                 <Route path="internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -85,23 +90,23 @@ export default function App() {
                                 <Route path="projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
                                 <Route path="cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
                                 <Route path="todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
-                                <Route path="*" element={<div className="p-8">404 Not Found</div>} />
+                                <Route path="*" element={<div className="page">404 Not Found</div>} />
                             </Route>
                         </Routes>
                     ) : (
                         <Routes>
                             <Route element={<PublicSiteLayout />}>
-                                <Route index element={<HomePage />} />
-                                <Route path="about" element={<AboutPage />} />
-                                <Route path="services" element={<ServicesPage />} />
-                                <Route path="packages" element={<PackagesPage />} />
-                                <Route path="portfolio" element={<PortfolioPage />} />
-                                <Route path="blog" element={<BlogPage />} />
-                                <Route path="blog/:slug" element={<BlogPostPage />} />
-                                <Route path="contact" element={<ContactPage />} />
-                                <Route path="admin" element={<AdminPage />} />
-                                <Route path="admin/tools" element={<ToolsPage />} />
-                                <Route path="*" element={<div className="p-8">404 Not Found</div>} />
+                                <Route index element={wrap(HomePage)} />
+                                <Route path="about" element={wrap(AboutPage)} />
+                                <Route path="services" element={wrap(ServicesPage)} />
+                                <Route path="packages" element={wrap(PackagesPage)} />
+                                <Route path="portfolio" element={wrap(PortfolioPage)} />
+                                <Route path="blog" element={wrap(BlogPage)} />
+                                <Route path="blog/:slug" element={wrap(BlogPostPage)} />
+                                <Route path="contact" element={wrapNarrow(ContactPage)} />
+                                <Route path="admin" element={wrap(AdminPage)} />
+                                <Route path="admin/tools" element={wrap(ToolsPage)} />
+                                <Route path="*" element={<div className="page">404 Not Found</div>} />
                             </Route>
                         </Routes>
                     )}
