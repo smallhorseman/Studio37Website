@@ -71,7 +71,7 @@ export default function PackagesPage() {
                     </div>
                 </FadeIn>
             ))
-        }
+        )}
         </div>
       </div>
     </div>
