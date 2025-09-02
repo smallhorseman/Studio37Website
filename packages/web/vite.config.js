@@ -1,10 +1,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// List any missing / optional runtime-only deps here
+const OPTIONAL_EXTERNALS = [
+  '@netlify/blobs',
+  // add more module ids reported as missing without installing them
+];
+
 export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: true,
+    rollupOptions: {
+      external: OPTIONAL_EXTERNALS,
+    },
+  },
+  optimizeDeps: {
+    exclude: OPTIONAL_EXTERNALS,
   },
   server: {
     proxy: {
