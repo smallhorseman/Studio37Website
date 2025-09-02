@@ -2,5 +2,5 @@
 @tailwind components;
 @tailwind utilities;
 
-/* All custom utility classes (.page, .card, buttons, skeletons, etc.)
+/* (All custom layout/styling now handled directly via Tailwind utility classes in components.)
    are injected via GlobalInlineStyles.jsx to avoid PostCSS parse errors. */
