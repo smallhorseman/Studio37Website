@@ -6,10 +6,11 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('jwt_token'));
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     try {
-      const response = await apiClient.post('/auth/login', {
-        email,
+      // Use the correct auth service URL and endpoint
+      const response = await apiClient.post('https://auth-3778.onrender.com/login', {
+        username,
         password,
       });
       const { token: newToken } = response.data;
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('jwt_token', newToken);
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      return { success: false, message: error.response?.data?.message || 'Login failed: Invalid credentials or server error.' };
     }
   };
 
