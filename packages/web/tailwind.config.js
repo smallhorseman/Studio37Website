@@ -20,24 +20,13 @@ export default {
       container: {
         center: true,
         padding: '1rem'
+      },
+      screens: {
+        '2xl': '1440px'
       }
     }
   },
-  plugins: []
+  plugins: [
+    // require('@tailwindcss/aspect-ratio'),
+  ],
 };
-          '2xl': '1440px',
-        },
-      },
-    },
-  },
-  plugins: [
-    // require('@tailwindcss/aspect-ratio'),
-  ],
-}
-      },
-    },
-  },
-  plugins: [
-    // require('@tailwindcss/aspect-ratio'),
-  ],
-}

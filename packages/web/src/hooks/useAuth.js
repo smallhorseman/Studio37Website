@@ -31,13 +31,3 @@ export function useAuth() {
     getAuthHeader: () => ({})
   };
 }
-}
-      authError: null,
-      login: async () => false,
-      logout: () => {},
-      getAuthHeader: () => ({}),
-      fetchWithAuth: async () => { throw new Error('No provider'); }
-    };
-  }
-  return ctx;
-}

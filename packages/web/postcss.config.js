@@ -1,12 +1,9 @@
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
-export default {
-  plugins: [
-    tailwindcss(),
-    autoprefixer()
-  ]
-};
+// Removed duplicate default export block
+function safeRequire(id) {
+  try {
     return require(id);
   } catch {
     return null;

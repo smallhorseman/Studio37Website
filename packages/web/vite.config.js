@@ -10,25 +10,6 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@api': path.resolve(__dirname, 'src/api'),
       '@components': path.resolve(__dirname, 'src/components'),
-      '@config': path.resolve(__dirname, 'src/config'),
-    },
-  },
-  build: {
-    target: 'es2022'
-  }
-});
-  '@netlify/blobs',
-  // add more module ids reported as missing without installing them
-];
-
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@hooks': path.resolve(__dirname, 'src/hooks'),
-      '@api': path.resolve(__dirname, 'src/api'),
-      '@components': path.resolve(__dirname, 'src/components'),
       '@config': path.resolve(__dirname, 'src/config'), // added
     },
   },
