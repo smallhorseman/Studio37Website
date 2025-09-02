@@ -5,9 +5,8 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
-# We can import this later when we add the Gemini recommendations
-# from gemini_service import get_gemini_recommendations
 
 def analyze_on_page_seo(url):
     driver = None
@@ -30,10 +29,10 @@ def analyze_on_page_seo(url):
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
         title_tag = soup.find('title')
-        title_text = title_tag.get_text() if title_tag else ''
+        title_text = title_tag.get_text(strip=True) if title_tag else 'No title tag found'
         
         meta_desc_tag = soup.find('meta', attrs={'name': 'description'})
-        meta_desc_text = meta_desc_tag['content'] if meta_desc_tag and meta_desc_tag.has_attr('content') else ''
+        meta_desc_text = meta_desc_tag['content'].strip() if meta_desc_tag and meta_desc_tag.has_attr('content') else 'No meta description found'
         
         h1_tags = [h1.get_text(strip=True) for h1 in soup.find_all('h1')]
         
@@ -43,6 +42,8 @@ def analyze_on_page_seo(url):
             'h1': {'tags': h1_tags, 'count': len(h1_tags)},
         }
 
+    except TimeoutException:
+        return {'error': "Timed out waiting for the page to load."}
     except Exception as e:
         return {'error': f"An unexpected error occurred: {e}"}
     finally:

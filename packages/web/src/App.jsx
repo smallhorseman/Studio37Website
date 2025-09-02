@@ -1,13 +1,13 @@
 import React from 'react';
-import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import Studio37Logo from './components/Studio37Logo';
+import { useAuth } from './AuthContext'; // Use our custom AuthContext
 
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
 import CRMPage from './pages/CRMPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ContentManagerPage from './pages/ContentManagerPage';
-import InternalDashboardPage from './pages/InternalDashboardPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 import LoginPage from './pages/LoginPage';
@@ -22,20 +22,19 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 
-// This component checks for a login token. If it doesn't exist, it redirects to the login page.
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('jwt_token');
+  const { token } = useAuth(); // Use the token from our AuthContext
   if (!token) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
-const ToolsLayout = ({ children }) => (
+const ToolsLayout = () => (
   <div className="min-h-screen bg-gray-50">
     <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
+        <Link to="/internal-dashboard"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
         <div className="space-x-4">
           <Link to="/internal-dashboard" className="px-2 py-1 rounded hover:bg-gray-700">Dashboard</Link>
           <Link to="/crm" className="px-2 py-1 rounded hover:bg-gray-700">CRM</Link>
@@ -46,11 +45,11 @@ const ToolsLayout = ({ children }) => (
         </div>
       </div>
     </nav>
-    <main>{children}</main>
+    <main><Outlet /></main>
   </div>
 );
 
-const PublicSiteLayout = ({ children }) => (
+const PublicSiteLayout = () => (
   <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
     <nav className="p-4 sm:px-8 flex justify-between items-center">
       <Link to="/" className="w-32"><Studio37Logo color="#36454F" /></Link>
@@ -62,7 +61,7 @@ const PublicSiteLayout = ({ children }) => (
         <Link to="/contact" className="rounded-md bg-faded-teal px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-soft-charcoal">Contact</Link>
       </div>
     </nav>
-    <main>{children}</main>
+    <main><Outlet /></main>
   </div>
 );
 
@@ -72,9 +71,9 @@ export default function App() {
 
   if (isToolsSite) {
     return (
-      <ToolsLayout>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ToolsLayout />}>
           <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
@@ -82,13 +81,13 @@ export default function App() {
           <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
           <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
           <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
-        </Routes>
-      </ToolsLayout>
+        </Route>
+      </Routes>
     );
   } else {
     return (
-      <PublicSiteLayout>
-        <Routes>
+      <Routes>
+        <Route element={<PublicSiteLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/services" element={<ServicesPage />} />
@@ -97,8 +96,8 @@ export default function App() {
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/contact" element={<ContactPage />} />
-        </Routes>
-      </PublicSiteLayout>
+        </Route>
+      </Routes>
     );
   }
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
@@ -12,15 +11,8 @@ export default function ProjectsPage() {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in.");
-
-            const response = await fetch(`${API_URL}/api/projects`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch projects');
-            setProjects(data);
+            const response = await apiClient.get('/projects');
+            setProjects(response.data);
         } catch (error) {
             setError(error.message);
         } finally {

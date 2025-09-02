@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from '../api/apiClient';
 
 export default function InternalDashboardPage() {
     const [gscData, setGscData] = useState(null);
@@ -13,17 +12,9 @@ export default function InternalDashboardPage() {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in again.");
-
-            const response = await fetch(`${API_URL}/api/get-gsc-data`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch GSC data');
-            setGscData(data);
-            // Pre-fill the textarea with current data for easy editing
-            setUpdateText(JSON.stringify(data, null, 2)); 
+            const response = await apiClient.get('/get-gsc-data');
+            setGscData(response.data);
+            setUpdateText(JSON.stringify(response.data, null, 2)); 
         } catch (err) {
             setError(err.message);
         } finally {
@@ -39,22 +30,9 @@ export default function InternalDashboardPage() {
         event.preventDefault();
         setError(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found.");
+            const dataToUpdate = JSON.parse(updateText);
+            const response = await apiClient.post('/update-gsc-data', dataToUpdate);
 
-            // This fetch call now includes the token in its headers
-            const response = await fetch(`${API_URL}/api/update-gsc-data`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: updateText, // Send the text from the textarea
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update data');
-            
             alert('GSC Data Updated Successfully!');
             fetchData(); // Refresh the data after updating
         } catch (err) {

@@ -71,7 +71,23 @@ def generic_crud(collection_name, doc_id=None, method='GET', data=None):
 @app.route('/')
 def index():
     return jsonify({"status": "ok", "message": "Studio37 Data API is running."})
+# --- SEO ANALYSIS ENDPOINT ---
+@app.route('/api/analyze-seo', methods=['GET'])
+@token_required
+def analyze_seo():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "URL parameter is missing"}), 400
+    
+    seo_analysis_data = analyze_on_page_seo(url)
+    
+    if 'error' in seo_analysis_data:
+        return jsonify(seo_analysis_data), 500
+    
+    return jsonify(seo_analysis_data), 200
 
+# Make sure you import the function at the top of your file
+# from scrapper import analyze_on_page_seo
 # --- CMS ENDPOINTS (FULL CRUD) ---
 @app.route('/api/cms/posts', methods=['POST', 'GET'])
 @token_required
@@ -165,6 +181,24 @@ def update_gsc_data():
         data = request.get_json()
         db.collection('sem37_data').document('gsc_main').set(data, merge=True)
         return jsonify({"message": "GSC data updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+# --- GEMINI ENDPOINT ---
+@app.route('/api/gemini/generate', methods=['POST'])
+@token_required
+def generate_text():
+    try:
+        data = request.get_json()
+        prompt = data.get('prompt')
+        if not prompt:
+            return jsonify({"error": "Prompt is missing"}), 400
+
+        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+
+        return jsonify({"generated_text": response.text}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

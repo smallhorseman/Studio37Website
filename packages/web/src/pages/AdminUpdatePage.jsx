@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import apiClient from '../api/apiClient.js';
 
 export default function AdminUpdatePage() {
   const [clicks, setClicks] = useState('');
@@ -16,36 +17,19 @@ export default function AdminUpdatePage() {
     const newData = {
       totalClicks: parseInt(clicks, 10),
       totalImpressions: parseInt(impressions, 10),
-      averageCtr: ctr,
+      averageCtr: parseFloat(ctr), 
       averagePosition: parseFloat(position),
       lastUpdated: new Date().toLocaleString(),
     };
 
     try {
-      // **THE FIX:** Get the token using the correct key, 'jwt_token'
-      const token = localStorage.getItem('jwt_token');
-
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
+      const response = await apiClient.post('/update-gsc-data', newData);
       
-      const backendUrl = 'https://sem37-api.onrender.com';
-      const response = await fetch(`${backendUrl}/api/update-gsc-data`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(newData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update data on the server.');
+      if (response.status !== 200) {
+        throw new Error(response.data.message || 'Failed to update data on the server.');
       }
 
-      const result = await response.json();
-      setStatus(result.message);
+      setStatus(response.data.message);
     } catch (error) {
       setStatus(`Error: ${error.message}`);
     } finally {
@@ -96,4 +80,3 @@ export default function AdminUpdatePage() {
     </div>
   );
 }
-

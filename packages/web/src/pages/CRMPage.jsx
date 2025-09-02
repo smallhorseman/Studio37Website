@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '../api/apiClient.js';
+import apiClient from '../apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 
 export default function CRMPage() {

@@ -1,30 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-// Assume PostEditorModal component exists and is imported
-// ...
 
 export default function ContentManagerPage() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    // ... other state for modal
 
     const fetchPosts = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('jwt_token');
-            if (!token) throw new Error("No login token found. Please log in again.");
-
-            const response = await fetch(`${API_URL}/api/cms/posts`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to fetch posts');
-            setPosts(data);
+            const response = await apiClient.get('/cms/posts');
+            setPosts(response.data);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -32,12 +20,24 @@ export default function ContentManagerPage() {
         }
     }, []);
 
+    const handleDeletePost = async (postId) => {
+        if (window.confirm('Are you sure you want to delete this post?')) {
+            try {
+                await apiClient.delete(`/cms/posts/${postId}`);
+                alert('Post deleted successfully!');
+                fetchPosts(); // Refresh the list of posts
+            } catch (err) {
+                setError(err.message);
+            }
+        }
+    };
+    
+    // Note: handleEditPost would open a modal or form with the post data
+
     useEffect(() => {
         fetchPosts();
     }, [fetchPosts]);
 
-    // Note: handleSavePost and handleDeletePost would also need to include the token header
-    
     if (loading) return <div className="p-8">Loading CMS content...</div>;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
     
@@ -48,8 +48,20 @@ export default function ContentManagerPage() {
                  <div className="bg-white p-4 rounded-lg shadow">
                     <ul>
                         {posts.map(post => (
-                            <li key={post.id} className="py-2 border-b">
+                            <li key={post.id} className="py-2 border-b flex justify-between items-center">
                                 <p className="font-semibold">{post.title}</p>
+                                <div className="space-x-2">
+                                    <button 
+                                        // onClick={() => handleEditPost(post.id)} 
+                                        className="px-3 py-1 text-sm font-semibold rounded-md bg-yellow-500 text-white hover:bg-yellow-600">
+                                        Edit
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeletePost(post.id)} 
+                                        className="px-3 py-1 text-sm font-semibold rounded-md bg-red-500 text-white hover:bg-red-600">
+                                        Delete
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>

@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
-// Correctly import our awesome, authenticated API client with the full file extension
 import apiClient from '../apiClient.js';
 
 const AdminUpdatePage = () => {
-  // State for the form inputs
   const [property, setProperty] = useState('https://studio37.cc');
   const [clicks, setClicks] = useState('');
   const [impressions, setImpressions] = useState('');
 
-  // State for managing UI feedback
   const [currentData, setCurrentData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [messageColor, setMessageColor] = useState('text-gray-700');
 
-  // On page load, let's fetch the current data so we know what we're updating
   useEffect(() => {
     const fetchCurrentData = async () => {
       setIsLoading(true);
@@ -31,7 +27,6 @@ const AdminUpdatePage = () => {
     fetchCurrentData();
   }, []);
 
-  // Handle the form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -41,23 +36,20 @@ const AdminUpdatePage = () => {
     const dataToUpdate = {
       property,
       updates: {
-        // Use parseInt to ensure we send numbers, not strings
         clicks: parseInt(clicks, 10),
         impressions: parseInt(impressions, 10),
       },
     };
 
     try {
-      // THE FIX: Use the apiClient to make an authenticated POST request.
-      // The token is attached automatically by the interceptor. It's magic!
       const response = await apiClient.post('/update-gsc-data', dataToUpdate);
 
       setStatusMessage('Data updated successfully!');
       setMessageColor('text-green-600');
       console.log('Success:', response.data);
-      // Clear form on success
       setClicks('');
       setImpressions('');
+      
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'An unexpected error occurred.';
       setStatusMessage(`Error: ${errorMsg}`);
@@ -80,7 +72,6 @@ const AdminUpdatePage = () => {
           </p>
         </div>
 
-        {/* Display current data if available */}
         {currentData && (
             <div className="bg-gray-100 p-4 rounded-lg text-sm">
                 <h3 className="font-semibold text-gray-800">Current Stored Data:</h3>
@@ -122,4 +113,3 @@ const AdminUpdatePage = () => {
 };
 
 export default AdminUpdatePage;
-
