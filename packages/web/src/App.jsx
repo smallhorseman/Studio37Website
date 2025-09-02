@@ -21,6 +21,7 @@ import PortfolioPage from './pages/PortfolioPage';
 import BlogPage from './pages/BlogPage';
 import AdminPage from './pages/AdminPage';
 import ToolsPage from './pages/ToolsPage';
+import AboutPage from './pages/AboutPage';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useAuth();
