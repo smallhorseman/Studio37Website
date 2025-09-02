@@ -19,7 +19,8 @@ export function AuthProvider({ children }) {
     fetchWithAuth: async () => { throw new Error('Auth disabled in lean mode'); }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Replaced JSX with createElement to avoid parser issue
+  return React.createElement(AuthContext.Provider, { value }, children);
 }
 
 export function useAuth() {
