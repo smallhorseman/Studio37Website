@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Auth service base URL (e.g. https://auth.yourdomain.com/auth or same origin /auth)
 const AUTH_BASE =
@@ -6,13 +6,30 @@ const AUTH_BASE =
   '/auth';
 
 export function useAuth() {
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const bootstrapped = useRef(false);
+  const [token, setToken] = useState(null);
+  const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
 
+  // Bootstrap token once
   useEffect(() => {
-    const handleStorage = () => setToken(localStorage.getItem('token'));
+    if (!bootstrapped.current) {
+      const stored = localStorage.getItem('token');
+      if (stored) setToken(stored);
+      bootstrapped.current = true;
+      setIsReady(true);
+    }
+  }, []);
+
+  // Storage sync
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'token') {
+        setToken(e.newValue);
+      }
+    };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
@@ -24,20 +41,13 @@ export function useAuth() {
       const res = await fetch(`${AUTH_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // in case cookies are used
+        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
-
-      if (!res.ok) {
-        throw new Error(`Login failed (${res.status})`);
-      }
-
+      if (!res.ok) throw new Error(`Login failed (${res.status})`);
       const data = await res.json();
-      // Support either access_token or token field
       const receivedToken = data.access_token || data.token;
-      if (!receivedToken) {
-        throw new Error('No token received');
-      }
+      if (!receivedToken) throw new Error('No token received');
       localStorage.setItem('token', receivedToken);
       setToken(receivedToken);
       return true;
@@ -50,10 +60,8 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
-    // Optional: call backend logout if it exists
     try {
-      await fetch(`${AUTH_BASE}/logout`, { method: 'POST', credentials: 'include' })
-        .catch(() => {});
+      await fetch(`${AUTH_BASE}/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
@@ -62,13 +70,22 @@ export function useAuth() {
 
   const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
 
+  // Optional guard utility for pages making API calls
+  const assertReadyAndAuthed = () => {
+    if (!isReady) throw new Error('Auth not initialized');
+    if (!isAuthenticated) throw new Error('Not authenticated');
+    return true;
+  };
+
   return {
     token,
     isAuthenticated,
+    isReady,
     loading,
     authError,
     login,
     logout,
     getAuthHeader,
+    assertReadyAndAuthed,
   };
 }
