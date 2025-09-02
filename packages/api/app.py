@@ -203,5 +203,17 @@ def generate_text():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Example endpoint for /api/services
+@app.route('/api/services')
+def get_services():
+    # Replace with your actual logic
+    return {"services": []}, 200
+
+# Example endpoint for /api/packages
+@app.route('/api/packages')
+def get_packages():
+    # Replace with your actual logic
+    return {"packages": []}, 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=False)
