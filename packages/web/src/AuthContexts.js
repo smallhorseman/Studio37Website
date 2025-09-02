@@ -6,7 +6,7 @@ const AUTH_API_URL = 'https://auth-3778.onrender.com';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('jwt_token'));
+  const [token, setToken] = = useState(localStorage.getItem('jwt_token'));
 
   useEffect(() => {
     if (token) {
