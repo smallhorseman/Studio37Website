@@ -3,3 +3,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-accent: theme(colors.faded-teal);
+    --brand-bg: theme(colors.vintage-cream);
+  }
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-vintage-cream text-soft-charcoal antialiased;
+    font-family: theme(fontFamily.sans);
+  }
+  h1,h2,h3,h4 {
+    @apply font-serif text-soft-charcoal;
+  }
+}

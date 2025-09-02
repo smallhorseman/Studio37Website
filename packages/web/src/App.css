@@ -12,43 +12,43 @@
 }
 
 /* Added reusable page utilities */
-.page {
-  @apply max-w-6xl mx-auto px-4 py-12;
+.page { @apply max-w-6xl mx-auto px-4 py-12; }
+.page-narrow { @apply max-w-3xl mx-auto px-4 py-12; }
+.page-header { @apply mb-8; }
+.page-title { @apply text-3xl font-serif tracking-tight text-soft-charcoal; }
+.page-subtitle { @apply mt-2 text-lg text-gray-600; }
+.section { @apply mt-12; }
+.card-grid { @apply grid gap-8 sm:grid-cols-2 lg:grid-cols-3; }
+.card { @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow transition; }
+.card-title { @apply text-lg font-semibold text-soft-charcoal; }
+.muted { @apply text-sm text-gray-500; }
+.loading-block { @apply page text-center text-soft-charcoal animate-pulse; }
+.error-block { @apply page text-center text-red-600; }
+.empty-block { @apply page text-center text-gray-500; }
+.link-inline { @apply text-faded-teal hover:underline; }
+.badge { @apply inline-block rounded bg-faded-teal/10 px-2 py-0.5 text-xs font-medium text-faded-teal; }
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2;
 }
-.page-narrow {
-  @apply max-w-3xl mx-auto px-4 py-12;
+.btn-primary {
+  @apply btn bg-faded-teal text-white hover:bg-soft-charcoal focus:ring-faded-teal;
 }
-.page-header {
-  @apply mb-8;
+.btn-outline {
+  @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10;
 }
-.page-title {
-  @apply text-3xl font-serif tracking-tight text-soft-charcoal;
+.btn-danger {
+  @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-600;
 }
-.page-subtitle {
-  @apply mt-2 text-lg text-gray-600;
-}
-.section {
-  @apply mt-12;
-}
-.card-grid {
-  @apply grid gap-8 sm:grid-cols-2 lg:grid-cols-3;
-}
-.card {
-  @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow transition;
-}
-.card-title {
-  @apply text-lg font-semibold text-soft-charcoal;
-}
-.muted {
-  @apply text-sm text-gray-500;
-}
-.loading-block {
-  @apply page text-center text-soft-charcoal animate-pulse;
-}
-.error-block {
-  @apply page text-center text-red-600;
-}
-.empty-block {
+
+/* Accessibility helpers */
+.sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
+
+/* Layout helpers */
+.stack-sm > * + * { @apply mt-2; }
+.stack-md > * + * { @apply mt-4; }
+.stack-lg > * + * { @apply mt-6; }
   @apply page text-center text-gray-500;
 }
 .link-inline {

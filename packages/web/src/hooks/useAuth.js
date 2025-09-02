@@ -89,6 +89,23 @@ function useProvideAuth() {
     return true;
   };
 
+  const fetchWithAuth = useCallback(
+    async (input, init = {}) => {
+      if (!token) throw new Error('No auth token');
+      const headers = {
+        ...(init.headers || {}),
+        Authorization: `Bearer ${token}`,
+      };
+      const res = await fetch(input, { ...init, headers });
+      if (res.status === 401) {
+        logout();
+        throw new Error('Unauthorized');
+      }
+      return res;
+    },
+    [token, logout]
+  );
+
   return {
     token,
     isAuthenticated,
@@ -99,6 +116,7 @@ function useProvideAuth() {
     logout,
     getAuthHeader,
     assertReadyAndAuthed,
+    fetchWithAuth,
   };
 }
 
