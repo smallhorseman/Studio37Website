@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom utility classes moved to GlobalInlineStyles (no @apply to avoid unknown rule warnings). */
+/* All custom utility/style rules moved to GlobalInlineStyles to eliminate @apply lint errors */
 .logo { @apply h-12 w-auto; font-family: 'Gochi Hand', cursive; }
 
 /* Page utilities */

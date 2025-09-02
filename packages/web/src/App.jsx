@@ -108,6 +108,9 @@ export const ResourceSection = ({ title, hookResult, renderItem, emptyMessage = 
   );
 };
 
+// NOTE: Styles for .page, .card, buttons, skeletons now come solely from GlobalInlineStyles.
+// App.css only contains Tailwind layer directives to avoid @apply warnings.
+
 export default function App() {
   const isToolsSite = window.location.hostname.includes('tools.');
 
