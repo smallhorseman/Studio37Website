@@ -1,11 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  createContext,
+  useContext,
+} from 'react';
 
-// Auth service base URL (e.g. https://auth.yourdomain.com/auth or same origin /auth)
+// Normalize base (can point to Render auth service or proxied /auth)
 const AUTH_BASE =
-  import.meta.env.VITE_AUTH_BASE_URL?.replace(/\/+$/, '') ||
-  '/auth';
+  import.meta.env.VITE_AUTH_BASE_URL?.replace(/\/+$/, '') || '/auth';
 
-export function useAuth() {
+const AuthContext = createContext(null);
+
+function useProvideAuth() {
   const bootstrapped = useRef(false);
   const [token, setToken] = useState(null);
   const [isReady, setIsReady] = useState(false);
@@ -13,7 +21,7 @@ export function useAuth() {
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
 
-  // Bootstrap token once
+  // Bootstrap once
   useEffect(() => {
     if (!bootstrapped.current) {
       const stored = localStorage.getItem('token');
@@ -23,54 +31,58 @@ export function useAuth() {
     }
   }, []);
 
-  // Storage sync
+  // Sync across tabs
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === 'token') {
-        setToken(e.newValue);
-      }
+      if (e.key === 'token') setToken(e.newValue);
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  const login = useCallback(async (username, password) => {
-    setLoading(true);
-    setAuthError(null);
-    try {
-      const res = await fetch(`${AUTH_BASE}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) throw new Error(`Login failed (${res.status})`);
-      const data = await res.json();
-      const receivedToken = data.access_token || data.token;
-      if (!receivedToken) throw new Error('No token received');
-      localStorage.setItem('token', receivedToken);
-      setToken(receivedToken);
-      return true;
-    } catch (e) {
-      setAuthError(e.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const login = useCallback(
+    async (username, password) => {
+      setLoading(true);
+      setAuthError(null);
+      try {
+        const res = await fetch(`${AUTH_BASE}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password }),
+        });
+        if (!res.ok) throw new Error(`Login failed (${res.status})`);
+        const data = await res.json();
+        const receivedToken = data.access_token || data.token;
+        if (!receivedToken) throw new Error('No token received');
+        localStorage.setItem('token', receivedToken);
+        setToken(receivedToken);
+        return true;
+      } catch (e) {
+        setAuthError(e.message);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [AUTH_BASE]
+  );
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${AUTH_BASE}/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+      await fetch(`${AUTH_BASE}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
     } finally {
       localStorage.removeItem('token');
       setToken(null);
     }
-  }, []);
+  }, [AUTH_BASE]);
 
-  const getAuthHeader = () => (token ? { Authorization: `Bearer ${token}` } : {});
+  const getAuthHeader = () =>
+    token ? { Authorization: `Bearer ${token}` } : {};
 
-  // Optional guard utility for pages making API calls
   const assertReadyAndAuthed = () => {
     if (!isReady) throw new Error('Auth not initialized');
     if (!isAuthenticated) throw new Error('Not authenticated');
@@ -88,4 +100,18 @@ export function useAuth() {
     getAuthHeader,
     assertReadyAndAuthed,
   };
+}
+
+export function AuthProvider({ children }) {
+  const value = useProvideAuth();
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// Public hook
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return ctx;
 }
