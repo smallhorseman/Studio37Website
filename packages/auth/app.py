@@ -4,10 +4,13 @@ import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET')  # Change this!
+CORS(app, origins=["https://studio37.cc", "http://localhost:3000"])
+jwt = JWTManager(app)
 
 @app.route('/')
 def index():
@@ -21,23 +24,16 @@ def login():
 
     # IMPORTANT: Replace this with a real database check
     if auth.get('username') == 'admin' and auth.get('password') == 'password123':
-        secret_key = os.getenv('JWT_SECRET')
-        if not secret_key:
-            return jsonify({"message": "Server configuration error"}), 500
-
-        # Use utcnow() for JWT 'exp' claim and ensure correct type for PyJWT >=2.x
-        exp_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        payload = {
-            'user': auth.get('username'),
-            'exp': exp_time
-        }
-        token = jwt.encode(payload, secret_key, algorithm="HS256")
-        # PyJWT >=2.x returns a str, but older versions return bytes
-        if isinstance(token, bytes):
-            token = token.decode('utf-8')
-        return jsonify({'token': token})
+        access_token = create_access_token(identity=auth.get('username'))
+        return jsonify(access_token=access_token), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
+
+@app.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5002, debug=True)
