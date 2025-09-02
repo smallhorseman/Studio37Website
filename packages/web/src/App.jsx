@@ -80,6 +80,33 @@ const Fallback = () => (
   </div>
 );
 
+export const ResourceSection = ({ title, hookResult, renderItem, emptyMessage = 'No records found.' }) => {
+  const { data, loading, error, isEmpty } = hookResult;
+  return (
+    <section className="section">
+      {title && <h2 className="page-title mb-6">{title}</h2>}
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton-card space-y-3">
+              <div className="skeleton-line w-1/2" />
+              <div className="skeleton-line" />
+              <div className="skeleton-sm" />
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <div className="error-block">{error.message || 'Error loading data.'}</div>}
+      {!loading && !error && isEmpty && <div className="empty-block">{emptyMessage}</div>}
+      {!loading && !error && !isEmpty && (
+        <div className="card-grid">
+          {Array.isArray(data) ? data.map(renderItem) : renderItem(data)}
+        </div>
+      )}
+    </section>
+  );
+};
+
 export default function App() {
   const isToolsSite = window.location.hostname.includes('tools.');
 
