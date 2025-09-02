@@ -23,6 +23,7 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
+import ToolsPage from './pages/ToolsPage';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useAuth();
@@ -63,9 +64,9 @@ export default function App() {
     const hostname = window.location.hostname;
     const isToolsSite = hostname.includes('tools.');
 
-    if (isToolsSite) {
-        return (
-            <Router>
+    return (
+        <Router>
+            {isToolsSite ? (
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route element={<ToolsLayout />}>
@@ -78,13 +79,10 @@ export default function App() {
                         <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
                     </Route>
                 </Routes>
-            </Router>
-        );
-    } else {
-        return (
-            <Router>
+            ) : (
                 <PublicSiteLayout>
                     <Routes>
+                        {/* Public pages */}
                         <Route path="/" element={<HomePage />} />
                         <Route path="/about" element={<AboutPage />} />
                         <Route path="/services" element={<ServicesPage />} />
@@ -93,10 +91,13 @@ export default function App() {
                         <Route path="/blog" element={<BlogPage />} />
                         <Route path="/blog/:slug" element={<BlogPostPage />} />
                         <Route path="/contact" element={<ContactPage />} />
+                        {/* Admin/tools pages */}
                         <Route path="/admin" element={<AdminPage />} />
+                        <Route path="/admin/tools" element={<ToolsPage />} />
+                        {/* Add more admin/tools routes as needed */}
                     </Routes>
                 </PublicSiteLayout>
-            </Router>
-        );
-    }
+            )}
+        </Router>
+    );
 }
