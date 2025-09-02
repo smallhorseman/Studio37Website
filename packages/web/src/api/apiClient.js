@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://sem37-api.onrender.com/api',
+  baseURL: 'https://sem37-api.onrender.com/api', // Make sure this matches your backend
 });
 
 // Attach token to requests if available
@@ -35,5 +35,9 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Example usage:
+// apiClient.get('/services') will request https://sem37-api.onrender.com/api/services
+// apiClient.get('/packages') will request https://sem37-api.onrender.com/api/packages
 
 export default apiClient;
