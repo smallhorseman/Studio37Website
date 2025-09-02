@@ -28,6 +28,7 @@ export default defineConfig({
     rollupOptions: {
       external: OPTIONAL_EXTERNALS,
     },
+    chunkSizeWarningLimit: 900,
   },
   optimizeDeps: {
     exclude: OPTIONAL_EXTERNALS,

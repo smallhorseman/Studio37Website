@@ -19,4 +19,15 @@
   h1,h2,h3,h4 {
     @apply font-serif text-soft-charcoal;
   }
+  a {
+    @apply transition-colors;
+  }
+  a:focus-visible {
+    @apply outline-none ring-2 ring-faded-teal ring-offset-2;
+  }
+  img,svg,video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 }

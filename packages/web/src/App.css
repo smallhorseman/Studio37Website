@@ -31,7 +31,7 @@
 /* A11y */
 .sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
 
-/* Stacks */
+/* Vertical spacing helpers */
 .stack-sm > * + * { @apply mt-2; }
 .stack-md > * + * { @apply mt-4; }
 .stack-lg > * + * { @apply mt-6; }
