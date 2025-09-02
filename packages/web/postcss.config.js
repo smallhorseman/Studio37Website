@@ -1,32 +1,32 @@
+import { createRequire } from 'module';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
+const require = createRequire(import.meta.url);
 const isProd = process.env.NODE_ENV === 'production';
 
-// Safe optional loader (won't break if dependency missing)
-function optional(importer) {
+function safeRequire(id) {
   try {
-    return importer();
+    return require(id);
   } catch {
     return null;
   }
 }
 
-const postcssImport = optional(() => require('postcss-import'));
-const nesting = optional(() => require('postcss-nesting'));
-const cssnano = optional(() =>
-  require('cssnano')({
-    preset: ['default', { discardComments: { removeAll: true } }],
-  })
-);
+const postcssImport = safeRequire('postcss-import');
+const nesting = safeRequire('postcss-nesting');
+const cssnano = isProd
+  ? safeRequire('cssnano')?.({
+      preset: ['default', { discardComments: { removeAll: true } }],
+    })
+  : null;
 
 export default {
   plugins: [
-    // Order matters
     postcssImport && postcssImport(),
     nesting && nesting(),
     tailwindcss(),
     autoprefixer(),
-    isProd && cssnano,
+    cssnano,
   ].filter(Boolean),
 };
