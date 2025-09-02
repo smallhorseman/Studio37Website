@@ -1,34 +1,34 @@
-import React from 'react'
-import { Routes, Route, Link, Navigate, Outlet } from 'react-router-dom'
-import Studio37Logo from './components/Studio37Logo'
-import { useAuth, AuthProvider } from './AuthContext'
+import React from 'react';
+import { Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
+import Studio37Logo from './components/Studio37Logo';
+import { AuthProvider, useAuth } from './AuthContext';
 
 // Tool Pages
-import DashboardPage from './pages/DashboardPage'
-import CRMPage from './pages/CRMPage'
-import ProjectsPage from './pages/ProjectsPage'
-import ContentManagerPage from './pages/ContentManagerPage'
-import AdminUpdatePage from './pages/AdminUpdatePage'
-import TodoPage from './pages/TodoPage'
-import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage';
+import CRMPage from './pages/CRMPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ContentManagerPage from './pages/ContentManagerPage';
+import AdminUpdatePage from './pages/AdminUpdatePage';
+import TodoPage from './pages/TodoPage';
+import LoginPage from './pages/LoginPage';
 
 // Public Pages
-import HomePage from './pages/HomePage'
-import AboutPage from './pages/AboutPage'
-import ServicesPage from './pages/ServicesPage'
-import PackagesPage from './pages/PackagesPage'
-import PortfolioPage from './pages/PortfolioPage'
-import BlogPage from './pages/BlogPage'
-import BlogPostPage from './pages/BlogPostPage'
-import ContactPage from './pages/ContactPage'
+import HomePage from './pages/HomePage';
+import AboutPage from './pages/AboutPage';
+import ServicesPage from './pages/ServicesPage';
+import PackagesPage from './pages/PackagesPage';
+import PortfolioPage from './pages/PortfolioPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
+import ContactPage from './pages/ContactPage';
 
 const ProtectedRoute = ({ children }) => {
-    const { token } = useAuth()
+    const { token } = useAuth();
     if (!token) {
-        return <Navigate to="/login" replace />
+        return <Navigate to="/login" replace />;
     }
-    return children
-}
+    return children;
+};
 
 const ToolsLayout = () => (
     <div className="min-h-screen bg-gray-50">
@@ -47,7 +47,7 @@ const ToolsLayout = () => (
         </nav>
         <main><Outlet /></main>
     </div>
-)
+);
 
 const PublicSiteLayout = () => (
     <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen">
@@ -63,11 +63,11 @@ const PublicSiteLayout = () => (
         </nav>
         <main><Outlet /></main>
     </div>
-)
+);
 
 export default function App() {
-    const hostname = window.location.hostname
-    const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost')
+    const hostname = window.location.hostname;
+    const isToolsSite = hostname.startsWith('tools.') || hostname.startsWith('localhost');
 
     if (isToolsSite) {
         return (
@@ -83,7 +83,7 @@ export default function App() {
                     <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
                 </Route>
             </Routes>
-        )
+        );
     } else {
         return (
             <Routes>
@@ -98,6 +98,6 @@ export default function App() {
                     <Route path="/contact" element={<ContactPage />} />
                 </Route>
             </Routes>
-        )
+        );
     }
 }
