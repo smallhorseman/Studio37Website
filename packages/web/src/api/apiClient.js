@@ -3,7 +3,7 @@ import { API_BASE } from '@/config/env';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
-  withCredentials: false,
+  timeout: 15000,
 });
 
 // Attach token to requests if available
@@ -26,8 +26,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response) {
       if (error.response.status === 401) {
-        // Redirect to login or show unauthorized message
-        window.location.href = '/login';
+        // Optional: broadcast logout
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
       if (error.response.status === 404) {
         // Optionally handle not found
