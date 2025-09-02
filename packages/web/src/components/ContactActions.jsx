@@ -2,34 +2,25 @@ import React from 'react';
 
 const ContactActions = ({ contact }) => {
   if (!contact) {
-    return <div>No contact selected.</div>;
+    return <div className="text-center text-gray-500 py-4">No contact selected.</div>;
   }
 
-  const handleCall = () => {
-    window.location.href = `tel:${contact.phone}`;
-  };
-
-  const handleText = () => {
-    window.location.href = `sms:${contact.phone}`;
-  };
-
-  const handleEmail = () => {
-    window.location.href = `mailto:${contact.email}`;
-  };
+  const handleCall = () => window.location.href = `tel:${contact.phone}`;
+  const handleText = () => window.location.href = `sms:${contact.phone}`;
+  const handleEmail = () => window.location.href = `mailto:${contact.email}`;
 
   return (
-    <div className="contact-actions space-x-2">
+    <div className="flex flex-wrap gap-2 justify-center mt-4">
       {contact.phone && (
         <>
-          <button onClick={handleCall} className="px-3 py-1 text-sm font-semibold rounded-md bg-blue-500 text-white hover:bg-blue-600">Call</button>
-          <button onClick={handleText} className="px-3 py-1 text-sm font-semibold rounded-md bg-green-500 text-white hover:bg-green-600">Text</button>
+          <button onClick={handleCall} className="px-4 py-2 text-sm font-semibold rounded bg-blue-500 text-white hover:bg-blue-600 transition">Call</button>
+          <button onClick={handleText} className="px-4 py-2 text-sm font-semibold rounded bg-green-500 text-white hover:bg-green-600 transition">Text</button>
         </>
       )}
       {contact.email && (
-        <button onClick={handleEmail} className="px-3 py-1 text-sm font-semibold rounded-md bg-red-500 text-white hover:bg-red-600">Email</button>
+        <button onClick={handleEmail} className="px-4 py-2 text-sm font-semibold rounded bg-red-500 text-white hover:bg-red-600 transition">Email</button>
       )}
-      {/* Edit button placeholder - to be implemented on the CRM page */}
-      <button className="px-3 py-1 text-sm font-semibold rounded-md bg-yellow-500 text-white hover:bg-yellow-600">Edit</button>
+      <button className="px-4 py-2 text-sm font-semibold rounded bg-yellow-500 text-white hover:bg-yellow-600 transition">Edit</button>
     </div>
   );
 };
