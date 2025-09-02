@@ -2,13 +2,13 @@ import axios from 'axios';
 import { API_BASE } from '@/config/env';
 import { REMOTE_API_BASE, PROXY_API_BASE, isSameOrigin } from '@/config/env';
 
-const apiClient = axios.create({
+const axiosApiClient = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
 });
 
 // Attach token to requests if available
-apiClient.interceptors.request.use(
+axiosApiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token'); // or get from context/hook
     if (token) {
@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
 );
 
 // Optional: Handle 401/404 errors globally
-apiClient.interceptors.response.use(
+axiosApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
@@ -40,10 +40,10 @@ apiClient.interceptors.response.use(
 );
 
 // Example usage:
-// apiClient.get('/services') will request https://sem37-api.onrender.com/api/services
-// apiClient.get('/packages') will request https://sem37-api.onrender.com/api/packages
+// axiosApiClient.get('/services') will request https://sem37-api.onrender.com/api/services
+// axiosApiClient.get('/packages') will request https://sem37-api.onrender.com/api/packages
 
-export default apiClient;
+export default axiosApiClient;
 
 const api = axios.create({
   baseURL: API_BASE,

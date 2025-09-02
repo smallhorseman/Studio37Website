@@ -4,7 +4,7 @@ import React, {
 } from 'react';
 import { REMOTE_AUTH_BASE, PROXY_AUTH_BASE, isSameOrigin } from '@config/env';
 
-// Decide if remote is same-origin
+// Determine same-origin
 const REMOTE_IS_SAME_ORIGIN = (() => {
   try { return new URL(REMOTE_AUTH_BASE, window.location.href).origin === window.location.origin; }
   catch { return false; }
@@ -12,7 +12,7 @@ const REMOTE_IS_SAME_ORIGIN = (() => {
 
 const AuthContext = createContext(undefined);
 
-// One-time fallback warning
+// Fallback (no provider)
 let warned = false;
 function fallbackAuth() {
   if (!warned && typeof window !== 'undefined') {
@@ -34,7 +34,7 @@ function fallbackAuth() {
   };
 }
 
-// Generic fetch with automatic CORS fallback
+// Fetch with remote→proxy fallback
 async function authFetch(path, options = {}, preferProxy = false) {
   const targets = [];
   if (preferProxy) targets.push(PROXY_AUTH_BASE);
@@ -55,14 +55,15 @@ async function authFetch(path, options = {}, preferProxy = false) {
 
 function useProvideAuth() {
   const bootstrapped = useRef(false);
+  const failedRemoteRef = useRef(false);
+
   const [token, setToken] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const isAuthenticated = !!token;
-  const failedRemoteRef = useRef(false);
 
-  // Initial token load
+  // Load stored token
   useEffect(() => {
     if (!bootstrapped.current) {
       const stored = localStorage.getItem('token');
@@ -72,7 +73,7 @@ function useProvideAuth() {
     }
   }, []);
 
-  // Cross‑tab sync
+  // Cross-tab sync
   useEffect(() => {
     const handler = e => { if (e.key === 'token') setToken(e.newValue); };
     window.addEventListener('storage', handler);
@@ -170,8 +171,6 @@ export function EnsureAuthProvider({ children }) {
 }
 // NOTE: AUTH_BASE comes from VITE_AUTH_BASE_URL. For production set it to the Render auth service URL
 // e.g. https://your-auth-service.onrender.com/auth so no frontend route handling is required.
-  };
-}
 
 export function AuthProvider({ children }) {
   const value = useProvideAuth();
