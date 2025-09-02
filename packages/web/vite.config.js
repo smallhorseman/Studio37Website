@@ -6,4 +6,13 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://sem37-api.onrender.com',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });

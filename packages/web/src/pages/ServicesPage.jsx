@@ -30,7 +30,9 @@ export default function ServicesPage() {
     }, [fetchServices]);
 
     if (loading) return <div className="py-24 sm:py-32">Loading services...</div>;
-    if (error) return <div className="py-24 sm:py-32 text-red-500">{error}</div>;
+    if (error) {
+        return <div className="p-8 text-red-500">Unable to load services. Please try again later.</div>;
+    }
 
     return (
         <div className="py-24 sm:py-32">

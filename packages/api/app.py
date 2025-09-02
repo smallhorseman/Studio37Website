@@ -206,7 +206,6 @@ def generate_text():
 # Example endpoint for /api/services
 @app.route('/api/services')
 def get_services():
-    # Replace with your actual logic
     return {"services": []}, 200
 
 # Example endpoint for /api/packages
