@@ -27,26 +27,26 @@
 .btn-primary { @apply btn bg-faded-teal text-white hover:bg-soft-charcoal focus:ring-faded-teal; }
 .btn-outline { @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10; }
 .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-600; }
+.btn:focus-visible { @apply ring-2 ring-faded-teal ring-offset-2; }
 
-/* A11y */
+/* Accessibility */
 .sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
 
 /* Vertical spacing helpers */
 .stack-sm > * + * { @apply mt-2; }
 .stack-md > * + * { @apply mt-4; }
 .stack-lg > * + * { @apply mt-6; }
-.btn-outline {
-  @apply btn border border-faded-teal text-faded-teal bg-white hover:bg-faded-teal/10;
-}
-.btn-danger {
-  @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-600;
-}
 
-/* Accessibility helpers */
-.sr-only { @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap; }
+/* Dark mode adjustments */
+.dark .card { @apply bg-soft-charcoal/60 border-soft-charcoal text-vintage-cream; }
+.dark .page-title { @apply text-vintage-cream; }
 
-/* Layout helpers */
-.stack-sm > * + * { @apply mt-2; }
+/* Print tweaks */
+@media print {
+  .header, nav, footer { display: none !important; }
+  .page, .page-narrow { @apply py-4 px-0 max-w-none; }
+  body { background: #fff !important; }
+}
 .stack-md > * + * { @apply mt-4; }
 .stack-lg > * + * { @apply mt-6; }
   @apply page text-center text-gray-500;

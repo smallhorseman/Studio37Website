@@ -31,6 +31,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 // Reusable wrappers
 const PageWrapper = ({ children }) => <div className="page">{children}</div>;
 const PageNarrow = ({ children }) => <div className="page-narrow">{children}</div>;
+const NotFound = () => <PageWrapper>404 Not Found</PageWrapper>;
 
 // Protected route using Outlet (allows nesting)
 const ProtectedOutlet = () => {
@@ -45,7 +46,7 @@ const ToolsLayout = () => (
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-white px-3 py-1 rounded shadow">
       Skip to main content
     </a>
-    <nav className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
+    <nav aria-label="Primary navigation" className="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-40">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/internal-dashboard"><Studio37Logo className="h-10 w-auto" color="white" /></Link>
         <div className="space-x-4">
@@ -86,7 +87,7 @@ export default function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
-          <Suspense fallback={<Fallback />}>
+          <Suspense fallback={<div className="loading-block"><p>Loading...</p></div>}>
             {isToolsSite ? (
               <Routes>
                 <Route path="/login" element={<PageNarrow><LoginPage /></PageNarrow>} />
@@ -100,7 +101,7 @@ export default function App() {
                     <Route path="cms" element={<ContentManagerPage />} />
                     <Route path="todos" element={<TodoPage />} />
                   </Route>
-                  <Route path="*" element={<PageWrapper>404 Not Found</PageWrapper>} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
             ) : (
@@ -116,7 +117,7 @@ export default function App() {
                   <Route path="contact" element={<PageNarrow><ContactPage /></PageNarrow>} />
                   <Route path="admin" element={<PageWrapper><AdminPage /></PageWrapper>} />
                   <Route path="admin/tools" element={<PageWrapper><ToolsPage /></PageWrapper>} />
-                  <Route path="*" element={<PageWrapper>404 Not Found</PageWrapper>} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
             )}
