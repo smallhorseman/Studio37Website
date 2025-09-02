@@ -4,6 +4,7 @@ import Studio37Logo from './components/Studio37Logo';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { useAuth } from './hooks/useAuth'; // Add this if you have a custom hook
+import './App.css';
 
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';

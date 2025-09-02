@@ -14,7 +14,7 @@ const Header = () => {
     const navigate = useNavigate();
 
     return (
-        <header className="bg-[#FFFDF6] sticky top-0 z-40 shadow-md">
+        <header className="header">
             <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
                 <Link to="/" className="w-32 flex-shrink-0">
                     <Studio37Logo color="#36454F" />
