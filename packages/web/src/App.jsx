@@ -74,8 +74,8 @@ export default function App() {
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route element={<ToolsLayout />}>
-                    <Route path="/" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
-                    <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboardPage /></ProtectedRoute>} />
+                    <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                    <Route path="/internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                     <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
                     <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
                     <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />

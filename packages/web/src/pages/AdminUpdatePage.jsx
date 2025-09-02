@@ -80,3 +80,5 @@ const AdminUpdatePage = () => {
     </div>
   );
 }
+
+export default AdminUpdatePage;
