@@ -50,5 +50,5 @@ export default function LoginPage() {
       </div>
     </div>
   );
-}const cors = require('cors');
+}
 app.use(cors());
