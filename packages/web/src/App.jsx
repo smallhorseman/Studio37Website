@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from '
 import Studio37Logo from './components/Studio37Logo';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { useAuth } from './hooks/useAuth'; // Add this if you have a custom hook
 
 // Tool Pages
 import DashboardPage from './pages/DashboardPage';
@@ -70,34 +71,32 @@ export default function App() {
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route element={<ToolsLayout />}>
-                        <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                        <Route path="/internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                        <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
-                        <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-                        <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-                        <Route path="/cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
-                        <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+                        <Route index element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                        <Route path="internal-dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                        <Route path="admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
+                        <Route path="crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+                        <Route path="projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+                        <Route path="cms" element={<ProtectedRoute><ContentManagerPage /></ProtectedRoute>} />
+                        <Route path="todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+                        <Route path="*" element={<div className="p-8">404 Not Found</div>} />
                     </Route>
                 </Routes>
             ) : (
-                <PublicSiteLayout>
-                    <Routes>
-                        {/* Public pages */}
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/about" element={<AboutPage />} />
-                        <Route path="/services" element={<ServicesPage />} />
-                        <Route path="/packages" element={<PackagesPage />} />
-                        <Route path="/portfolio" element={<PortfolioPage />} />
-                        <Route path="/blog" element={<BlogPage />} />
-                        <Route path="/blog/:slug" element={<BlogPostPage />} />
-                        <Route path="/contact" element={<ContactPage />} />
-                        {/* Admin/tools pages */}
-                        <Route path="/admin" element={<AdminPage />} />
-                        <Route path="/admin/tools" element={<ToolsPage />} />
-                        {/* Add more admin/tools routes as needed */}
+                <Routes>
+                    <Route element={<PublicSiteLayout />}>
+                        <Route index element={<HomePage />} />
+                        <Route path="about" element={<AboutPage />} />
+                        <Route path="services" element={<ServicesPage />} />
+                        <Route path="packages" element={<PackagesPage />} />
+                        <Route path="portfolio" element={<PortfolioPage />} />
+                        <Route path="blog" element={<BlogPage />} />
+                        <Route path="blog/:slug" element={<BlogPostPage />} />
+                        <Route path="contact" element={<ContactPage />} />
+                        <Route path="admin" element={<AdminPage />} />
+                        <Route path="admin/tools" element={<ToolsPage />} />
                         <Route path="*" element={<div className="p-8">404 Not Found</div>} />
-                    </Routes>
-                </PublicSiteLayout>
+                    </Route>
+                </Routes>
             )}
         </Router>
     );
