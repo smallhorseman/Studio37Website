@@ -5,53 +5,61 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import './App.css';
-import { API_BASE } from '@config/env'; // ensures correct base host
-// Packages fetch fallback: retries failed absolute API_BASE packages calls through /api proxy (temporary CORS workaround)
-if (typeof window !== 'undefined' && !window.__packages_fetch_shim_installed__) {
-  window.__packages_fetch_shim_installed__ = true;
+import { API_BASE } from '@config/env'; // Generic API fallback shim for CORS/network failures on selected resource roots
+if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
+  window.__api_fallback_shim_installed__ = true;
   const originalFetch = window.fetch.bind(window);
-  const apiHost = (() => { try { return new URL(API_BASE).host; } catch { return null; } })();
   const allowRelative = import.meta.env.VITE_ALLOW_PROD_RELATIVE === '1' || import.meta.env.VITE_ALLOW_PROD_RELATIVE === 'true';
+  const apiHost = (() => { try { return new URL(API_BASE).host; } catch { return null; } })();
+
+  // Resource roots we want to auto‑retry through /api proxy
+  const RESOURCE_ROOTS = [
+    { re: /\/packages\/?(\?|$)/, rel: '/api/packages' },
+    { re: /\/services\/?(\?|$)/, rel: '/api/services' },
+    { re: /\/projects\/?(\?|$)/, rel: '/api/projects' },
+    { re: /\/cms\/posts\/?(\?|$)/, rel: '/api/cms/posts' },
+  ];
 
   window.fetch = async function patchedFetch(input, init) {
-    const reqUrl = typeof input === 'string' ? input : input?.url || '';
-    const isPackages =
-      /\/packages\/?(\?|$)/.test(reqUrl) &&
-      (reqUrl.startsWith(API_BASE) || (apiHost && reqUrl.includes(apiHost)));
+    const urlStr = typeof input === 'string' ? input : input?.url || '';
+    if (!allowRelative) return originalFetch(input, init);
 
-    if (!allowRelative || !isPackages) {
-      return originalFetch(input, init);
-    }
+    const match = RESOURCE_ROOTS.find(r => r.re.test(urlStr));
+    if (!match) return originalFetch(input, init);
 
-    // First attempt (absolute)
+    // Only intervene for absolute calls to our API host (or direct API_BASE start)
+    const isApiHost = (() => {
+      try {
+        const u = new URL(urlStr, window.location.href);
+        return u.href.startsWith(API_BASE) || (apiHost && u.host === apiHost);
+      } catch { return false; }
+    })();
+    if (!isApiHost) return originalFetch(input, init);
+
+    // First attempt
     try {
       const res = await originalFetch(input, init);
       const ct = res.headers.get('content-type') || '';
       const looksHtml = ct.includes('text/html');
       if (!res.ok && looksHtml) {
-        // likely SPA shell – try relative
-        const rel = toRelativePackages(reqUrl);
+        const rel = buildRelative(urlStr, match.rel);
         if (rel) return originalFetch(rel, init);
       }
-      // If 404 with no CORS headers we may still get a valid Response; let caller decide.
       return res;
     } catch (e) {
-      // Network/CORS error -> retry relative
-      const rel = toRelativePackages(reqUrl);
+      const rel = buildRelative(urlStr, match.rel);
       if (rel) {
-        try { return await originalFetch(rel, init); }
-        catch { /* swallow second failure */ }
+        try { return await originalFetch(rel, init); } catch { /* ignore second fail */ }
       }
       throw e;
     }
   };
 
-  function toRelativePackages(fullUrl) {
+  function buildRelative(full, relBase) {
     try {
-      const u = new URL(fullUrl, window.location.href);
-      const path = u.pathname.replace(/\/+$/, '');
-      if (!/\/packages$/.test(path)) return null;
-      return `/api/packages${u.search}`;
+      const u = new URL(full, window.location.href);
+      // Preserve query string
+      return relBase + u.search;
     } catch {
       return null;
     }

@@ -27,7 +27,8 @@ export default defineConfig({
         ? '1'           // default ON to allow /api fallback for CORS while backend is fixed
         : process.env.VITE_ALLOW_PROD_RELATIVE
     ),
-    'import.meta.env.VITE_PACKAGES_ENDPOINT': JSON.stringify(process.env.VITE_PACKAGES_ENDPOINT || '')
+    'import.meta.env.VITE_PACKAGES_ENDPOINT': JSON.stringify(process.env.VITE_PACKAGES_ENDPOINT || ''),
+    'import.meta.env.VITE_SERVICES_ENDPOINT': JSON.stringify(process.env.VITE_SERVICES_ENDPOINT || '') // added
   },
   esbuild: {
     jsx: 'automatic',
