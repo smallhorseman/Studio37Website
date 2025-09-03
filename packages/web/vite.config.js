@@ -21,7 +21,8 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'https://sem37-api.onrender.com'),
-    'import.meta.env.VITE_AUTH_BASE_URL': JSON.stringify(process.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com')
+    'import.meta.env.VITE_AUTH_BASE_URL': JSON.stringify(process.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com'),
+    'import.meta.env.VITE_ALLOW_PROD_RELATIVE': JSON.stringify(process.env.VITE_ALLOW_PROD_RELATIVE || '')
   },
   esbuild: {
     jsx: 'automatic',

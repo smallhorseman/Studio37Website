@@ -35,3 +35,5 @@ export const API_HOST = (() => {
 export const IS_PROD = import.meta.env.PROD;
 // Optional explicit overrides
 export const PROJECTS_ENDPOINT_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim() || '';
+export const PACKAGES_ENDPOINT_OVERRIDE = import.meta.env.VITE_PACKAGES_ENDPOINT?.trim() || '';
+export const ALLOW_PROD_RELATIVE = !!import.meta.env.VITE_ALLOW_PROD_RELATIVE;

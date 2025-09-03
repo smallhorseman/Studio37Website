@@ -2,5 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 /* Lean mode: styling via inline Tailwind utilities */
-/* (All custom layout/styling now handled directly via Tailwind utility classes in components.)
-   are injected via GlobalInlineStyles.jsx to avoid PostCSS parse errors. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%; /* valid value (previous invalid parses were logged) */
+  }
+}

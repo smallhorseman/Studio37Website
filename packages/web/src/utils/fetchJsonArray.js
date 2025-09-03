@@ -1,4 +1,4 @@
-import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD } from '@/config/env';
+import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD, PACKAGES_ENDPOINT_OVERRIDE, ALLOW_PROD_RELATIVE } from '@/config/env';
 
 const HTML_SIGNATURE_RE = /<!doctype|<html/i;
 const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
@@ -17,8 +17,10 @@ export async function fetchJsonArray(logical, opts = {}) {
 
   // Explicit overrides
   if (override) candidates.add(override);
-  if (!override && logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE)
-    candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
+  if (!override) {
+    if (logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE) candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
+    if (logical === 'packages' && PACKAGES_ENDPOINT_OVERRIDE) candidates.add(PACKAGES_ENDPOINT_OVERRIDE);
+  }
 
   // Core absolute candidates
   [
@@ -31,8 +33,8 @@ export async function fetchJsonArray(logical, opts = {}) {
     `${base}/v1/${logical}/`
   ].forEach(c => candidates.add(c));
 
-  // Relative fallbacks only in dev (prod returns app shell HTML)
-  if (!IS_PROD) {
+  // Relative fallbacks only in dev OR if explicitly allowed in prod (temporary CORS workaround)
+  if (!IS_PROD || ALLOW_PROD_RELATIVE) {
     candidates.add(`/api/${logical}`);
     candidates.add(`/api/${logical}/`);
   }
