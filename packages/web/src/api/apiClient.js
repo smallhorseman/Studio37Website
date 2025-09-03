@@ -154,10 +154,42 @@ async function smartFetch(path, options = {}) {
           if (method === 'PUT' && res.status === 404 && /\/packages\/[^/]+$/.test(finalPath)) {
             if (API_DEBUG) console.warn('[apiClient] downgrade PUT->POST for slug not found', finalPath);
             // attempt create immediately (POST) then skip remaining candidates
-            try {
-              const createRes = await tryFetch(base, finalPath.replace(/\/([^/]+)$/, ''), {
-                ...options,
-                method: 'POST'
-              });
-              if (createRes?.ok) {
-                if
+                        try {
+                          const createRes = await tryFetch(base, finalPath.replace(/\/([^/]+)$/, ''), {
+                            ...options,
+                            method: 'POST'
+                          });
+                          if (createRes?.ok) {
+                            return createRes;
+                          }
+                        } catch (e) {
+                          if (API_DEBUG) console.warn('[apiClient] downgrade create via POST failed', e);
+                          lastError = e;
+                        }
+                      }
+                      // 404 -> try next candidate
+                      if (res.status === 404) {
+                        lastError = res;
+                        continue;
+                      }
+                      // Other non-OK -> record and try next base/candidate
+                      lastError = res;
+                      continue;
+                    }
+            
+                    // Success path
+                    return res;
+            
+                  } catch (err) {
+                    lastError = err;
+                    if (API_DEBUG) console.warn('[apiClient] fetch error', { base, path: finalPath, err });
+                    continue;
+                  }
+                }
+              }
+            
+              if (lastError) throw lastError;
+              throw new Error('smartFetch: request failed without explicit error');
+            }
+            
+            export { smartFetch };

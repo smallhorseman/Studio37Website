@@ -17,6 +17,8 @@ function genId(prefix, col) {
 }
 /* === END helpers === */
 
+const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
+
 export default function ContentManagerPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -188,6 +190,70 @@ export default function ContentManagerPage() {
       return next;
     });
 
+  // ADD helper (place before onSave)
+  const attemptRemoteSave = useCallback(async ({
+    resourcePath,
+    payload,
+    isNew,
+    token
+  }) => {
+    const headers = {
+      'Content-Type':'application/json',
+      Accept:'application/json',
+      ...(token ? { Authorization:`Bearer ${token}` } : {})
+    };
+    // If new: POST only
+    if (isNew) {
+      try {
+        const res = await fetch(resourcePath, {
+          method:'POST',
+          headers,
+          credentials:'include',
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`POST ${res.status}`);
+        const ct = (res.headers.get('content-type')||'').toLowerCase();
+        if (!ct.includes('json')) throw new Error('POST non-json');
+        return { ok:true, data: await res.json(), created:true };
+      } catch (e) {
+        if (API_DEBUG) console.warn('[CMS] POST failed (will stay local)', e);
+        return { ok:false };
+      }
+    }
+    // Update path (PUT first)
+    try {
+      const res = await fetch(`${resourcePath}/${payload.id}`, {
+        method:'PUT',
+        headers,
+        credentials:'include',
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        // Fallback: slug/id not found -> try create
+        if ([400,404].includes(res.status)) {
+          if (API_DEBUG) console.warn('[CMS] PUT fallback to POST', payload.id);
+          const createRes = await fetch(resourcePath, {
+            method:'POST',
+            headers,
+            credentials:'include',
+            body: JSON.stringify(payload)
+          });
+            if (!createRes.ok) throw new Error(`POST-after-PUT ${createRes.status}`);
+            const ct2 = (createRes.headers.get('content-type')||'').toLowerCase();
+            if (!ct2.includes('json')) throw new Error('POST-after-PUT non-json');
+            return { ok:true, data: await createRes.json(), created:true, replaced:true };
+        }
+        throw new Error(`PUT ${res.status}`);
+      }
+      const ct = (res.headers.get('content-type')||'').toLowerCase();
+      if (!ct.includes('json')) throw new Error('PUT non-json');
+      return { ok:true, data: await res.json(), created:false };
+    } catch (e) {
+      if (API_DEBUG) console.warn('[CMS] update failed', e);
+      return { ok:false };
+    }
+  }, []);
+
   // Ensure onSave uses markUnsynced & upsertLocal (patch existing version)
   // Find existing onSave and replace its core remote logic with:
   const onSave = async () => {
@@ -212,30 +278,24 @@ export default function ContentManagerPage() {
       payload.excerpt = payload.description || payload.excerpt || '';
     }
 
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
     let saved = null;
     let remoteOk = false;
+
     try {
-      const method = isNew ? 'POST' : 'PUT';
-      const url = isNew ? resourcePath : `${resourcePath}/${editing.id}`;
-      const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type':'application/json',
-          Accept:'application/json',
-          ...(token ? { Authorization:`Bearer ${token}` } : {})
-        },
-        credentials:'include',
-        body: JSON.stringify(payload)
+      const { ok, data } = await attemptRemoteSave({
+        resourcePath,
+        payload,
+        isNew,
+        token
       });
-      if (res.ok) {
-        const ct = (res.headers.get('content-type')||'').toLowerCase();
-        if (ct.includes('json')) {
-          saved = { ...payload, ...(await res.json()) };
-          remoteOk = true;
-        }
+      if (ok && data && typeof data === 'object') {
+        saved = { ...payload, ...data, _unsynced: undefined };
+        if (!saved.id) saved.id = payload.id; // ensure id
+        remoteOk = true;
+      } else {
+        saved = markUnsynced(payload);
       }
-      if (!remoteOk) throw new Error();
     } catch {
       saved = markUnsynced(payload);
     } finally {
@@ -257,18 +317,38 @@ export default function ContentManagerPage() {
   };
 
   const onDelete = async (post) => {
-    if (!window.confirm('Delete this post?')) return;
-    const pid = (post && typeof post.id === 'string') ? post.id : null;
+    if (!post) return;
+    if (!window.confirm('Delete this item?')) return;
+    const pid = typeof post.id === 'string' ? post.id : null;
+    const resourcePath =
+      collection === 'posts' ? '/api/cms/posts' :
+      collection === 'packages' ? '/api/packages' :
+      '/api/projects';
+
     let remoteOk = false;
     if (pid && !pid.startsWith('local-')) {
       try {
-        await tryApi('DELETE', `/api/cms/posts/${pid}`);
-        remoteOk = true;
-      } catch { /* offline */ }
+        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+        const res = await fetch(`${resourcePath}/${pid}`, {
+          method:'DELETE',
+          headers: {
+            Accept:'application/json',
+            ...(token ? { Authorization:`Bearer ${token}` } : {})
+          },
+          credentials:'include'
+        });
+        if (res.ok || res.status === 404) remoteOk = true; // treat 404 as gone
+      } catch (e) {
+        if (API_DEBUG) console.warn('[CMS] delete failed (offline?)', e);
+      }
     }
     if (pid) deleteLocal(pid);
     setPosts(ps => ps.filter(p => p.id !== pid));
     if (editing && editing.id === pid) setEditing(null);
+    if (!remoteOk && pid && !pid.startsWith('local-')) {
+      setApiError('Remote delete failed – removed locally.');
+      setTimeout(()=>setApiError(null), 4000);
+    }
   };
 
   // UPDATE filtered to include name/description for other collections
