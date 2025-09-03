@@ -6,30 +6,30 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ApiFetchFallback from './components/ApiFetchFallback';
 import './App.css';
-import { lazyWithRetry, withBuildTag, installChunkErrorReload } from '@/utils/lazy';
+import { lazyWithRetry, installChunkErrorReload } from '@/utils/lazy';
 
 // Install global chunk failure reload (once)
 installChunkErrorReload();
 
 // Replace previous React.lazy(...) calls with retry-enabled versions
-// Pages (lazy)
-const HomePage = lazyWithRetry(() => import(withBuildTag('./pages/HomePage')));
-const ServicesPage = lazyWithRetry(() => import(withBuildTag('./pages/ServicesPage')));
-const PackagesPage = lazyWithRetry(() => import(withBuildTag('./pages/PackagesPage')));
-const PortfolioPage = lazyWithRetry(() => import(withBuildTag('./pages/PortfolioPage')));
-const BlogPage = lazyWithRetry(() => import(withBuildTag('./pages/BlogPage')));
-const AboutPage = lazyWithRetry(() => import(withBuildTag('./pages/AboutPage')));
-const AdminPage = lazyWithRetry(() => import(withBuildTag('./pages/AdminPage')));
-const ToolsPage = lazyWithRetry(() => import(withBuildTag('./pages/ToolsPage')));
-const BlogPostPage = lazyWithRetry(() => import(withBuildTag('./pages/BlogPostPage')));
-const ContactPage = lazyWithRetry(() => import(withBuildTag('./pages/ContactPage')));
-const LoginPage = lazyWithRetry(() => import(withBuildTag('./pages/LoginPage')));
-const DashboardPage = lazyWithRetry(() => import(withBuildTag('./pages/DashboardPage')));
-const CRMPage = lazyWithRetry(() => import(withBuildTag('./pages/CRMPage')));
-const ProjectsPage = lazyWithRetry(() => import(withBuildTag('./pages/ProjectsPage')));
-const ContentManagerPage = lazyWithRetry(() => import(withBuildTag('./pages/ContentManagerPage')));
-const AdminUpdatePage = lazyWithRetry(() => import(withBuildTag('./pages/AdminUpdatePage')));
-const TodoPage = lazyWithRetry(() => import(withBuildTag('./pages/TodoPage')));
+// Pages (lazy) – reverted to static specifiers (no query params)
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
+const ServicesPage = lazyWithRetry(() => import('./pages/ServicesPage'));
+const PackagesPage = lazyWithRetry(() => import('./pages/PackagesPage'));
+const PortfolioPage = lazyWithRetry(() => import('./pages/PortfolioPage'));
+const BlogPage = lazyWithRetry(() => import('./pages/BlogPage'));
+const AboutPage = lazyWithRetry(() => import('./pages/AboutPage'));
+const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'));
+const ToolsPage = lazyWithRetry(() => import('./pages/ToolsPage'));
+const BlogPostPage = lazyWithRetry(() => import('./pages/BlogPostPage'));
+const ContactPage = lazyWithRetry(() => import('./pages/ContactPage'));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
+const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage'));
+const CRMPage = lazyWithRetry(() => import('./pages/CRMPage'));
+const ProjectsPage = lazyWithRetry(() => import('./pages/ProjectsPage'));
+const ContentManagerPage = lazyWithRetry(() => import('./pages/ContentManagerPage'));
+const AdminUpdatePage = lazyWithRetry(() => import('./pages/AdminUpdatePage'));
+const TodoPage = lazyWithRetry(() => import('./pages/TodoPage'));
 
 // Minimal ResourceSection (re‑introduced for pages importing from '@/App')
 export const ResourceSection = ({
