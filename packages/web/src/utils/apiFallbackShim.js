@@ -14,6 +14,7 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
   try { apiHost = new URL(API_BASE).host; } catch { /* ignore */ }
 
   const RESOURCE_ROOTS = [
+    // NOTE: In production /api/* should be forwarded by Netlify _redirects (see /public/_redirects).
     { re: /\/packages\/?(\?|$)/, rel: '/api/packages' },
     { re: /\/services\/?(\?|$)/, rel: '/api/services' },
     { re: /\/projects\/?(\?|$)/, rel: '/api/projects' },

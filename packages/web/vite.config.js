@@ -53,6 +53,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+        // Dev-only proxy; production uses /public/_redirects for /api/*
         target: process.env.VITE_API_PROXY_TARGET || 'https://sem37-api.onrender.com',
         changeOrigin: true,
         secure: false,

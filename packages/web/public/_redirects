@@ -1,3 +1,2 @@
 /api/* https://sem37-api.onrender.com/:splat 200
-# SPA fallback (keep last)
 /* /index.html 200
