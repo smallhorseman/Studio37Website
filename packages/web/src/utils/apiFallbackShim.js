@@ -1,4 +1,5 @@
 import { API_BASE } from '@config/env';
+import { getSeedForPath } from '@/data/seedContent';
 
 const ENABLED = import.meta.env.VITE_ENABLE_API_SHIM === '1';
 const DEBUG = !!import.meta.env.VITE_API_SHIM_DEBUG;
@@ -24,7 +25,6 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     const urlStr = typeof input === 'string' ? input : input?.url || '';
     const match = RESOURCE_ROOTS.find(r => r.re.test(urlStr));
     if (!match) return originalFetch(input, init);
-
     const isApiHost = (() => {
       try {
         const u = new URL(urlStr, window.location.href);
@@ -41,8 +41,17 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
         const rel = toRelative(urlStr, match.rel);
         if (rel) {
           if (DEBUG) console.warn('[apiShim] retry', { from: urlStr, to: rel, status: res.status });
-          return originalFetch(rel, init);
+          const proxyRes = await originalFetch(rel, init).catch(() => null);
+          if (proxyRes && proxyRes.ok) return proxyRes;
+          const seed = safeSeed(urlStr);
+          if (seed) return seed;
+          return proxyRes || res;
         }
+      }
+      // If API returns HTML (CORS or app shell) but status ok => seed fallback
+      if (res.ok && (ct.includes('text/html'))) {
+        const seed = safeSeed(urlStr);
+        if (seed) return seed;
       }
       return res;
     } catch (e) {
@@ -50,9 +59,15 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
       if (rel) {
         try {
           if (DEBUG) console.warn('[apiShim] network error, retry', { from: urlStr, to: rel, error: e?.message });
-          return await originalFetch(rel, init);
+          const proxyRes = await originalFetch(rel, init).catch(() => null);
+          if (proxyRes && proxyRes.ok) return proxyRes;
+          const seed = safeSeed(urlStr);
+          if (seed) return seed;
+          return proxyRes || Promise.reject(e);
         } catch { /* ignore */ }
       }
+      const seed = safeSeed(urlStr);
+      if (seed) return seed;
       throw e;
     }
   };
@@ -61,6 +76,22 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     try {
       const u = new URL(full, window.location.href);
       return relBase + u.search;
+    } catch {
+      return null;
+    }
+  }
+
+  function safeSeed(fullUrl) {
+    try {
+      const u = new URL(fullUrl, window.location.href);
+      const data = getSeedForPath(u.pathname);
+      if (!data) return null;
+      if (DEBUG) console.warn('[apiShim] serving seed data for', u.pathname);
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      return new Response(blob, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'X-Seed-Data': '1' }
+      });
     } catch {
       return null;
     }
