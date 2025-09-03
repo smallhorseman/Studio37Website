@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { API_BASE } from '@/config/env';
 import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from '../components/PolaroidImage';
@@ -18,16 +18,17 @@ export default function PortfolioPage() {
   // Added: optional explicit override via env (VITE_PROJECTS_ENDPOINT)
   const PROJECTS_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim();
 
-  // Rebuilt candidate list (absolute first, then relative proxy versions)
-  const endpointCandidates = Array.from(new Set([
+  // NEW: memoize candidate list so it doesn't change every render
+  const endpointCandidates = useMemo(() => Array.from(new Set([
     ...(PROJECTS_OVERRIDE ? [PROJECTS_OVERRIDE] : []),
     `${API_BASE}/api/projects`,
     `${API_BASE}/projects`,
     `${API_BASE}/projects/`,
-    // Fallback to relative (will go through dev/proxy if configured)
     '/api/projects',
     '/api/projects/'
-  ]));
+  ])), [PROJECTS_OVERRIDE]);
+
+  const hasFetchedRef = useRef(false); // NEW guard for initial fetch (StrictMode/dev)
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -144,6 +145,8 @@ export default function PortfolioPage() {
   }, [endpointCandidates]);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;       // NEW guard
+    hasFetchedRef.current = true;
     fetchProjects();
   }, [fetchProjects]);
 
