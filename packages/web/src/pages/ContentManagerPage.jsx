@@ -1,68 +1,31 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent'; // ADD packages/projects seeds
 import { FadeIn } from '../components/FadeIn';
 import { useLocation } from 'react-router-dom'; // NEW
 
+// Ensure we have seeds for all collections
+import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent';
+
 const LS_KEY_BASE = 'cms_collection_';
 
-// REPLACE load/save helpers with collection‑aware versions
-function loadLocalEditsFor(collection) {
-  const key = `${LS_KEY_BASE}${collection}`;
-  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
-}
-function saveLocalEditsFor(collection, posts) {
-  const key = `${LS_KEY_BASE}${collection}`;
-  try { localStorage.setItem(key, JSON.stringify(posts)); } catch { /* ignore */ }
-}
-// Update generic helpers to call collection versions
-// (keep old names for internal reuse by passing active collection)
-function loadLocalEdits() { return []; }
-function saveLocalEdits() { /* no-op (collection specific now) */ }
-
-async function tryApi(method, path, body) {
-  try {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // NEW
-    const res = await fetch(path, {
-      method,
-      headers: {
-        'Content-Type':'application/json',
-        'Accept':'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}) // NEW
-      },
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const ct = res.headers.get('content-type') || '';
-    if (/json/i.test(ct)) return await res.json();
-    return null;
-  } catch (e) {
-    throw e;
-  }
+function storageKey(collection) {
+  return `${LS_KEY_BASE}${collection}`;
 }
 
-// NEW helpers for unsynced drafts
-function getUnsynced(posts = loadLocalEdits()) {
-  return posts.filter(p =>
+function loadLocalRaw(collection) {
+  try { return JSON.parse(localStorage.getItem(storageKey(collection))) || []; } catch { return []; }
+}
+
+function saveLocalRaw(collection, items) {
+  try { localStorage.setItem(storageKey(collection), JSON.stringify(items)); } catch { /* ignore */ }
+}
+
+// Unsynced detection helper (kept; now calls loadLocalRaw directly)
+function getUnsyncedFor(collection) {
+  return loadLocalRaw(collection).filter(p =>
     p &&
     (p._unsynced ||
      (typeof p.id === 'string' && p.id.startsWith('local-')))
   );
-}
-function markUnsynced(post) {
-  return { ...post, _unsynced: true };
-}
-function replaceLocal(oldId, newPost) {
-  const all = loadLocalEdits();
-  const out = [];
-  for (const p of all) {
-    if (p.id === oldId) continue;
-    if (newPost.slug && p.slug === newPost.slug && p.id !== newPost.id) continue;
-    out.push(p);
-  }
-  out.push(newPost);
-  saveLocalEdits(out);
-  return out;
 }
 
 export default function ContentManagerPage() {
@@ -98,17 +61,22 @@ export default function ContentManagerPage() {
     });
   }, []);
 
-  // UPDATE mergedPosts to branch by collection
+  // UPDATED mergedPosts to use new helpers (removes require & old loadLocal)
   const mergedPosts = useCallback(() => {
     const local = loadLocal();
     const map = new Map();
-    if (collection === 'posts') {
-      [...seedBlogPosts, ...local].forEach(p => p && map.set(p.id, p));
-    } else if (collection === 'packages') {
-      [...seedPackages, ...local].forEach(p => p && map.set(p.id, p));
-    } else if (collection === 'projects') {
-      [...seedProjects, ...local].forEach(p => p && map.set(p.id, p));
-    }
+    const seedArr = collection === 'posts'
+      ? seedBlogPosts
+      : collection === 'packages'
+        ? seedPackages
+        : seedProjects;
+
+    [...seedArr, ...local].forEach(p => {
+      if (!p) return;
+      const id = (p.id && String(p.id).trim()) || `seed-${collection}-${Math.random().toString(36).slice(2)}`;
+      map.set(id, { ...p, id });
+    });
+
     return Array.from(map.values()).sort(
       (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
     );
@@ -204,25 +172,41 @@ export default function ContentManagerPage() {
       return next;
     });
 
-  // UPDATE upsert/delete to use collection storage
-  const upsertLocal = (item) => {
-    const local = loadLocal();
-    const idx = local.findIndex(p => p.id === item.id);
-    if (idx >= 0) local[idx] = item; else local.push(item);
-    saveLocal(local);
-  };
-  const deleteLocal = (id) => {
-    const local = loadLocal().filter(p => p.id !== id);
-    saveLocal(local);
-  };
+  // UPDATE upsert / delete to use saveLocal
+  const upsertLocal = useCallback((item) => {
+    const all = loadLocal();
+    const idx = all.findIndex(p => p.id === item.id);
+    if (idx >= 0) all[idx] = item; else all.push(item);
+    saveLocal(all);
+  }, [loadLocal, saveLocal]);
+
+  const deleteLocal = useCallback((id) => {
+    saveLocal(loadLocal().filter(p => p.id !== id));
+  }, [loadLocal, saveLocal]);
+
+  // UPDATE unsynced replaceLocal logic (used by sync)
+  const replaceLocal = useCallback((oldId, newPost) => {
+    let all = loadLocal();
+    all = all.filter(p => p.id !== oldId && !(newPost.slug && p.slug === newPost.slug && p.id !== newPost.id));
+    all.push(newPost);
+    saveLocal(all);
+    return all;
+  }, [loadLocal, saveLocal]);
+
+  // NEW helpers for unsynced drafts
+  function markUnsynced(post) {
+    return { ...post, _unsynced: true };
+  }
+
+  const getUnsynced = useCallback(() => getUnsyncedFor(collection), [collection]);
 
   // NEW: attempt to push unsynced drafts
   const attemptSyncAll = useCallback(async () => {
     if (syncing) return;
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
     if (!token) return; // cannot sync if not authenticated
-    let locals = loadLocalEdits();
-    const unsynced = getUnsynced(locals);
+    let locals = loadLocal();
+    const unsynced = getUnsynced();
     if (!unsynced.length) {
       setSyncMsg('No drafts to sync.');
       setTimeout(()=>setSyncMsg(null), 2500);
@@ -254,7 +238,7 @@ export default function ContentManagerPage() {
         // keep unsynced; continue
       }
     }
-    saveLocalEdits(locals);
+    saveLocal(locals);
     // Merge into current view
     setPosts(ps => {
       const map = new Map();
