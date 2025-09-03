@@ -28,6 +28,17 @@ function LoginPageInner() {
     }
   }, [isAuthenticated, nextPath, navigate]);
 
+  useEffect(() => {
+    let tag = document.querySelector('meta[name="robots"][data-login]');
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.name = 'robots';
+      tag.setAttribute('data-login','1');
+      document.head.appendChild(tag);
+    }
+    tag.content = 'noindex,nofollow';
+  }, []);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     const result = await login(form.username, form.password);

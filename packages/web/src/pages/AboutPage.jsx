@@ -9,10 +9,10 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10 items-center">
           <FadeIn>
             <div>
-              <h2 className="text-base font-semibold leading-7 text-warm-tan tracking-widest">OUR STORY</h2>
-              <p className="mt-2 text-3xl font-serif font-bold tracking-tight text-soft-charcoal sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-serif font-bold tracking-tight text-soft-charcoal sm:text-4xl">
                 More Than a Photo, It's a Feeling
-              </p>
+              </h1>
+              <p className="uppercase tracking-widest text-xs text-warm-tan mt-4">Our Story</p>
               <p className="mt-6 text-lg leading-8 text-gray-700">
                 Studio 37 was born from a passion for storytelling. We believe the best photographs are the ones that transport you back to a moment—the laughter, the joy, the quiet connection. Our approach combines the timeless, tangible feel of vintage film with the precision of modern digital photography.
               </p>
@@ -24,9 +24,13 @@ export default function AboutPage() {
           <div className="flex justify-center">
              <PolaroidImage
                 src="https://res.cloudinary.com/dmjxho2rl/image/upload/v1724213256/IMG_4278_1_v83qfs.jpg"
-                alt="Lead Photographer"
+                alt="Studio 37 lead photographer capturing a candid moment outdoors"
                 caption="Ponyboy, Lead Photographer"
                 rotation={2}
+                width={800}
+                height={1000}
+                decoding="async"
+                loading="eager"
              />
           </div>
         </div>

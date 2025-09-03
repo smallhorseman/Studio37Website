@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient.js';
 
 const AdminUpdatePage = () => {
@@ -8,6 +8,17 @@ const AdminUpdatePage = () => {
   const [position, setPosition] = useState('');
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let tag = document.querySelector('meta[name="robots"][data-internal]');
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.name = 'robots';
+      tag.setAttribute('data-internal','1');
+      document.head.appendChild(tag);
+    }
+    tag.content = 'noindex,nofollow';
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
