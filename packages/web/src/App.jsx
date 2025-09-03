@@ -20,6 +20,20 @@ if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
     { re: /\/cms\/posts\/?(\?|$)/, rel: '/api/cms/posts' },
   ];
 
+  // Build a relative proxy path from an absolute URL and the target rel root
+  function buildRelative(absUrl, relRoot) {
+    try {
+      const u = new URL(absUrl, window.location.href);
+      const segments = u.pathname.split('/').filter(Boolean);
+      // Drop the original leading resource root (e.g. 'packages')
+      segments.shift();
+      const tail = segments.join('/');
+      return relRoot + (tail ? '/' + tail : '') + u.search + u.hash;
+    } catch {
+      return null;
+    }
+  }
+
   window.fetch = async function patchedFetch(input, init) {
     const urlStr = typeof input === 'string' ? input : input?.url || '';
     if (!allowRelative) return originalFetch(input, init);
@@ -44,4 +58,22 @@ if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
       // Fallback if HTML shell OR 404 (likely missing endpoint / CORS)
       if ((!res.ok && looksHtml) || res.status === 404) {
         const rel = buildRelative(urlStr, match.rel);
-        if
+        if (rel) {
+          return await originalFetch(rel, init);
+        }
+      }
+      return res;
+    } catch (err) {
+      // Network/CORS failure: attempt direct relative fallback
+      const rel = buildRelative(urlStr, match.rel);
+      if (rel) {
+        try {
+          return await originalFetch(rel, init);
+        } catch {
+          // swallow and rethrow original
+        }
+      }
+      throw err;
+    }
+  };
+}
