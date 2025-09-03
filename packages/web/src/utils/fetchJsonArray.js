@@ -5,6 +5,9 @@ const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
 const looksLikeHtml = (txt = '') => HTML_SIGNATURE_RE.test(txt.slice(0, 500));
 const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
 const FORCE_REL = import.meta.env.VITE_FORCE_RELATIVE_API === '1' || import.meta.env.VITE_API_RELATIVE_ONLY === '1';
+// NEW: short-lived cache for repeated 401s (prevents console spam / network hammer)
+const RESULT_CACHE = new Map(); // logical -> { ts, status, result }
+const UNAUTH_TTL_MS = 4000;
 
 /**
  * Fetch an endpoint that should yield a JSON array (or {results: []}).
@@ -15,6 +18,15 @@ const inflight = new Map(); // logical -> Promise
 export async function fetchJsonArray(logical, opts = {}) {
   // IN-FLIGHT DE-DUPE
   if (inflight.has(logical)) return inflight.get(logical);
+
+  // NEW: serve cached public 401 (no token) result for a brief TTL to avoid repeated requests
+  {
+    const cached = RESULT_CACHE.get(logical);
+    if (cached && cached.status === 401 && (Date.now() - cached.ts) < UNAUTH_TTL_MS) {
+      return cached.result;
+    }
+  }
+
   const exec = (async () => {
     const { override, extraCandidates = [] } = opts;
     const attempts = [];
@@ -95,13 +107,19 @@ export async function fetchJsonArray(logical, opts = {}) {
 
         // EARLY EXIT ON 401 (avoid endpoint hammering)
         if (status === 401) {
-          classification = 'http_401';
-          attempts.push({ url, status, classification });
-          // Fire unauthorized event once (token likely invalid)
-          if (token && typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('auth:unauthorized'));
+          if (token) {
+            classification = 'http_401';
+            attempts.push({ url, status, classification });
+            if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:unauthorized'));
+            break;
+          } else {
+            // NEW: public 401 (user not logged in) -> treat as non-fatal empty (cached)
+            classification = 'http_401_public';
+            attempts.push({ url, status, classification });
+            const result = { data: [], error: null, attempts };
+            RESULT_CACHE.set(logical, { ts: Date.now(), status, result });
+            return result;
           }
-          break; // stop trying other variants
         }
 
         if (!res.ok) {

@@ -44,6 +44,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- NEW: replace failed placeholder images with inline SVG -->
+    <script>
+      (function () {
+        const FallbackSVG = 'data:image/svg+xml;utf8,' +
+          encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" style="background:#f3f4f6"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="16" fill="#9ca3af">Image unavailable</text></svg>');
+        document.addEventListener('error', function (e) {
+          const el = e.target;
+            if (el && el.tagName === 'IMG' && /placeholder\.com/i.test(el.src) && !el.dataset._fallbackApplied) {
+              el.dataset._fallbackApplied = '1';
+              el.src = FallbackSVG;
+          }
+        }, true);
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
