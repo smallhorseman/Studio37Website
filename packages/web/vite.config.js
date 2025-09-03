@@ -33,6 +33,7 @@ export default defineConfig({
       process.env.VITE_ENABLE_API_SHIM === undefined ? '1' : process.env.VITE_ENABLE_API_SHIM
     ),
     'import.meta.env.VITE_API_SHIM_DEBUG': JSON.stringify(process.env.VITE_API_SHIM_DEBUG || ''),
+    'import.meta.env.VITE_PROJECTS_ENDPOINT': JSON.stringify(process.env.VITE_PROJECTS_ENDPOINT || '')
   },
   esbuild: {
     jsx: 'automatic',

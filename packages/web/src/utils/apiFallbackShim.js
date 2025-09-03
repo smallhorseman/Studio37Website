@@ -25,16 +25,31 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     const urlStr = typeof input === 'string' ? input : input?.url || '';
     const match = RESOURCE_ROOTS.find(r => r.re.test(urlStr));
     if (!match) return originalFetch(input, init);
+
+    const urlObj = (() => { try { return new URL(urlStr, window.location.href); } catch { return null; } })();
+    // Treat as API-bound if it already targets API_BASE host OR it is a same-origin relative path (we will attempt proxy + seed)
     const isApiHost = (() => {
       try {
-        const u = new URL(urlStr, window.location.href);
-        return u.href.startsWith(API_BASE) || (apiHost && u.host === apiHost);
+        if (!urlObj) return false;
+        return urlObj.href.startsWith(API_BASE) ||
+          (apiHost && urlObj.host === apiHost) ||
+          (urlObj.origin === window.location.origin); // allow relative for rewrite
       } catch { return false; }
     })();
     if (!isApiHost) return originalFetch(input, init);
 
+    // If the original call was relative (same origin) and not already /api/, build a synthetic absolute to API_BASE for first attempt.
+    let firstTarget = input;
+    if (urlObj && urlObj.origin === window.location.origin && !/\/api\//.test(urlObj.pathname)) {
+      try {
+        const abs = new URL(match.rel + urlObj.search, API_BASE);
+        firstTarget = abs.toString();
+        if (DEBUG) console.warn('[apiShim] upgrading relative to absolute API', { from: urlStr, to: firstTarget });
+      } catch { /* ignore */ }
+    }
+
     try {
-      const res = await originalFetch(input, init);
+      const res = await originalFetch(firstTarget, init);
       const ct = res.headers.get('content-type') || '';
       const looksHtml = ct.includes('text/html');
       if ((!res.ok && looksHtml) || res.status === 404) {
