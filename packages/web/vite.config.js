@@ -28,7 +28,11 @@ export default defineConfig({
         : process.env.VITE_ALLOW_PROD_RELATIVE
     ),
     'import.meta.env.VITE_PACKAGES_ENDPOINT': JSON.stringify(process.env.VITE_PACKAGES_ENDPOINT || ''),
-    'import.meta.env.VITE_SERVICES_ENDPOINT': JSON.stringify(process.env.VITE_SERVICES_ENDPOINT || '') // added
+    'import.meta.env.VITE_SERVICES_ENDPOINT': JSON.stringify(process.env.VITE_SERVICES_ENDPOINT || ''), // added
+    'import.meta.env.VITE_ENABLE_API_SHIM': JSON.stringify(
+      process.env.VITE_ENABLE_API_SHIM === undefined ? '1' : process.env.VITE_ENABLE_API_SHIM
+    ),
+    'import.meta.env.VITE_API_SHIM_DEBUG': JSON.stringify(process.env.VITE_API_SHIM_DEBUG || ''),
   },
   esbuild: {
     jsx: 'automatic',
@@ -44,7 +48,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: OPTIONAL_EXTERNALS,
-    include: ['lodash']
   },
   server: {
     proxy: {

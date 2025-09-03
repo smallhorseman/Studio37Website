@@ -1,6 +1,9 @@
 import { API_BASE } from '@config/env';
 
-if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
+const ENABLED = import.meta.env.VITE_ENABLE_API_SHIM === '1';
+const DEBUG = !!import.meta.env.VITE_API_SHIM_DEBUG;
+
+if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
   window.__api_fallback_shim_installed__ = true;
   const originalFetch = window.fetch.bind(window);
   const allowRelative =
@@ -36,13 +39,19 @@ if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
       const looksHtml = ct.includes('text/html');
       if ((!res.ok && looksHtml) || res.status === 404) {
         const rel = toRelative(urlStr, match.rel);
-        if (rel) return originalFetch(rel, init);
+        if (rel) {
+          if (DEBUG) console.warn('[apiShim] retry', { from: urlStr, to: rel, status: res.status });
+          return originalFetch(rel, init);
+        }
       }
       return res;
     } catch (e) {
       const rel = toRelative(urlStr, match.rel);
       if (rel) {
-        try { return await originalFetch(rel, init); } catch { /* ignore */ }
+        try {
+          if (DEBUG) console.warn('[apiShim] network error, retry', { from: urlStr, to: rel, error: e?.message });
+          return await originalFetch(rel, init);
+        } catch { /* ignore */ }
       }
       throw e;
     }

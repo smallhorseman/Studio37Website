@@ -1,11 +1,15 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import './App.css';
-import './utils/apiFallbackShim'; // new: registers fetch fallback on import
+
+// Conditional shim import only if enabled flag.
+if (import.meta.env.VITE_ENABLE_API_SHIM === '1') {
+  await import('./utils/apiFallbackShim');
+}
 
 // Lightweight fallback (was causing ReferenceError when missing)
 const LoadingFallback = () => (
@@ -14,8 +18,16 @@ const LoadingFallback = () => (
   </div>
 );
 
-// ...existing ResourceSection, Page, Layout, Protected, ToolsLayout (unchanged except Fallback removal)...
 // ...existing ResourceSection code...
+export const ResourceSection = React.memo(function ResourceSection({
+   title,
+   hookResult,
+   renderItem,
+   emptyMessage = 'No records found.'
+}) {
+  // ...existing code...
+});
+
 // ...existing Page, Layout, Protected, ToolsLayout code...
 
 function App() {
@@ -24,9 +36,7 @@ function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
-          <Suspense fallback={<LoadingFallback />}>
-            {isToolsSite ? <ToolsLayout /> : <Layout />}
-          </Suspense>
+          {isToolsSite ? <ToolsLayout /> : <Layout />}
         </Router>
       </ErrorBoundary>
     </AuthProvider>
