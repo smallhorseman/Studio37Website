@@ -76,6 +76,8 @@ export { api };
 
 // --- SMART FETCH LAYER (fetch-based) ---
 
+const API_DEBUG = import.meta?.env?.VITE_API_DEBUG === '1';
+
 function prefixIfNeeded(path) {
   if (path.startsWith('/api/')) return path;
   if (KNOWN_RESOURCE_PREFIXES.some(p => path.startsWith(p))) {
@@ -84,110 +86,78 @@ function prefixIfNeeded(path) {
   return path;
 }
 
-async function tryFetch(base, path, options) {
-  const url = base + path;
-  return fetch(url, options);
+// NEW: generate fallback candidate paths for a logical resource request
+function buildPathCandidates(originalPath) {
+  const out = [];
+  const clean = originalPath.startsWith('/') ? originalPath : '/' + originalPath;
+
+  // First: original as‑is
+  out.push(clean);
+
+  // Ensure /api prefix variant
+  if (!clean.startsWith('/api/')) out.push('/api' + clean);
+
+  // If already /api/<resource> add cms variant
+  const m = clean.match(/^\/api\/([^/]+)(\/.*)?$/);
+  if (m) {
+    const resource = m[1];
+    // Add /api/cms/<resource> only for known content types
+    if (['packages','projects','services'].includes(resource)) {
+      out.push(`/api/cms/${resource}`);
+    }
+  } else {
+    // If not /api/ maybe it is /packages => add /api/packages
+    const seg = clean.split('/')[1];
+    if (['packages','projects','services'].includes(seg)) {
+      out.push(`/api/${seg}`);
+      out.push(`/api/cms/${seg}`);
+    }
+  }
+
+  // De‑duplicate while keeping order
+  return Array.from(new Set(out));
 }
 
-function shouldProxyFirst() {
-  // Proxy first when tools subdomain, forced, or remote is cross-origin
-  return runningOnTools || forceProxy || remoteIsCross;
-}
-
+// Enhanced smartFetch to try fallback candidates if 404
 async function smartFetch(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
-  // Always normalize path for proxy attempt
-  const normalized = prefixIfNeeded(path.startsWith('/') ? path : '/' + path);
-
-  const sequence = shouldProxyFirst()
+  const primaryNormalized = prefixIfNeeded(path.startsWith('/') ? path : '/' + path);
+  const baseOrder = shouldProxyFirst()
     ? [PROXY_API_BASE, REMOTE_API_BASE]
     : [REMOTE_API_BASE, PROXY_API_BASE];
 
+  // Build path candidates (only used after a 404 on first pass)
+  const pathCandidates = buildPathCandidates(primaryNormalized);
+
   let lastError;
-  for (const base of sequence) {
-    const isProxy = base === PROXY_API_BASE;
-    const finalPath = isProxy ? normalized : path; // only prefix for proxy leg
-    try {
-      const res = await tryFetch(base, finalPath, {
-        ...options,
-        method,
-        credentials: options.credentials || 'include'
-      });
-      if (!res) throw new Error('No response object');
-      if (!res.ok) {
-        // Continue to next strategy on 404 / CORS-like remote
-        if (!isProxy && remoteIsCross && (res.status === 404 || res.status === 403)) {
-          lastError = new Error(`Remote ${res.status}`);
-          continue;
-        }
-        // Return non-OK to caller (proxy errors surfaced)
-        return res;
-      }
-      if (isProxy) forceProxy = true; // lock future ordering
-      return res;
-    } catch (e) {
-      lastError = e;
-      continue;
-    }
-  }
-  throw lastError || new Error('API fetch failed');
-}
+  for (const base of baseOrder) {
+    // For each base cycle through candidates (first candidate list may include original)
+    for (const candidate of pathCandidates) {
+      // For remote leg we keep candidate as is (remote may accept raw or prefixed)
+      // For proxy leg ensure api-prefixed candidate
+      const isProxy = base === PROXY_API_BASE;
+      const finalPath = isProxy ? prefixIfNeeded(candidate) : candidate;
 
-export const apiClient = {
-  async get(path, init = {}) {
-    const res = await smartFetch(path, { ...init, method: 'GET' });
-    return res;
-  },
-  async post(path, body, init = {}) {
-    const res = await smartFetch(path, {
-      ...init,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
-      body: JSON.stringify(body)
-    });
-    return res;
-  }
-};
+      try {
+        const res = await tryFetch(base, finalPath, {
+          ...options,
+            method,
+            credentials: options.credentials || 'include'
+        });
 
-// Helper to parse JSON safely
-export async function parseJson(res) {
-  const text = await res.text();
-  try { return JSON.parse(text); } catch { return text; }
-}
+        if (!res) throw new Error('No response object');
 
-export function enableProxyMode() {
-  forceProxy = true;
-  try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
-  try { api.defaults.baseURL = '/api'; } catch { /* ignore */ }
-}
-
-// NEW: hard force everything through proxy immediately (can be called after first successful proxy call)
-export function forceProxyAll() {
-  enableProxyMode();
-}
-
-// getJson helper updated to reuse prefix logic
-export async function getJson(path) {
-  const candidates = shouldProxyFirst()
-    ? [prefixIfNeeded(path), path]
-    : [path, prefixIfNeeded(path)];
-  let lastErr;
-  for (const p of candidates) {
-    try {
-      const res = await fetch(p, {
-        credentials: 'include',
-        headers: { Accept: 'application/json' }
-      });
-      const ct = (res.headers.get('content-type') || '').toLowerCase();
-      if (!res.ok || !ct.includes('json')) {
-        lastErr = new Error(`Bad response ${res.status} ${p}`);
-        continue;
-      }
-      return await res.json();
-    } catch (e) {
-      lastErr = e;
-      continue;
-    }
-  }
-  throw lastErr || new Error('Failed getJson');
-}
+        // If we hit a 404 on first candidate and there are alternates, loop continues
+        if (!res.ok) {
+          if (API_DEBUG) console.warn('[apiClient] non-OK', { base, path: finalPath, status: res.status });
+          // Special: PUT with slug that 404s -> degrade to POST attempt (creation) once
+          if (method === 'PUT' && res.status === 404 && /\/packages\/[^/]+$/.test(finalPath)) {
+            if (API_DEBUG) console.warn('[apiClient] downgrade PUT->POST for slug not found', finalPath);
+            // attempt create immediately (POST) then skip remaining candidates
+            try {
+              const createRes = await tryFetch(base, finalPath.replace(/\/([^/]+)$/, ''), {
+                ...options,
+                method: 'POST'
+              });
+              if (createRes?.ok) {
+                if
