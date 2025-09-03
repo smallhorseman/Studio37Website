@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ApiFetchFallback from './components/ApiFetchFallback';
 import './App.css';
 
 // Static (eager) page imports to avoid dynamic chunk fetch failures
@@ -186,7 +185,6 @@ export default function App() {
     <AuthProvider>
       <ErrorBoundary>
         <Router>
-          <ApiFetchFallback />
           <Suspense fallback={<Fallback />}>
             {isToolsSite ? <ToolsLayout /> : <Layout />}
           </Suspense>

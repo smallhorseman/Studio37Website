@@ -29,4 +29,9 @@ export const FORCE_API_PROXY =
   (import.meta.env.VITE_FORCE_API_PROXY === '1' ||
    import.meta.env.VITE_FORCE_API_PROXY === 'true');
 
+export const API_HOST = (() => {
+  try { return new URL(API_BASE).host; } catch { return ''; }
+})();
+export const IS_PROD = import.meta.env.PROD;
+// Optional explicit overrides
 export const PROJECTS_ENDPOINT_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim() || '';

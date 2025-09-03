@@ -17,10 +17,8 @@ export default function ProjectsPage() {
         });
         attemptsRef.current = attempts;
         if (fetchErr && data.length === 0) {
-            setError(
-                fetchErr + ' Attempts: ' +
-                attempts.map(a => `[${a.classification}@${a.url}]`).join(' ')
-            );
+            setError(fetchErr + ' Attempts: ' +
+                attempts.map(a => `[${a.classification}@${a.url}]`).join(' '));
         }
         setProjects(Array.isArray(data) ? data : []);
         setLoading(false);

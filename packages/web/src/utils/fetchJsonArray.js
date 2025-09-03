@@ -1,4 +1,8 @@
-import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE } from '@/config/env';
+import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD } from '@/config/env';
+
+const HTML_SIGNATURE_RE = /<!doctype|<html/i;
+const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
+const looksLikeHtml = (txt='') => HTML_SIGNATURE_RE.test(txt.slice(0,500));
 
 /**
  * Tries to fetch JSON array data from a path (with or without leading /api).
@@ -8,57 +12,34 @@ export async function fetchJsonArray(logical, opts = {}) {
   const { override, extraCandidates = [] } = opts;
   const attempts = [];
 
-  const buildCandidates = () => {
-    const list = new Set();
+  const base = API_BASE.replace(/\/+$/, '');
+  const candidates = new Set();
 
-    // 1. Explicit override (env or caller)
-    if (override) list.add(override);
-    // 2. Specific env override for projects if logical matches
-    if (!override && logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE) {
-      list.add(PROJECTS_ENDPOINT_OVERRIDE);
-    }
+  // Explicit override(s)
+  if (override) candidates.add(override);
+  if (!override && logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE)
+    candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
 
-    const base = API_BASE.replace(/\/+$/, '');
+  // Core absolute candidates
+  const core = [
+    `${base}/api/${logical}`,
+    `${base}/api/${logical}/`,
+    `${base}/${logical}`,
+    `${base}/${logical}/`,
+    `${base}/api/v1/${logical}`,
+    `${base}/v1/${logical}`
+  ];
+  core.forEach(c => candidates.add(c));
 
-    // 3. Common plural / singular / versioned candidates
-    const bases = [base];
-    const roots = [
-      logical,
-      `${logical}/`,
-      `${logical}s`,
-      `${logical}s/`
-    ];
-
-    const versioned = [
-      `api/${logical}`,
-      `api/${logical}/`,
-      `api/${logical}s`,
-      `api/${logical}s/`,
-      `api/v1/${logical}`,
-      `api/v1/${logical}/`,
-      `v1/${logical}`,
-      `v1/${logical}/`
-    ];
-
-    [...roots, ...versioned].forEach(p => bases.forEach(b => list.add(`${b}/${p}`)));
-
-    // Allow consumer provided extras
-    extraCandidates.forEach(c => {
-      if (c.startsWith('http')) list.add(c);
-      else list.add(`${base}/${c.replace(/^\/+/, '')}`);
-    });
-
-    return Array.from(list);
-  };
-
-  const candidates = buildCandidates();
-
-  const HTML_SIGNATURE_RE = /<!doctype|<html/i;
-  const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
-
-  function looksLikeHtml(txt = '') {
-    return HTML_SIGNATURE_RE.test(txt.slice(0, 500));
+  // Only add relative fallbacks in DEV (Netlify prod has no proxy; would return HTML)
+  if (!IS_PROD) {
+    candidates.add(`/api/${logical}`);
+    candidates.add(`/api/${logical}/`);
   }
+
+  extraCandidates.forEach(c => {
+    if (c) candidates.add(/^https?:\/\//i.test(c) ? c : `${base}/${c.replace(/^\/+/,'')}`);
+  });
 
   for (const url of candidates) {
     let classification = 'unknown';
@@ -70,9 +51,8 @@ export async function fetchJsonArray(logical, opts = {}) {
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
-
       const status = res.status;
-      const ctype = (res.headers.get('content-type') || '').toLowerCase();
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
 
       if (!res.ok) {
         classification = `http_${status}`;
@@ -81,32 +61,52 @@ export async function fetchJsonArray(logical, opts = {}) {
       }
 
       const text = await res.text();
-
-      if (ctype.includes('text/html') || looksLikeHtml(text)) {
+      if (ct.includes('text/html') || looksLikeHtml(text)) {
         classification = APP_SHELL_HINT_RE.test(text) ? 'html_app_shell' : 'html';
         attempts.push({ url, status, classification });
         continue;
       }
 
       let payload;
-      try {
-        payload = JSON.parse(text);
-      } catch {
+      try { payload = JSON.parse(text); }
+      catch {
         classification = 'json_parse_error';
         attempts.push({ url, status, classification });
         continue;
       }
 
-      if (Array.isArray(payload)) {
+      if (Array.isArray(payload))
         return { data: payload, error: null, attempts };
-      }
-      if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
+
+      if (payload && typeof payload === 'object' && Array.isArray(payload.results))
         return { data: payload.results, error: null, attempts };
-      }
 
       classification = 'unexpected_structure';
       attempts.push({ url, status, classification });
+
     } catch (e) {
+      classification = `fetch_error:${e?.message || e}`;
+      attempts.push({ url, status: 'n/a', classification });
+    }
+  }
+
+  return {
+    data: [],
+    error: buildHint(logical, attempts),
+    attempts
+  };
+}
+
+function buildHint(logical, attempts) {
+  if (!attempts.length) return `No attempts for ${logical}.`;
+  if (attempts.every(a => a.classification.startsWith('html')))
+    return `All ${logical} endpoints returned HTML (likely hitting frontend). Use absolute API URL or set VITE_${logical.toUpperCase()}_ENDPOINT.`;
+  if (attempts.some(a => a.classification === 'html_app_shell'))
+    return `App shell HTML detected. Remove client rewrite to /api or configure Netlify proxy.`;
+  if (attempts.some(a => a.classification.startsWith('http_404')))
+    return `404s encountered. Verify resource path or provide VITE_${logical.toUpperCase()}_ENDPOINT.`;
+  return `No valid JSON array (${logical}).`;
+}
       classification = `fetch_error:${e?.message || e}`;
       attempts.push({ url, status: 'n/a', classification });
     }
