@@ -9,138 +9,160 @@ const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
  * Fetch an endpoint that should yield a JSON array (or {results: []}).
  * Returns: { data: array, error: string|null, attempts: [{url,status,classification}] }
  */
+const inflight = new Map(); // logical -> Promise
+
 export async function fetchJsonArray(logical, opts = {}) {
-  const { override, extraCandidates = [] } = opts;
-  const attempts = [];
+  // IN-FLIGHT DE-DUPE
+  if (inflight.has(logical)) return inflight.get(logical);
+  const exec = (async () => {
+    const { override, extraCandidates = [] } = opts;
+    const attempts = [];
 
-  const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
-  const base = baseRaw.replace(/\/+$/,'');
-  const candidates = new Set();
+    const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
+    const base = baseRaw.replace(/\/+$/,'');
+    const candidates = new Set();
 
-  // Explicit overrides
-  if (override) candidates.add(override);
-  if (!override) {
-    if (logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE) candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
-    if (logical === 'packages' && PACKAGES_ENDPOINT_OVERRIDE) candidates.add(PACKAGES_ENDPOINT_OVERRIDE);
-    if (logical === 'services' && SERVICES_ENDPOINT_OVERRIDE) candidates.add(SERVICES_ENDPOINT_OVERRIDE); // added
-  }
+    // Explicit overrides
+    if (override) candidates.add(override);
+    if (!override) {
+      if (logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE) candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
+      if (logical === 'packages' && PACKAGES_ENDPOINT_OVERRIDE) candidates.add(PACKAGES_ENDPOINT_OVERRIDE);
+      if (logical === 'services' && SERVICES_ENDPOINT_OVERRIDE) candidates.add(SERVICES_ENDPOINT_OVERRIDE); // added
+    }
 
-  // Core absolute candidates
-  [
-    `${base}/api/${logical}`,
-    `${base}/api/${logical}/`,
-    `${base}/${logical}`,
-    `${base}/${logical}/`,
-    `${base}/api/v1/${logical}`,
-    `${base}/v1/${logical}`,
-    `${base}/v1/${logical}/`
-  ].forEach(c => candidates.add(c));
+    // Core absolute candidates
+    [
+      `${base}/api/${logical}`,
+      `${base}/api/${logical}/`,
+      `${base}/${logical}`,
+      `${base}/${logical}/`,
+      `${base}/api/v1/${logical}`,
+      `${base}/v1/${logical}`,
+      `${base}/v1/${logical}/`
+    ].forEach(c => candidates.add(c));
 
-  // Relative fallbacks only in dev OR if explicitly allowed in prod (temporary CORS workaround)
-  if (!IS_PROD || ALLOW_PROD_RELATIVE) {
-    candidates.add(`/api/${logical}`);
-    candidates.add(`/api/${logical}/`);
-  }
+    // Relative fallbacks only in dev OR if explicitly allowed in prod (temporary CORS workaround)
+    if (!IS_PROD || ALLOW_PROD_RELATIVE) {
+      candidates.add(`/api/${logical}`);
+      candidates.add(`/api/${logical}/`);
+    }
 
-  // Extra user-provided
-  extraCandidates.forEach(c => {
-    if (!c) return;
-    candidates.add(/^https?:\/\//i.test(c) ? c : `${base}/${c.replace(/^\/+/, '')}`);
+    // Extra user-provided
+    extraCandidates.forEach(c => {
+      if (!c) return;
+      candidates.add(/^https?:\/\//i.test(c) ? c : `${base}/${c.replace(/^\/+/, '')}`);
+    });
+
+    for (const url of candidates) {
+      let classification = 'unknown';
+      try {
+        const token = (() => {
+          try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; }
+        })();
+        const res = await fetch(url, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json, text/plain;q=0.4, */*;q=0.1',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+        if (API_DEBUG) console.warn('[fetchJsonArray]', logical, url, res.status);
+
+        const status = res.status;
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+
+        // EARLY EXIT ON 401 (avoid endpoint hammering)
+        if (status === 401) {
+          classification = 'http_401';
+          attempts.push({ url, status, classification });
+          // Fire unauthorized event once (token likely invalid)
+          if (token && typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:unauthorized'));
+          }
+          break; // stop trying other variants
+        }
+
+        if (!res.ok) {
+          classification = `http_${status}`;
+          attempts.push({ url, status, classification });
+          continue;
+        }
+
+        const text = await res.text();
+
+        if (ct.includes('text/html') || looksLikeHtml(text)) {
+          classification = APP_SHELL_HINT_RE.test(text) ? 'html_app_shell' : 'html';
+          attempts.push({ url, status, classification });
+          continue;
+        }
+
+        let payload;
+        try {
+          payload = JSON.parse(text);
+        } catch {
+            classification = 'json_parse_error';
+            attempts.push({ url, status, classification });
+            continue;
+        }
+
+        if (Array.isArray(payload)) {
+          return { data: payload, error: null, attempts };
+        }
+
+        if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
+          return { data: payload.results, error: null, attempts };
+        }
+
+        classification = 'unexpected_structure';
+        attempts.push({ url, status, classification });
+      } catch (e) {
+        classification = `fetch_error:${e?.message || e}`;
+        attempts.push({ url, status: 'n/a', classification });
+      }
+    }
+
+    // NEW: all attempts 404 -> explicit final remote retry (idempotent safeguard)
+    const all404 = attempts.length && attempts.every(a => String(a.status).startsWith('404'));
+    if (all404) {
+      const canonical = `https://sem37-api.onrender.com/api/${logical}`;
+      const alreadyTried = attempts.some(a => a.url === canonical);
+      if (!alreadyTried) {
+        try {
+          const token = (() => { try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; } })();
+          const res = await fetch(canonical, {
+            credentials: 'include',
+              headers:{
+                Accept:'application/json',
+                'X-Requested-With':'XMLHttpRequest',
+                ...(token ? { Authorization:`Bearer ${token}` } : {})
+              }
+          });
+          const ct = (res.headers.get('content-type')||'').toLowerCase();
+          if (res.ok && ct.includes('json')) {
+            const j = await res.json();
+            if (Array.isArray(j)) return { data:j, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
+            if (j && typeof j==='object' && Array.isArray(j.results))
+              return { data:j.results, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
+          }
+          attempts.push({ url:canonical, status:res.status, classification:`late_retry_${res.status}` });
+        } catch (e) {
+          attempts.push({ url:canonical, status:'n/a', classification:`late_retry_error:${e?.message||e}` });
+        }
+      }
+    }
+
+    return {
+      data: [],
+      error: buildHint(logical, attempts),
+      attempts
+    };
+  })().finally(() => {
+    inflight.delete(logical);
   });
 
-  for (const url of candidates) {
-    let classification = 'unknown';
-    try {
-      const token = (() => {
-        try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; }
-      })();
-      const res = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json, text/plain;q=0.4, */*;q=0.1',
-          'X-Requested-With': 'XMLHttpRequest',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      });
-      if (API_DEBUG) console.warn('[fetchJsonArray]', logical, url, res.status);
-
-      const status = res.status;
-      const ct = (res.headers.get('content-type') || '').toLowerCase();
-
-      if (!res.ok) {
-        classification = `http_${status}`;
-        attempts.push({ url, status, classification });
-        continue;
-      }
-
-      const text = await res.text();
-
-      if (ct.includes('text/html') || looksLikeHtml(text)) {
-        classification = APP_SHELL_HINT_RE.test(text) ? 'html_app_shell' : 'html';
-        attempts.push({ url, status, classification });
-        continue;
-      }
-
-      let payload;
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        classification = 'json_parse_error';
-        attempts.push({ url, status, classification });
-        continue;
-      }
-
-      if (Array.isArray(payload)) {
-        return { data: payload, error: null, attempts };
-      }
-
-      if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
-        return { data: payload.results, error: null, attempts };
-      }
-
-      classification = 'unexpected_structure';
-      attempts.push({ url, status, classification });
-    } catch (e) {
-      classification = `fetch_error:${e?.message || e}`;
-      attempts.push({ url, status: 'n/a', classification });
-    }
-  }
-
-  // NEW: all attempts 404 -> explicit final remote retry (idempotent safeguard)
-  const all404 = attempts.length && attempts.every(a => String(a.status).startsWith('404'));
-  if (all404) {
-    const canonical = `https://sem37-api.onrender.com/api/${logical}`;
-    const alreadyTried = attempts.some(a => a.url === canonical);
-    if (!alreadyTried) {
-      try {
-        const token = (() => { try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; } })();
-        const res = await fetch(canonical, {
-          credentials: 'include',
-            headers:{
-              Accept:'application/json',
-              'X-Requested-With':'XMLHttpRequest',
-              ...(token ? { Authorization:`Bearer ${token}` } : {})
-            }
-        });
-        const ct = (res.headers.get('content-type')||'').toLowerCase();
-        if (res.ok && ct.includes('json')) {
-          const j = await res.json();
-          if (Array.isArray(j)) return { data:j, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
-          if (j && typeof j==='object' && Array.isArray(j.results))
-            return { data:j.results, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
-        }
-        attempts.push({ url:canonical, status:res.status, classification:`late_retry_${res.status}` });
-      } catch (e) {
-        attempts.push({ url:canonical, status:'n/a', classification:`late_retry_error:${e?.message||e}` });
-      }
-    }
-  }
-
-  return {
-    data: [],
-    error: buildHint(logical, attempts),
-    attempts
-  };
+  inflight.set(logical, exec);
+  return exec;
 }
 
 function buildHint(logical, attempts) {

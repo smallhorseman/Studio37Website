@@ -30,8 +30,8 @@ function LoginPageInner() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const ok = await login(form.username, form.password);
-    if (ok) navigate(nextPath || '/internal-dashboard', { replace: true });
+    const result = await login(form.username, form.password);
+    if (result?.success) navigate(nextPath || '/internal-dashboard', { replace: true });
   };
 
   const authHost = (import.meta.env.VITE_AUTH_URL || 'https://auth-3778.onrender.com')

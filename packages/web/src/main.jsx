@@ -8,23 +8,63 @@ if (typeof window !== 'undefined' && !window.__api_auth_fetch_patch__) {
   window.__api_auth_fetch_patch__ = true;
   const ORIG_FETCH = window.fetch.bind(window);
   const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
+  const API_BASE_HOST = (() => {
+    try {
+      const base = (import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
+      return new URL(base).host;
+    } catch { return null; }
+  })();
+  const AUTH_EVENT_FLAG = '__auth_unauth_fired__';
+  const last401 = new Map(); // url -> ts
+
   window.fetch = async (input, init = {}) => {
+    const urlStr = typeof input === 'string' ? input : input?.url || '';
     try {
       const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
       if (token) {
-        const urlStr = typeof input === 'string' ? input : input?.url || '';
-        const sameOrigin = !/^https?:\/\//i.test(urlStr) || urlStr.startsWith(window.location.origin);
-        const isApi = /\/api\//.test(urlStr);
-        if (sameOrigin && isApi) {
+        // same-origin /api/* OR absolute pointing to API_BASE host
+        const isAbsolute = /^https?:\/\//i.test(urlStr);
+        let hostMatch = false;
+        if (isAbsolute && API_BASE_HOST) {
+          try { hostMatch = new URL(urlStr).host === API_BASE_HOST; } catch { /* ignore */ }
+        }
+        const needsAuth = /\/api\//.test(urlStr) && (!isAbsolute || hostMatch);
+        if (needsAuth) {
           const headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined) || {});
-            if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+          if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
             if (!headers.has('Accept')) headers.set('Accept', 'application/json');
           init.headers = headers;
           if (API_DEBUG) console.warn('[fetch+auth]', urlStr);
         }
       }
     } catch { /* ignore */ }
-    return ORIG_FETCH(input, init);
+
+    const res = await ORIG_FETCH(input, init);
+
+    // 401 handling + throttle (avoid spamming same failing endpoint)
+    if (res && res.status === 401) {
+      const now = Date.now();
+      const prev = last401.get(urlStr) || 0;
+      last401.set(urlStr, now);
+      if (now - prev < 1500) {
+        if (API_DEBUG) console.warn('[fetch+auth][401-throttle]', urlStr);
+      }
+      try {
+        const hadToken = localStorage.getItem('jwt_token');
+        if (hadToken) {
+          localStorage.removeItem('jwt_token');
+        }
+      } catch { /* ignore */ }
+      if (!window[AUTH_EVENT_FLAG]) {
+        window[AUTH_EVENT_FLAG] = true;
+        window.dispatchEvent(new Event('auth:unauthorized'));
+        if (API_DEBUG) console.warn('[auth] dispatched auth:unauthorized (401)', urlStr);
+        // reset flag after short delay to allow future re-auth cycles
+        setTimeout(() => { window[AUTH_EVENT_FLAG] = false; }, 4000);
+      }
+    }
+
+    return res;
   };
 }
 
