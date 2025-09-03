@@ -77,3 +77,20 @@ if (typeof window !== 'undefined' && !window.__api_fallback_shim_installed__) {
     }
   };
 }
+
+function App() {
+  const isToolsSite = typeof window !== 'undefined' && window.location.hostname.includes('tools.');
+  return (
+    <AuthProvider>
+      <ErrorBoundary>
+        <Router>
+          <Suspense fallback={<Fallback />}>
+            {isToolsSite ? <ToolsLayout /> : <Layout />}
+          </Suspense>
+        </Router>
+      </ErrorBoundary>
+    </AuthProvider>
+  );
+}
+
+export default App;
