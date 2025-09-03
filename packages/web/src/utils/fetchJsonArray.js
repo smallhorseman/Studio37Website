@@ -4,6 +4,7 @@ const HTML_SIGNATURE_RE = /<!doctype|<html/i;
 const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
 const looksLikeHtml = (txt = '') => HTML_SIGNATURE_RE.test(txt.slice(0, 500));
 const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
+const FORCE_REL = import.meta.env.VITE_FORCE_RELATIVE_API === '1' || import.meta.env.VITE_API_RELATIVE_ONLY === '1';
 
 /**
  * Fetch an endpoint that should yield a JSON array (or {results: []}).
@@ -31,7 +32,7 @@ export async function fetchJsonArray(logical, opts = {}) {
     }
 
     // Core absolute candidates
-    [
+    const absoluteCandidates = [
       `${base}/api/${logical}`,
       `${base}/api/${logical}/`,
       `${base}/${logical}`,
@@ -39,12 +40,22 @@ export async function fetchJsonArray(logical, opts = {}) {
       `${base}/api/v1/${logical}`,
       `${base}/v1/${logical}`,
       `${base}/v1/${logical}/`
-    ].forEach(c => candidates.add(c));
+    ];
 
-    // Relative fallbacks only in dev OR if explicitly allowed in prod (temporary CORS workaround)
-    if (!IS_PROD || ALLOW_PROD_RELATIVE) {
-      candidates.add(`/api/${logical}`);
-      candidates.add(`/api/${logical}/`);
+    // Relative (preferred when forcing relative to bypass CORS)
+    const relativeCandidates = [
+      `/api/${logical}`,
+      `/api/${logical}/`
+    ];
+
+    if (forceRelativeMode) {
+      relativeCandidates.forEach(c => candidates.add(c));
+      absoluteCandidates.forEach(c => candidates.add(c));
+    } else {
+      absoluteCandidates.forEach(c => candidates.add(c));
+      if (!IS_PROD || ALLOW_PROD_RELATIVE) {
+        relativeCandidates.forEach(c => candidates.add(c));
+      }
     }
 
     // Extra user-provided
@@ -65,7 +76,8 @@ export async function fetchJsonArray(logical, opts = {}) {
             'Accept': 'application/json, text/plain;q=0.4, */*;q=0.1',
             'X-Requested-With': 'XMLHttpRequest',
             ...(token ? { Authorization: `Bearer ${token}` } : {})
-          }
+          },
+          mode: 'cors'
         });
         if (API_DEBUG) console.warn('[fetchJsonArray]', logical, url, res.status);
 
@@ -117,8 +129,20 @@ export async function fetchJsonArray(logical, opts = {}) {
         classification = 'unexpected_structure';
         attempts.push({ url, status, classification });
       } catch (e) {
-        classification = `fetch_error:${e?.message || e}`;
+        const msg = String(e?.message || '');
+        if (/Failed to fetch|CORS|TypeError/i.test(msg)) {
+          classification = 'cors_block';
+          // If CORS blocked on an absolute URL and we are not yet in forceRelativeMode, enqueue relative first for next iterations
+          if (!forceRelativeMode) {
+            if (!candidates.has(`/api/${logical}`)) candidates.add(`/api/${logical}`);
+            if (!candidates.has(`/api/${logical}/`)) candidates.add(`/api/${logical}/`);
+          }
+        } else {
+          classification = `fetch_error:${e?.message || e}`;
+        }
         attempts.push({ url, status: 'n/a', classification });
+        // If CORS block, continue trying (relative may succeed)
+        continue;
       }
     }
 
@@ -150,6 +174,15 @@ export async function fetchJsonArray(logical, opts = {}) {
           attempts.push({ url:canonical, status:'n/a', classification:`late_retry_error:${e?.message||e}` });
         }
       }
+    }
+
+    const allCors = attempts.length && attempts.every(a => a.classification === 'cors_block');
+    if (allCors) {
+      return {
+        data: [],
+        error: 'CORS blocked all absolute API attempts. Use relative /api proxy (set VITE_FORCE_RELATIVE_API=1) or enable CORS on backend.',
+        attempts
+      };
     }
 
     return {

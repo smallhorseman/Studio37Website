@@ -16,9 +16,11 @@ if (typeof window !== 'undefined' && !window.__api_auth_fetch_patch__) {
   })();
   const AUTH_EVENT_FLAG = '__auth_unauth_fired__';
   const last401 = new Map(); // url -> ts
+  const PUBLIC_401_OK = [/\/api\/packages\b/i, /\/api\/services\b/i]; // allow unauth 401 without clearing
 
   window.fetch = async (input, init = {}) => {
     const urlStr = typeof input === 'string' ? input : input?.url || '';
+    let usedAuthHeader = false;
     try {
       const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
       if (token) {
@@ -31,8 +33,13 @@ if (typeof window !== 'undefined' && !window.__api_auth_fetch_patch__) {
         const needsAuth = /\/api\//.test(urlStr) && (!isAbsolute || hostMatch);
         if (needsAuth) {
           const headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined) || {});
-          if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
-            if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+          if (!headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${token}`);
+            usedAuthHeader = true; // NEW
+          } else {
+            usedAuthHeader = true;
+          }
+          if (!headers.has('Accept')) headers.set('Accept', 'application/json');
           init.headers = headers;
           if (API_DEBUG) console.warn('[fetch+auth]', urlStr);
         }
@@ -43,24 +50,27 @@ if (typeof window !== 'undefined' && !window.__api_auth_fetch_patch__) {
 
     // 401 handling + throttle (avoid spamming same failing endpoint)
     if (res && res.status === 401) {
-      const now = Date.now();
-      const prev = last401.get(urlStr) || 0;
-      last401.set(urlStr, now);
-      if (now - prev < 1500) {
-        if (API_DEBUG) console.warn('[fetch+auth][401-throttle]', urlStr);
-      }
-      try {
-        const hadToken = localStorage.getItem('jwt_token');
-        if (hadToken) {
-          localStorage.removeItem('jwt_token');
+      const isPublic = PUBLIC_401_OK.some(re => re.test(urlStr));
+      if (usedAuthHeader && !isPublic) { // NEW condition
+        const now = Date.now();
+        const prev = last401.get(urlStr) || 0;
+        last401.set(urlStr, now);
+        if (now - prev < 1500) {
+          if (API_DEBUG) console.warn('[fetch+auth][401-throttle]', urlStr);
         }
-      } catch { /* ignore */ }
-      if (!window[AUTH_EVENT_FLAG]) {
-        window[AUTH_EVENT_FLAG] = true;
-        window.dispatchEvent(new Event('auth:unauthorized'));
-        if (API_DEBUG) console.warn('[auth] dispatched auth:unauthorized (401)', urlStr);
-        // reset flag after short delay to allow future re-auth cycles
-        setTimeout(() => { window[AUTH_EVENT_FLAG] = false; }, 4000);
+        try {
+          const hadToken = localStorage.getItem('jwt_token');
+          if (hadToken) localStorage.removeItem('jwt_token');
+        } catch { /* ignore */ }
+        if (!window[AUTH_EVENT_FLAG]) {
+          window[AUTH_EVENT_FLAG] = true;
+          window.dispatchEvent(new Event('auth:unauthorized'));
+          if (API_DEBUG) console.warn('[auth] dispatched auth:unauthorized (401)', urlStr);
+          // reset flag after short delay to allow future re-auth cycles
+          setTimeout(() => { window[AUTH_EVENT_FLAG] = false; }, 4000);
+        }
+      } else if (API_DEBUG && !usedAuthHeader) {
+        console.warn('[fetch+auth][401-public-or-no-auth]', urlStr);
       }
     }
 
