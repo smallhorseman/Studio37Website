@@ -6,6 +6,7 @@ import path from 'path';
 const OPTIONAL_EXTERNALS = ['@netlify/blobs'];
 
 export default defineConfig({
+  base: '/', // ensure absolute asset paths for Netlify
   plugins: [react()],
   resolve: {
     alias: {

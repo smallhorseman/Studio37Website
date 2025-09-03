@@ -6,25 +6,30 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ApiFetchFallback from './components/ApiFetchFallback';
 import './App.css';
+import { lazyWithRetry, withBuildTag, installChunkErrorReload } from '@/utils/lazy';
 
+// Install global chunk failure reload (once)
+installChunkErrorReload();
+
+// Replace previous React.lazy(...) calls with retry-enabled versions
 // Pages (lazy)
-const HomePage = lazy(() => import('./pages/HomePage'));
-const ServicesPage = lazy(() => import('./pages/ServicesPage'));
-const PackagesPage = lazy(() => import('./pages/PackagesPage'));
-const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
-const BlogPage = lazy(() => import('./pages/BlogPage'));
-const AboutPage = lazy(() => import('./pages/AboutPage'));
-const AdminPage = lazy(() => import('./pages/AdminPage'));
-const ToolsPage = lazy(() => import('./pages/ToolsPage'));
-const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const CRMPage = lazy(() => import('./pages/CRMPage'));
-const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
-const ContentManagerPage = lazy(() => import('./pages/ContentManagerPage'));
-const AdminUpdatePage = lazy(() => import('./pages/AdminUpdatePage'));
-const TodoPage = lazy(() => import('./pages/TodoPage'));
+const HomePage = lazyWithRetry(() => import(withBuildTag('./pages/HomePage')));
+const ServicesPage = lazyWithRetry(() => import(withBuildTag('./pages/ServicesPage')));
+const PackagesPage = lazyWithRetry(() => import(withBuildTag('./pages/PackagesPage')));
+const PortfolioPage = lazyWithRetry(() => import(withBuildTag('./pages/PortfolioPage')));
+const BlogPage = lazyWithRetry(() => import(withBuildTag('./pages/BlogPage')));
+const AboutPage = lazyWithRetry(() => import(withBuildTag('./pages/AboutPage')));
+const AdminPage = lazyWithRetry(() => import(withBuildTag('./pages/AdminPage')));
+const ToolsPage = lazyWithRetry(() => import(withBuildTag('./pages/ToolsPage')));
+const BlogPostPage = lazyWithRetry(() => import(withBuildTag('./pages/BlogPostPage')));
+const ContactPage = lazyWithRetry(() => import(withBuildTag('./pages/ContactPage')));
+const LoginPage = lazyWithRetry(() => import(withBuildTag('./pages/LoginPage')));
+const DashboardPage = lazyWithRetry(() => import(withBuildTag('./pages/DashboardPage')));
+const CRMPage = lazyWithRetry(() => import(withBuildTag('./pages/CRMPage')));
+const ProjectsPage = lazyWithRetry(() => import(withBuildTag('./pages/ProjectsPage')));
+const ContentManagerPage = lazyWithRetry(() => import(withBuildTag('./pages/ContentManagerPage')));
+const AdminUpdatePage = lazyWithRetry(() => import(withBuildTag('./pages/AdminUpdatePage')));
+const TodoPage = lazyWithRetry(() => import(withBuildTag('./pages/TodoPage')));
 
 // Minimal ResourceSection (re‑introduced for pages importing from '@/App')
 export const ResourceSection = ({
