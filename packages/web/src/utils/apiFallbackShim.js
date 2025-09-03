@@ -100,9 +100,11 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
   function safeSeed(fullUrl) {
     try {
       const u = new URL(fullUrl, window.location.href);
-      const data = getSeedForPath(u.pathname);
+      // NEW: normalize path by removing a leading /api (so /api/projects -> /projects)
+      const normalizedPath = u.pathname.replace(/^\/api(?=\/)/, '');
+      const data = getSeedForPath(normalizedPath);
       if (!data) return null;
-      if (DEBUG) console.warn('[apiShim] serving seed data for', u.pathname);
+      if (DEBUG) console.warn('[apiShim] serving seed data for', normalizedPath);
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       return new Response(blob, {
         status: 200,

@@ -4,6 +4,7 @@ import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from '../components/PolaroidImage';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
+import { seedProjects } from '@/data/seedContent'; // NEW fallback import
 
 export default function PortfolioPage() {
   const [projects, setProjects] = useState([]);          // always store normalized array
@@ -125,7 +126,14 @@ export default function PortfolioPage() {
       }
     }
 
-    // If we reach here, all candidates failed
+    // If we reach here, all candidates failed: try local seed before surfacing error
+    if (Array.isArray(seedProjects) && seedProjects.length) {
+      // eslint-disable-next-line no-console
+      console.warn('[PortfolioPage] Using seedProjects fallback (all remote attempts failed).');
+      setProjects(seedProjects);
+      setLoading(false);
+      return;
+    }
     setError(
       `Projects unavailable. Attempts: ` +
       attemptDetails

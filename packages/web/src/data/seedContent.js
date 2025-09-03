@@ -98,10 +98,11 @@ export const seedServices = [
 
 // Helper for API shim path mapping
 export function getSeedForPath(pathname) {
-  if (/\/cms\/posts\/?$/.test(pathname)) return seedBlogPosts;
-  if (/\/projects\/?$/.test(pathname)) return seedProjects;
-  if (/\/packages\/?$/.test(pathname)) return seedPackages;
-  if (/\/services\/?$/.test(pathname)) return seedServices;
+  const p = pathname.replace(/^\/api(?=\/)/, ''); // NEW normalize
+  if (/\/cms\/posts\/?$/.test(p)) return seedBlogPosts;
+  if (/\/projects\/?$/.test(p)) return seedProjects;
+  if (/\/packages\/?$/.test(p)) return seedPackages;
+  if (/\/services\/?$/.test(p)) return seedServices;
   return null;
 }
 
