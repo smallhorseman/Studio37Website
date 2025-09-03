@@ -34,8 +34,15 @@ export default function ContentManagerPage() {
   const [apiError, setApiError] = useState(null);
   const [editing, setEditing] = useState(null); // post object or null
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState([]);
+  const [filter, setFilter] = useState(''); // was []
   const [attemptLog, setAttemptLog] = useState([]);
+
+  const makeSlug = (v='') =>
+    v.toLowerCase()
+      .trim()
+      .replace(/\s+/g,'-')
+      .replace(/[^a-z0-9\-]/g,'')
+      .replace(/\-+/g,'-');
 
   const mergedPosts = useCallback(() => {
     const local = loadLocalEdits();
@@ -112,7 +119,18 @@ export default function ContentManagerPage() {
   const cancelEdit = () => setEditing(null);
 
   const handleChange = (field, value) =>
-    setEditing(e => ({ ...e, [field]: value }));
+    setEditing(e => {
+      if (!e) return e;
+      const next = { ...e, [field]: value };
+      // Auto-generate slug while creating (only if slug still empty or matches previous auto pattern)
+      if (field === 'title' && (!e.slug || e.slug === makeSlug(e.title || ''))) {
+        next.slug = makeSlug(value);
+      }
+      if (field === 'slug') {
+        next.slug = makeSlug(value);
+      }
+      return next;
+    });
 
   const upsertLocal = (post) => {
     const local = loadLocalEdits();
@@ -132,7 +150,7 @@ export default function ContentManagerPage() {
     let isNew = !editing.id;
     const payload = {
       ...editing,
-      slug: editing.slug || editing.title.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,''),
+      slug: editing.slug ? makeSlug(editing.slug) : makeSlug(editing.title || `post-${Date.now()}`)
     };
     try {
       let saved = null;
@@ -175,11 +193,11 @@ export default function ContentManagerPage() {
     if (editing && editing.id === post.id) setEditing(null);
   };
 
-  const filtered = posts.filter(p =>
-    !filter ||
-    (p.title||'').toLowerCase().includes(filter.toLowerCase()) ||
-    (p.slug||'').toLowerCase().includes(filter.toLowerCase())
-  );
+  const filtered = posts.filter(p => {
+    if (!filter) return true;
+    const f = filter.toLowerCase();
+    return (p.title || '').toLowerCase().includes(f) || (p.slug || '').toLowerCase().includes(f);
+  });
 
   return (
     <FadeIn>
