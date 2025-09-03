@@ -34,6 +34,30 @@ async function tryApi(method, path, body) {
   }
 }
 
+// NEW helpers for unsynced drafts
+function getUnsynced(posts = loadLocalEdits()) {
+  return posts.filter(p =>
+    p &&
+    (p._unsynced ||
+     (typeof p.id === 'string' && p.id.startsWith('local-')))
+  );
+}
+function markUnsynced(post) {
+  return { ...post, _unsynced: true };
+}
+function replaceLocal(oldId, newPost) {
+  const all = loadLocalEdits();
+  const out = [];
+  for (const p of all) {
+    if (p.id === oldId) continue;
+    if (newPost.slug && p.slug === newPost.slug && p.id !== newPost.id) continue;
+    out.push(p);
+  }
+  out.push(newPost);
+  saveLocalEdits(out);
+  return out;
+}
+
 export default function ContentManagerPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +67,9 @@ export default function ContentManagerPage() {
   const [filter, setFilter] = useState(''); // was []
   const [attemptLog, setAttemptLog] = useState([]);
   const [unauthorized, setUnauthorized] = useState(false); // NEW
+  const [syncing, setSyncing] = useState(false);               // NEW
+  const [syncMsg, setSyncMsg] = useState(null);                // NEW ephemeral info
+  const [lastSyncAt, setLastSyncAt] = useState(null);          // NEW
   const location = useLocation(); // NEW
 
   const makeSlug = (v='') =>
@@ -175,11 +202,86 @@ export default function ContentManagerPage() {
     saveLocalEdits(local);
   };
 
+  // NEW: attempt to push unsynced drafts
+  const attemptSyncAll = useCallback(async () => {
+    if (syncing) return;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+    if (!token) return; // cannot sync if not authenticated
+    let locals = loadLocalEdits();
+    const unsynced = getUnsynced(locals);
+    if (!unsynced.length) {
+      setSyncMsg('No drafts to sync.');
+      setTimeout(()=>setSyncMsg(null), 2500);
+      return;
+    }
+    setSyncing(true);
+    let success = 0;
+    for (const draft of unsynced) {
+      const isNew = !draft.id || draft.id.startsWith('local-');
+      const body = {
+        ...draft,
+        _unsynced: undefined, // strip flag
+      };
+      try {
+        const res = await tryApi(isNew ? 'POST' : 'PUT',
+          isNew ? '/api/cms/posts' : `/api/cms/posts/${draft.id}`,
+          body
+        );
+        if (res && typeof res === 'object') {
+          let final = { ...res };
+            if (!final.slug && draft.slug) final.slug = draft.slug;
+          // Replace local draft (by old id or slug)
+          locals = replaceLocal(draft.id, final);
+          success++;
+        } else {
+          // leave as unsynced
+        }
+      } catch {
+        // keep unsynced; continue
+      }
+    }
+    saveLocalEdits(locals);
+    // Merge into current view
+    setPosts(ps => {
+      const map = new Map();
+      // remote posts already there
+      ps.forEach(p => map.set(p.id, p));
+      locals.forEach(p => map.set(p.id, p));
+      return Array.from(map.values());
+    });
+    setSyncing(false);
+    setLastSyncAt(Date.now());
+    if (success) {
+      setSyncMsg(`Synced ${success} draft${success === 1 ? '' : 's'}.`);
+    } else {
+      setSyncMsg('No drafts synced (still offline or unauthorized).');
+    }
+    setTimeout(()=>setSyncMsg(null), 3500);
+  }, [syncing]);
+
+  // Auto‑retry sync periodically & on window focus
+  useEffect(() => {
+    const onFocus = () => attemptSyncAll();
+    window.addEventListener('focus', onFocus);
+    const id = setInterval(() => attemptSyncAll(), 30000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(id);
+    };
+  }, [attemptSyncAll]);
+
+  // Try sync shortly after initial refresh (once)
+  useEffect(() => {
+    if (!loading && !unauthorized) {
+      const t = setTimeout(() => attemptSyncAll(), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [loading, unauthorized, attemptSyncAll]);
+
   const onSave = async () => {
     if (!editing) return;
     setSaving(true);
     let isNew = !editing.id;
-    // NEW: ensure a local id early (so UI updates even if remote fails)
     const provisionalId = editing.id || `local-${Date.now()}`;
     const payload = {
       ...editing,
@@ -195,29 +297,32 @@ export default function ContentManagerPage() {
           saved = await tryApi('POST', '/api/cms/posts', payload);
           remoteOk = true;
         } catch {
-          // remote failed; keep local
-          saved = { ...payload };
+          saved = markUnsynced({ ...payload });
         }
       } else {
         try {
           saved = await tryApi('PUT', `/api/cms/posts/${editing.id}`, payload);
           remoteOk = true;
         } catch {
-          saved = { ...payload }; // keep local override
+          saved = markUnsynced({ ...payload });
         }
       }
       if (!saved.id) saved.id = payload.id;
       upsertLocal(saved);
       setEditing(null);
-      // Force local state update immediately (optimistic), then refresh
       setPosts(ps => {
         const map = new Map(ps.map(p => [p.id, p]));
         map.set(saved.id, saved);
-        return normalizePosts(Array.from(map.values()));
+        return Array.from(map.values());
       });
       refresh();
       if (!remoteOk) {
-        setApiError('Saved locally (offline / auth / network issue). Will sync when API is reachable.');
+        setApiError('Draft saved locally (offline / auth issue). It will auto-sync when possible.');
+        setTimeout(()=>setApiError(null), 6000);
+      } else {
+        setApiError(null);
+        setSyncMsg('Post saved.');
+        setTimeout(()=>setSyncMsg(null), 2500);
       }
     } finally {
       setSaving(false);
@@ -245,10 +350,18 @@ export default function ContentManagerPage() {
     return (p.title || '').toLowerCase().includes(f) || (p.slug || '').toLowerCase().includes(f);
   });
 
+  const unsyncedCount = getUnsynced().length; // NEW count
+
   return (
     <FadeIn>
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">Content Manager</h1>
+        {/* NEW sync message */}
+        {syncMsg && (
+          <div className="mb-3 text-xs px-3 py-2 rounded bg-blue-50 text-blue-700 border border-blue-200">
+            {syncMsg}
+          </div>
+        )}
         {unauthorized && (
           <div className="mb-4 p-3 text-sm border border-red-400 bg-red-50 text-red-700 rounded flex flex-wrap gap-3 items-center">
             <span>Authentication required to load live posts.</span>
@@ -300,6 +413,18 @@ export default function ContentManagerPage() {
               >
                 Refresh
               </button>
+              <button
+                onClick={attemptSyncAll}
+                disabled={syncing || !unsyncedCount}
+                className="px-3 py-1 border rounded text-sm hover:bg-gray-50 disabled:opacity-40"
+              >
+                {syncing ? 'Syncing...' : unsyncedCount ? `Sync (${unsyncedCount})` : 'Sync'}
+              </button>
+              {lastSyncAt && (
+                <span className="text-[10px] text-gray-400">
+                  Last sync {new Date(lastSyncAt).toLocaleTimeString()}
+                </span>
+              )}
               <div className="text-xs text-gray-500">
                 {attemptLog.length ? `Attempts: ${attemptLog.map(a=>`${a.note}@${a.url}`).join(' | ')}` : null}
               </div>
@@ -307,36 +432,44 @@ export default function ContentManagerPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <div className="md:col-span-2 space-y-3">
                 {loading && <div className="text-sm text-gray-500">Loading...</div>}
-                  {!loading && filtered.map((p, idx) => (
-                    <div
-                      key={p.id || `row-${idx}`}
-                      className="border rounded p-4 bg-white flex flex-col gap-2 shadow-sm"
-                    >
-                      <div className="flex justify-between items-center gap-3">
-                        <h2 className="font-semibold text-soft-charcoal truncate">{p.title || '(Untitled)'}</h2>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={()=>startEdit(p)}
-                            className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                          >Edit</button>
-                          <button
-                            onClick={()=>onDelete(p)}
-                            className="text-xs px-2 py-1 border rounded text-red-600 hover:bg-red-50"
-                          >Delete</button>
+                  {!loading && filtered.map((p, idx) => {
+                    const isLocal = typeof p.id === 'string' && p.id.startsWith('local-');
+                    const isUnsynced = p._unsynced || isLocal;
+                    return (
+                      <div
+                        key={p.id || `row-${idx}`}
+                        className="border rounded p-4 bg-white flex flex-col gap-2 shadow-sm"
+                      >
+                        <div className="flex justify-between items-center gap-3">
+                          <h2 className="font-semibold text-soft-charcoal truncate">
+                            {p.title || '(Untitled)'}
+                          </h2>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={()=>startEdit(p)}
+                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                            >Edit</button>
+                            <button
+                              onClick={()=>onDelete(p)}
+                              className="text-xs px-2 py-1 border rounded text-red-600 hover:bg-red-50"
+                            >Delete</button>
+                          </div>
                         </div>
+                        <div className="text-xs text-gray-500 flex flex-wrap gap-2 items-center">
+                          <span>{p.slug}</span>
+                          {isUnsynced && (
+                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">
+                              {syncing ? 'syncing...' : 'unsynced'}
+                            </span>
+                          )}
+                          {(!p.id || typeof p.id !== 'string') && (
+                            <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">no-id</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">{p.excerpt}</p>
                       </div>
-                      <div className="text-xs text-gray-500 flex flex-wrap gap-2">
-                        <span>{p.slug}</span>
-                        {typeof p.id === 'string' && p.id.startsWith('local-') && (
-                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded">local</span>
-                        )}
-                        {(!p.id || typeof p.id !== 'string') && (
-                          <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">no-id</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-2">{p.excerpt}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {!loading && !filtered.length && (
                     <div className="text-sm text-gray-400">No posts match.</div>
                   )}
