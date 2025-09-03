@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { seedBlogPosts } from '@/data/seedContent';
-import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 
 const LS_KEY = 'cms_posts_local_v1';
@@ -31,13 +29,12 @@ async function tryApi(method, path, body) {
 }
 
 export default function ContentManagerPage() {
-  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [editing, setEditing] = useState(null); // post object or null
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState([]);
   const [attemptLog, setAttemptLog] = useState([]);
 
   const mergedPosts = useCallback(() => {
@@ -184,13 +181,20 @@ export default function ContentManagerPage() {
     (p.slug||'').toLowerCase().includes(filter.toLowerCase())
   );
 
-  if (loading) return <div className="p-8">Loading CMS content...</div>;
-  if (apiError) return <div className="p-8 text-red-500">Error: {apiError}</div>;
-  
   return (
     <FadeIn>
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">Content Manager</h1>
+        {apiError && (
+          <div className="mb-4 p-3 text-sm border border-yellow-400 bg-yellow-50 text-yellow-800 rounded">
+            {apiError}
+          </div>
+        )}
+        {loading && (
+          <div className="mb-4 text-sm text-gray-500 animate-pulse">
+            Loading remote posts (showing anything cached when ready)...
+          </div>
+        )}
          <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex flex-wrap gap-3 items-center mb-4">
               <button

@@ -28,7 +28,8 @@ import ContentManagerPage from './pages/ContentManagerPage';
 import AdminUpdatePage from './pages/AdminUpdatePage';
 import TodoPage from './pages/TodoPage';
 
-import axiosApiClient from './api/apiClient'; // NEW: to patch baseURL when on tools subdomain
+import axiosApiClient from './api/apiClient'; // NEW early patch target
+import { API_BASE } from './config/env';      // NEW import for rewrite install
 
 // ResourceSection (unchanged logic)
 export const ResourceSection = React.memo(function ResourceSection({
@@ -136,11 +137,42 @@ function Layout() {
   );
 }
 
-// Auth gate (stub still always unauthenticated)
+// NEW: fetch rewrite installer (moved near top so we can invoke before initial effects)
+function installProxyFetchRewrite(API_BASE) {
+  if (typeof window === 'undefined') return;
+  if (window.__proxy_fetch_installed__) return;
+  window.__proxy_fetch_installed__ = true;
+  const remoteOrigin = (() => { try { return new URL(API_BASE).origin; } catch { return null; } })();
+  if (!remoteOrigin) return;
+  const origFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    let url = typeof input === 'string' ? input : (input && input.url) || '';
+    try {
+      const u = new URL(url, window.location.href);
+      if (u.origin === remoteOrigin) {
+        const pathQS = u.pathname + u.search + u.hash;
+        const proxied = pathQS.startsWith('/api/') ? pathQS : '/api' + pathQS;
+        return origFetch(proxied, init);
+      }
+    } catch { /* ignore */ }
+    return origFetch(input, init);
+  };
+}
+
+// NEW: early runtime patch (before first render) to avoid initial CORS errors
+if (typeof window !== 'undefined' && window.location.hostname.includes('tools.')) {
+  try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
+  installProxyFetchRewrite(API_BASE);
+}
+
+// Auth gate (updated to break login loop by checking token directly)
 const Protected = ({ children }) => {
   const { isAuthenticated, isReady, loading } = useAuth();
-  if (!isReady || loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
+  // If hook not ready but token exists, treat as loading then allow
+  if (!isReady && token) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Initializing session...</div>;
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;
+  if (!isAuthenticated && !token) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -189,42 +221,13 @@ function ToolsLayout() {
   );
 }
 
-// NEW: fetch rewrite installer (handles plain fetch calls pointing at remote API_BASE)
-function installProxyFetchRewrite(API_BASE) {
-  if (typeof window === 'undefined') return;
-  if (window.__proxy_fetch_installed__) return;
-  window.__proxy_fetch_installed__ = true;
-  const remoteOrigin = (() => { try { return new URL(API_BASE).origin; } catch { return null; } })();
-  if (!remoteOrigin) return;
-  const origFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => {
-    let url = typeof input === 'string' ? input : (input && input.url) || '';
-    try {
-      const u = new URL(url, window.location.href);
-      if (u.origin === remoteOrigin) {
-        // Preserve path + query; ensure single /api prefix
-        const pathQS = u.pathname + u.search + u.hash;
-        const proxied = pathQS.startsWith('/api/') ? pathQS : '/api' + pathQS;
-        return origFetch(proxied, init);
-      }
-    } catch { /* ignore */ }
-    return origFetch(input, init);
-  };
-}
-
 function App() {
   const isToolsSite = typeof window !== 'undefined' && window.location.hostname.includes('tools.');
+  // NOTE: effect kept for redundancy (already patched early above)
   React.useEffect(() => {
     if (isToolsSite) {
-      // Force axios to use relative proxy to avoid CORS
       try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
-      // Install fetch rewrite for any direct fetch usage
-      try {
-        // API_BASE imported at build time via env; re-use same constant
-        // eslint-disable-next-line global-require
-        const { API_BASE } = require('./config/env');
-        installProxyFetchRewrite(API_BASE);
-      } catch { /* ignore */ }
+      installProxyFetchRewrite(API_BASE);
     }
   }, [isToolsSite]);
   return (
