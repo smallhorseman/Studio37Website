@@ -2,11 +2,11 @@ import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD } from '@/config/env';
 
 const HTML_SIGNATURE_RE = /<!doctype|<html/i;
 const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
-const looksLikeHtml = (txt='') => HTML_SIGNATURE_RE.test(txt.slice(0,500));
+const looksLikeHtml = (txt = '') => HTML_SIGNATURE_RE.test(txt.slice(0, 500));
 
 /**
- * Tries to fetch JSON array data from a path (with or without leading /api).
- * Returns { data: array, error: string | null, attempts: [] }
+ * Fetch an endpoint that should yield a JSON array (or {results: []}).
+ * Returns: { data: array, error: string|null, attempts: [{url,status,classification}] }
  */
 export async function fetchJsonArray(logical, opts = {}) {
   const { override, extraCandidates = [] } = opts;
@@ -15,30 +15,32 @@ export async function fetchJsonArray(logical, opts = {}) {
   const base = API_BASE.replace(/\/+$/, '');
   const candidates = new Set();
 
-  // Explicit override(s)
+  // Explicit overrides
   if (override) candidates.add(override);
   if (!override && logical === 'projects' && PROJECTS_ENDPOINT_OVERRIDE)
     candidates.add(PROJECTS_ENDPOINT_OVERRIDE);
 
   // Core absolute candidates
-  const core = [
+  [
     `${base}/api/${logical}`,
     `${base}/api/${logical}/`,
     `${base}/${logical}`,
     `${base}/${logical}/`,
     `${base}/api/v1/${logical}`,
-    `${base}/v1/${logical}`
-  ];
-  core.forEach(c => candidates.add(c));
+    `${base}/v1/${logical}`,
+    `${base}/v1/${logical}/`
+  ].forEach(c => candidates.add(c));
 
-  // Only add relative fallbacks in DEV (Netlify prod has no proxy; would return HTML)
+  // Relative fallbacks only in dev (prod returns app shell HTML)
   if (!IS_PROD) {
     candidates.add(`/api/${logical}`);
     candidates.add(`/api/${logical}/`);
   }
 
+  // Extra user-provided
   extraCandidates.forEach(c => {
-    if (c) candidates.add(/^https?:\/\//i.test(c) ? c : `${base}/${c.replace(/^\/+/,'')}`);
+    if (!c) return;
+    candidates.add(/^https?:\/\//i.test(c) ? c : `${base}/${c.replace(/^\/+/, '')}`);
   });
 
   for (const url of candidates) {
@@ -51,6 +53,7 @@ export async function fetchJsonArray(logical, opts = {}) {
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
+
       const status = res.status;
       const ct = (res.headers.get('content-type') || '').toLowerCase();
 
@@ -61,6 +64,7 @@ export async function fetchJsonArray(logical, opts = {}) {
       }
 
       const text = await res.text();
+
       if (ct.includes('text/html') || looksLikeHtml(text)) {
         classification = APP_SHELL_HINT_RE.test(text) ? 'html_app_shell' : 'html';
         attempts.push({ url, status, classification });
@@ -68,22 +72,24 @@ export async function fetchJsonArray(logical, opts = {}) {
       }
 
       let payload;
-      try { payload = JSON.parse(text); }
-      catch {
+      try {
+        payload = JSON.parse(text);
+      } catch {
         classification = 'json_parse_error';
         attempts.push({ url, status, classification });
         continue;
       }
 
-      if (Array.isArray(payload))
+      if (Array.isArray(payload)) {
         return { data: payload, error: null, attempts };
+      }
 
-      if (payload && typeof payload === 'object' && Array.isArray(payload.results))
+      if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
         return { data: payload.results, error: null, attempts };
+      }
 
       classification = 'unexpected_structure';
       attempts.push({ url, status, classification });
-
     } catch (e) {
       classification = `fetch_error:${e?.message || e}`;
       attempts.push({ url, status: 'n/a', classification });
@@ -99,25 +105,16 @@ export async function fetchJsonArray(logical, opts = {}) {
 
 function buildHint(logical, attempts) {
   if (!attempts.length) return `No attempts for ${logical}.`;
-  if (attempts.every(a => a.classification.startsWith('html')))
-    return `All ${logical} endpoints returned HTML (likely hitting frontend). Use absolute API URL or set VITE_${logical.toUpperCase()}_ENDPOINT.`;
+  const allHtml = attempts.every(a => a.classification.startsWith('html'));
+  if (allHtml)
+    return `All ${logical} endpoints returned HTML (likely hitting frontend). Provide VITE_${logical.toUpperCase()}_ENDPOINT or correct API_BASE.`;
   if (attempts.some(a => a.classification === 'html_app_shell'))
-    return `App shell HTML detected. Remove client rewrite to /api or configure Netlify proxy.`;
+    return `App shell HTML detected for ${logical}. Remove rewrite to frontend for API paths.`;
   if (attempts.some(a => a.classification.startsWith('http_404')))
-    return `404s encountered. Verify resource path or provide VITE_${logical.toUpperCase()}_ENDPOINT.`;
-  return `No valid JSON array (${logical}).`;
-}
-      classification = `fetch_error:${e?.message || e}`;
-      attempts.push({ url, status: 'n/a', classification });
-    }
-  }
-
-  const hint = deriveHint(logical, attempts);
-  return {
-    data: [],
-    error: `No valid JSON array response (${logical}). ${hint}`,
-    attempts
-  };
+    return `${logical} endpoints 404. Verify path or set VITE_${logical.toUpperCase()}_ENDPOINT.`;
+  if (attempts.some(a => a.classification.startsWith('fetch_error')))
+    return `Network errors fetching ${logical}. Check CORS / connectivity.`;
+  return `No valid JSON array for ${logical}.`;
 }
 
 function deriveHint(logical, attempts) {
