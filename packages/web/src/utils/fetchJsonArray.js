@@ -3,6 +3,7 @@ import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD, PACKAGES_ENDPOINT_OVERRI
 const HTML_SIGNATURE_RE = /<!doctype|<html/i;
 const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
 const looksLikeHtml = (txt = '') => HTML_SIGNATURE_RE.test(txt.slice(0, 500));
+const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
 
 /**
  * Fetch an endpoint that should yield a JSON array (or {results: []}).
@@ -50,13 +51,18 @@ export async function fetchJsonArray(logical, opts = {}) {
   for (const url of candidates) {
     let classification = 'unknown';
     try {
+      const token = (() => {
+        try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; }
+      })();
       const res = await fetch(url, {
         credentials: 'include',
         headers: {
           'Accept': 'application/json, text/plain;q=0.4, */*;q=0.1',
-          'X-Requested-With': 'XMLHttpRequest'
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
+      if (API_DEBUG) console.warn('[fetchJsonArray]', logical, url, res.status);
 
       const status = res.status;
       const ct = (res.headers.get('content-type') || '').toLowerCase();

@@ -120,7 +120,14 @@ export default function ContentManagerPage() {
     let data = null;
     for (const url of candidates) {
       try {
-        const res = await fetch(url, { credentials:'include', headers:{ Accept:'application/json' } });
+        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // NEW
+        const res = await fetch(url, {
+          credentials:'include',
+          headers:{
+            Accept:'application/json',
+            ...(token ? { Authorization:`Bearer ${token}` } : {})
+          }
+        });
         const ct = res.headers.get('content-type') || '';
         if (res.status === 401) {
           attempts.push({ url, note:'unauthorized' });
@@ -145,7 +152,11 @@ export default function ContentManagerPage() {
     } else {
       const local = loadLocal();
       const m = new Map();
-      data.forEach(p => m.set(p.id, p));
+      data.forEach(p => {
+        if (!p) return;
+        const id = (p.id && String(p.id).trim()) || genId('remote', collection); // NEW ensure id
+        m.set(id, { ...p, id });
+      });
       local.forEach(p => m.set(p.id, p));
       data = Array.from(m.values());
     }

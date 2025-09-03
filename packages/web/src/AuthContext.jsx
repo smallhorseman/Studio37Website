@@ -17,6 +17,31 @@ export const AuthProvider = ({ children }) => {
     setIsReady(true);
   }, []);
 
+  // NEW: cross-tab + internal unauthorized sync
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === 'jwt_token') {
+        setToken(e.newValue);
+      }
+    }
+    function onUnauthorized() {
+      try { localStorage.removeItem('jwt_token'); } catch {}
+      setToken(null);
+    }
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('auth:unauthorized', onUnauthorized);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('auth:unauthorized', onUnauthorized);
+    };
+  }, []);
+
+  // Optional manual token refresh stub (if backend adds refresh later)
+  const refreshToken = useCallback(async () => {
+    // placeholder: implement /refresh when API available
+    return token;
+  }, [token]);
+
   const login = useCallback(async (username, password) => {
     setLoading(true);
     setAuthError(null);
@@ -73,8 +98,9 @@ export const AuthProvider = ({ children }) => {
     loading,
     authError,
     login,
-    logout
-  }), [token, isReady, loading, authError, login, logout]);
+    logout,
+    refreshToken // NEW
+  }), [token, isReady, loading, authError, login, logout, refreshToken]);
 
   return (
     <AuthContext.Provider value={value}>

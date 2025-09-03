@@ -3,6 +3,8 @@ import { fetchJsonArray } from '@/utils/fetchJsonArray';
 import { FadeIn } from '../components/FadeIn';
 import { seedCrm } from '@/data/seedContent';
 
+const API_DEBUG = import.meta.env.VITE_API_DEBUG === '1';
+
 export default function CRMPage() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,16 +27,24 @@ export default function CRMPage() {
       const candidates = ['/api/crm','/crm'];
       for (const url of candidates) {
         try {
-          const r = await fetch(url, { credentials:'include', headers:{Accept:'application/json'} });
+          const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+          const r = await fetch(url, {
+            credentials:'include',
+            headers:{
+              Accept:'application/json',
+              ...(token ? { Authorization:`Bearer ${token}` } : {})
+            }
+          });
           const ct = (r.headers.get('content-type')||'').toLowerCase();
-          if (!r.ok || !ct.includes('json')) continue;
+          if (!r.ok || !ct.includes('json')) { if (API_DEBUG) console.warn('[CRM fallback miss]', url, r.status); continue; }
           const j = await r.json();
-          if (Array.isArray(j)) { final = j; break; }
-        } catch { continue; }
+          if (Array.isArray(j)) { final = j; if (API_DEBUG) console.warn('[CRM fallback hit]', url); break; }
+        } catch (e) { if (API_DEBUG) console.warn('[CRM fallback err]', url, e?.message); continue; }
       }
       if (!final || !final.length) {
         final = seedCrm;
         setNote('Using seed CRM data (API unavailable).');
+        if (API_DEBUG) console.warn('[CRM seed] using seed data');
       }
       if (fetchErr && (!final || final === seedCrm))
         setError(null); // suppress noisy combined error now that we have seed

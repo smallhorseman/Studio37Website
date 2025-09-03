@@ -20,6 +20,14 @@ function LoginPageInner() {
     if (isAuthenticated) navigate(nextPath || '/internal-dashboard', { replace: true });
   }, [isAuthenticated, nextPath, navigate]);
 
+  useEffect(() => {
+    // Immediate redirect if token already there (avoid flashing login form)
+    const existing = localStorage.getItem('jwt_token');
+    if (existing && isAuthenticated) {
+      navigate(nextPath || '/internal-dashboard', { replace: true });
+    }
+  }, [isAuthenticated, nextPath, navigate]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     const ok = await login(form.username, form.password);
