@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './AuthContext'; // UPDATED
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';

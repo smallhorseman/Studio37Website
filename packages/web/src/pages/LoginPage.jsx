@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, EnsureAuthProvider } from '@/hooks/useAuth';
+import { useAuth, AuthProvider } from '@/AuthContext'; // UPDATED
 import { useLocation, useNavigate } from 'react-router-dom';
 import Studio37Logo from '../components/Studio37Logo';
 
@@ -67,8 +67,8 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <EnsureAuthProvider>
+    <AuthProvider>
       <LoginPageInner />
-    </EnsureAuthProvider>
+    </AuthProvider>
   );
 }
