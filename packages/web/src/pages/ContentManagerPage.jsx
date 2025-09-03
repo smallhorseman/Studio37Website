@@ -2,31 +2,20 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
 import { useLocation } from 'react-router-dom'; // NEW
 
-// Ensure we have seeds for all collections
-import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent';
+// Ensure seeds imported once (already present earlier)
+// import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent'; // keep
 
+// ==== BEGIN LOCAL STORAGE HELPERS (NEW / FIX) ====
 const LS_KEY_BASE = 'cms_collection_';
-
-function storageKey(collection) {
-  return `${LS_KEY_BASE}${collection}`;
+function storageKey(col) { return `${LS_KEY_BASE}${col}`; }
+function loadLocalRaw(col) {
+  try { return JSON.parse(localStorage.getItem(storageKey(col))) || []; } catch { return []; }
 }
-
-function loadLocalRaw(collection) {
-  try { return JSON.parse(localStorage.getItem(storageKey(collection))) || []; } catch { return []; }
+function saveLocalRaw(col, items) {
+  try { localStorage.setItem(storageKey(col), JSON.stringify(items)); } catch { /* ignore */ }
 }
-
-function saveLocalRaw(collection, items) {
-  try { localStorage.setItem(storageKey(collection), JSON.stringify(items)); } catch { /* ignore */ }
-}
-
-// Unsynced detection helper (kept; now calls loadLocalRaw directly)
-function getUnsyncedFor(collection) {
-  return loadLocalRaw(collection).filter(p =>
-    p &&
-    (p._unsynced ||
-     (typeof p.id === 'string' && p.id.startsWith('local-')))
-  );
-}
+// Replaces any previous loadLocalEdits()/saveLocalEdits()/loadLocal placeholders
+// ==== END LOCAL STORAGE HELPERS ====
 
 export default function ContentManagerPage() {
   const [posts, setPosts] = useState([]);
@@ -64,19 +53,16 @@ export default function ContentManagerPage() {
   // UPDATED mergedPosts to use new helpers (removes require & old loadLocal)
   const mergedPosts = useCallback(() => {
     const local = loadLocal();
+    const seedArr =
+      collection === 'posts' ? seedBlogPosts :
+      collection === 'packages' ? seedPackages :
+      seedProjects;
     const map = new Map();
-    const seedArr = collection === 'posts'
-      ? seedBlogPosts
-      : collection === 'packages'
-        ? seedPackages
-        : seedProjects;
-
     [...seedArr, ...local].forEach(p => {
       if (!p) return;
       const id = (p.id && String(p.id).trim()) || `seed-${collection}-${Math.random().toString(36).slice(2)}`;
       map.set(id, { ...p, id });
     });
-
     return Array.from(map.values()).sort(
       (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
     );
@@ -173,39 +159,49 @@ export default function ContentManagerPage() {
     });
 
   // UPDATE upsert / delete to use saveLocal
-  const upsertLocal = useCallback((item) => {
+  const upsertLocal = useCallback(item => {
     const all = loadLocal();
-    const idx = all.findIndex(p => p.id === item.id);
-    if (idx >= 0) all[idx] = item; else all.push(item);
+    const i = all.findIndex(p => p.id === item.id);
+    if (i >= 0) all[i] = item; else all.push(item);
     saveLocal(all);
   }, [loadLocal, saveLocal]);
 
-  const deleteLocal = useCallback((id) => {
+  const deleteLocal = useCallback(id => {
     saveLocal(loadLocal().filter(p => p.id !== id));
   }, [loadLocal, saveLocal]);
 
-  // UPDATE unsynced replaceLocal logic (used by sync)
-  const replaceLocal = useCallback((oldId, newPost) => {
-    let all = loadLocal();
-    all = all.filter(p => p.id !== oldId && !(newPost.slug && p.slug === newPost.slug && p.id !== newPost.id));
-    all.push(newPost);
-    saveLocal(all);
-    return all;
-  }, [loadLocal, saveLocal]);
+  // mergedPosts (remove any require usage)
+  const mergedPosts = useCallback(() => {
+    const local = loadLocal();
+    const seedArr =
+      collection === 'posts' ? seedBlogPosts :
+      collection === 'packages' ? seedPackages :
+      seedProjects;
+    const map = new Map();
+    [...seedArr, ...local].forEach(p => {
+      if (!p) return;
+      const id = (p.id && String(p.id).trim()) || `seed-${collection}-${Math.random().toString(36).slice(2)}`;
+      map.set(id, { ...p, id });
+    });
+    return Array.from(map.values()).sort(
+      (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
+    );
+  }, [collection, loadLocal]);
 
-  // NEW helpers for unsynced drafts
-  function markUnsynced(post) {
-    return { ...post, _unsynced: true };
-  }
+  // attemptSyncAll: ensure it uses new helpers (replace any previous version)
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState(null);
+  const [lastSyncAt, setLastSyncAt] = useState(null);
 
-  const getUnsynced = useCallback(() => getUnsyncedFor(collection), [collection]);
-
-  // NEW: attempt to push unsynced drafts
   const attemptSyncAll = useCallback(async () => {
     if (syncing) return;
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
-    if (!token) return; // cannot sync if not authenticated
-    let locals = loadLocal();
+    const authToken = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+    if (!authToken) return;
+    const resourcePath =
+      collection === 'posts' ? '/api/cms/posts' :
+      collection === 'packages' ? '/api/packages' :
+      '/api/projects';
+
     const unsynced = getUnsynced();
     if (!unsynced.length) {
       setSyncMsg('No drafts to sync.');
@@ -216,119 +212,111 @@ export default function ContentManagerPage() {
     let success = 0;
     for (const draft of unsynced) {
       const isNew = !draft.id || draft.id.startsWith('local-');
-      const body = {
-        ...draft,
-        _unsynced: undefined, // strip flag
-      };
+      const payload = { ...draft };
+      delete payload._unsynced;
       try {
-        const res = await tryApi(isNew ? 'POST' : 'PUT',
-          isNew ? '/api/cms/posts' : `/api/cms/posts/${draft.id}`,
-          body
-        );
-        if (res && typeof res === 'object') {
-          let final = { ...res };
-            if (!final.slug && draft.slug) final.slug = draft.slug;
-          // Replace local draft (by old id or slug)
-          locals = replaceLocal(draft.id, final);
-          success++;
-        } else {
-          // leave as unsynced
-        }
+        const method = isNew ? 'POST' : 'PUT';
+        const url = isNew ? resourcePath : `${resourcePath}/${draft.id}`;
+        const token = authToken;
+        const res = await fetch(url, {
+          method,
+            headers: {
+              'Content-Type':'application/json',
+              Accept:'application/json',
+              ...(token ? { Authorization:`Bearer ${token}` } : {})
+            },
+            credentials:'include',
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error();
+        const ct = (res.headers.get('content-type')||'').toLowerCase();
+        if (!ct.includes('json')) throw new Error();
+        const saved = await res.json();
+        const final = { ...draft, ...saved, _unsynced: undefined };
+        replaceLocal(draft.id, final);
+        success++;
       } catch {
-        // keep unsynced; continue
+        // leave unsynced
+        continue;
       }
     }
-    saveLocal(locals);
-    // Merge into current view
+    // Refresh posts state from merged local + seeds + remote fallback
     setPosts(ps => {
-      const map = new Map();
-      // remote posts already there
-      ps.forEach(p => map.set(p.id, p));
-      locals.forEach(p => map.set(p.id, p));
+      const map = new Map(ps.map(p => [p.id, p]));
+      loadLocal().forEach(p => map.set(p.id, p));
       return Array.from(map.values());
     });
     setSyncing(false);
     setLastSyncAt(Date.now());
-    if (success) {
-      setSyncMsg(`Synced ${success} draft${success === 1 ? '' : 's'}.`);
-    } else {
-      setSyncMsg('No drafts synced (still offline or unauthorized).');
-    }
+    setSyncMsg(success ? `Synced ${success}` : 'Sync failed (offline/auth).');
     setTimeout(()=>setSyncMsg(null), 3500);
-  }, [syncing]);
+  }, [collection, getUnsynced, loadLocal, replaceLocal, syncing]);
 
-  // Auto‑retry sync periodically & on window focus
-  useEffect(() => {
-    const onFocus = () => attemptSyncAll();
-    window.addEventListener('focus', onFocus);
-    const id = setInterval(() => attemptSyncAll(), 30000);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      clearInterval(id);
-    };
-  }, [attemptSyncAll]);
-
-  // Try sync shortly after initial refresh (once)
-  useEffect(() => {
-    if (!loading && !unauthorized) {
-      const t = setTimeout(() => attemptSyncAll(), 1500);
-      return () => clearTimeout(t);
-    }
-  }, [loading, unauthorized, attemptSyncAll]);
-
-  // UPDATE onSave: dynamic endpoint + normalization
+  // Ensure onSave uses markUnsynced & upsertLocal (patch existing version)
+  // Find existing onSave and replace its core remote logic with:
   const onSave = async () => {
     if (!editing) return;
     setSaving(true);
-    const isPosts = collection === 'posts';
-    const resourcePath = isPosts ? '/api/cms/posts' :
-      collection === 'packages' ? '/api/packages' : '/api/projects';
     const isNew = !editing.id;
-    const baseSlugSource =
-      editing.slug ||
-      editing.title ||
-      editing.name ||
-      `item-${Date.now()}`;
+    const baseSlugSource = editing.slug || editing.title || editing.name || `item-${Date.now()}`;
+    const resourcePath =
+      collection === 'posts' ? '/api/cms/posts' :
+      collection === 'packages' ? '/api/packages' :
+      '/api/projects';
+
+    const provisionalId = editing.id || `local-${Date.now()}`;
     const payload = {
       ...editing,
-      slug: makeSlug(baseSlugSource)
+      id: provisionalId,
+      slug: baseSlugSource.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+      created_at: editing.created_at || new Date().toISOString()
     };
-    // Normalize fields for posts view
     if (collection !== 'posts') {
-      // map name/description to post-like keys for UI reuse
       payload.title = payload.name;
       payload.excerpt = payload.description || payload.excerpt || '';
     }
-    const provisionalId = editing.id || `local-${Date.now()}`;
-    payload.id = editing.id || provisionalId;
 
+    let saved = null;
     let remoteOk = false;
     try {
-      let saved;
-      try {
-        saved = await tryApi(isNew ? 'POST' : 'PUT',
-          isNew ? resourcePath : `${resourcePath}/${editing.id}`,
-          payload
-        );
-        remoteOk = true;
-      } catch {
-        saved = { ...payload, _unsynced:true };
+      const method = isNew ? 'POST' : 'PUT';
+      const url = isNew ? resourcePath : `${resourcePath}/${editing.id}`;
+      const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type':'application/json',
+          Accept:'application/json',
+          ...(token ? { Authorization:`Bearer ${token}` } : {})
+        },
+        credentials:'include',
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const ct = (res.headers.get('content-type')||'').toLowerCase();
+        if (ct.includes('json')) {
+          saved = { ...payload, ...(await res.json()) };
+          remoteOk = true;
+        }
       }
-      if (!saved.id) saved.id = payload.id;
+      if (!remoteOk) throw new Error();
+    } catch {
+      saved = markUnsynced(payload);
+    } finally {
+      if (!saved.id) saved.id = provisionalId;
       upsertLocal(saved);
       setEditing(null);
       setPosts(ps => {
-        const m = new Map(ps.map(p=>[p.id,p]));
-        m.set(saved.id, saved);
-        return Array.from(m.values());
+        const map = new Map(ps.map(p => [p.id, p]));
+        map.set(saved.id, saved);
+        return Array.from(map.values());
       });
-      refresh();
       if (!remoteOk) {
-        setApiError('Draft saved locally (offline/auth). Will auto-sync.');
-        setTimeout(()=>setApiError(null), 6000);
+        setApiError('Draft saved locally (will sync).');
+        setTimeout(()=>setApiError(null), 5000);
       }
-    } finally {
       setSaving(false);
+      refresh();
     }
   };
 
