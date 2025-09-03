@@ -1,10 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <!-- PRECONNECT for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload + swap pattern -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap" />
+    </noscript>
+    <!-- FOUC guard (very small, removed after first frame) -->
+    <style>
+      html.no-js body { visibility:hidden; }
+      /* Avoid layout jump when font swaps */
+      @supports (font-display:swap) {
+        /* nothing extra needed; Google API already supplies display=swap */
+      }
+      /* (Optional) reduce motion initial animation cost */
+      @media (prefers-reduced-motion: reduce) {
+        * { animation-duration:0.01ms!important; animation-iteration-count:1!important; transition:none!important; }
+      }
+    </style>
     <title>Vite + React</title>
+    <script>
+      // Reveal ASAP after first frame
+      window.requestAnimationFrame(() => {
+        document.documentElement.classList.remove('no-js');
+        document.body.style.visibility = 'visible';
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
