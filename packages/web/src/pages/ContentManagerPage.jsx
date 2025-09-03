@@ -52,12 +52,27 @@ export default function ContentManagerPage() {
       .replace(/[^a-z0-9\-]/g,'')
       .replace(/\-+/g,'-');
 
+  // NEW: normalize posts so every item has a stable string id
+  const normalizePosts = useCallback((arr) => {
+    return (arr || []).map((p, i) => {
+      if (!p || typeof p !== 'object') return { id: `null-${i}-${Date.now()}`, title: '(Invalid item)' };
+      if (typeof p.id !== 'string' || !p.id.trim()) {
+        return { ...p, id: `gen-${i}-${Date.now()}` };
+      }
+      return p;
+    });
+  }, []);
+
   const mergedPosts = useCallback(() => {
     const local = loadLocalEdits();
     const map = new Map();
-    [...seedBlogPosts, ...local].forEach(p => map.set(p.id, p));
-    return Array.from(map.values()).sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
-  }, []);
+    [...seedBlogPosts, ...local].forEach(p => {
+      const pid = (p && typeof p.id === 'string' && p.id.trim()) ? p.id : `seed-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      map.set(pid, { ...p, id: pid });
+    });
+    return normalizePosts(Array.from(map.values()))
+      .sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
+  }, [normalizePosts]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -108,11 +123,11 @@ export default function ContentManagerPage() {
       const map = new Map();
       data.forEach(p => map.set(p.id, p));
       local.forEach(p => map.set(p.id, p));
-      data = Array.from(map.values());
+      data = normalizePosts(Array.from(map.values()));
     }
     setPosts(data);
     setLoading(false);
-  }, [mergedPosts, unauthorized]);
+  }, [mergedPosts, unauthorized, normalizePosts]);
 
   useEffect(() => {
     refresh();
@@ -198,7 +213,7 @@ export default function ContentManagerPage() {
       setPosts(ps => {
         const map = new Map(ps.map(p => [p.id, p]));
         map.set(saved.id, saved);
-        return Array.from(map.values());
+        return normalizePosts(Array.from(map.values()));
       });
       refresh();
       if (!remoteOk) {
@@ -211,20 +226,17 @@ export default function ContentManagerPage() {
 
   const onDelete = async (post) => {
     if (!window.confirm('Delete this post?')) return;
+    const pid = (post && typeof post.id === 'string') ? post.id : null;
     let remoteOk = false;
-    if (post.id && !post.id.startsWith('local-')) {
+    if (pid && !pid.startsWith('local-')) {
       try {
-        await tryApi('DELETE', `/api/cms/posts/${post.id}`);
+        await tryApi('DELETE', `/api/cms/posts/${pid}`);
         remoteOk = true;
       } catch { /* offline */ }
     }
-    deleteLocal(post.id);
-    if (remoteOk) {
-      setPosts(ps => ps.filter(p => p.id !== post.id));
-    } else {
-      setPosts(ps => ps.filter(p => p.id !== post.id));
-    }
-    if (editing && editing.id === post.id) setEditing(null);
+    if (pid) deleteLocal(pid);
+    setPosts(ps => ps.filter(p => p.id !== pid));
+    if (editing && editing.id === pid) setEditing(null);
   };
 
   const filtered = posts.filter(p => {
@@ -295,9 +307,9 @@ export default function ContentManagerPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <div className="md:col-span-2 space-y-3">
                 {loading && <div className="text-sm text-gray-500">Loading...</div>}
-                  {!loading && filtered.map(p => (
+                  {!loading && filtered.map((p, idx) => (
                     <div
-                      key={p.id}
+                      key={p.id || `row-${idx}`}
                       className="border rounded p-4 bg-white flex flex-col gap-2 shadow-sm"
                     >
                       <div className="flex justify-between items-center gap-3">
@@ -315,7 +327,12 @@ export default function ContentManagerPage() {
                       </div>
                       <div className="text-xs text-gray-500 flex flex-wrap gap-2">
                         <span>{p.slug}</span>
-                        {p.id.startsWith('local-') && <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded">local</span>}
+                        {typeof p.id === 'string' && p.id.startsWith('local-') && (
+                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded">local</span>
+                        )}
+                        {(!p.id || typeof p.id !== 'string') && (
+                          <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">no-id</span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-600 line-clamp-2">{p.excerpt}</p>
                     </div>
