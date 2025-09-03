@@ -8,6 +8,8 @@ const FORCE_REL = import.meta.env.VITE_FORCE_RELATIVE_API === '1' || import.meta
 // NEW: short-lived cache for repeated 401s (prevents console spam / network hammer)
 const RESULT_CACHE = new Map(); // logical -> { ts, status, result }
 const UNAUTH_TTL_MS = 4000;
+// NEW: endpoints that are publicly viewable (401 just means "no private items")
+const OPTIONAL_PUBLIC_RESOURCES = new Set(['projects','packages','services','crm','tasks']);
 
 /**
  * Fetch an endpoint that should yield a JSON array (or {results: []}).
@@ -107,13 +109,15 @@ export async function fetchJsonArray(logical, opts = {}) {
 
         // EARLY EXIT ON 401 (avoid endpoint hammering)
         if (status === 401) {
-          if (token) {
+          const tokenPresent = !!token;
+          const isOptionalPublic = OPTIONAL_PUBLIC_RESOURCES.has(logical);
+          if (tokenPresent && !isOptionalPublic) {
             classification = 'http_401';
             attempts.push({ url, status, classification });
             if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:unauthorized'));
             break;
           } else {
-            // NEW: public 401 (user not logged in) -> treat as non-fatal empty (cached)
+            // Treat as public 401 (even if a stale token exists for optional public data)
             classification = 'http_401_public';
             attempts.push({ url, status, classification });
             const result = { data: [], error: null, attempts };
@@ -203,6 +207,11 @@ export async function fetchJsonArray(logical, opts = {}) {
       }
     }
 
+    // NEW: suppress error if all attempts were public 401s
+    if (attempts.length && attempts.every(a => a.classification === 'http_401_public')) {
+      return { data: [], error: null, attempts };
+    }
+
     const allCors = attempts.length && attempts.every(a => a.classification === 'cors_block');
     if (allCors) {
       return {
@@ -227,6 +236,9 @@ export async function fetchJsonArray(logical, opts = {}) {
 
 function buildHint(logical, attempts) {
   if (!attempts.length) return `No attempts for ${logical}.`;
+  // NEW: silence pure public 401 sets
+  const onlyPublic401 = attempts.every(a => a.classification === 'http_401_public');
+  if (onlyPublic401) return null;
   const allHtml = attempts.every(a => a.classification.startsWith('html'));
   if (allHtml)
     return `All ${logical} endpoints returned HTML (likely hitting frontend). Provide VITE_${logical.toUpperCase()}_ENDPOINT or correct API_BASE.`;
