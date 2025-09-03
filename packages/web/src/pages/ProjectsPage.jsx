@@ -1,60 +1,84 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import apiClient from '../api/apiClient.js';
-import { FadeIn } from '../components/FadeIn';
+import { fetchJsonArray } from '@/utils/fetchJsonArray';
 
 export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const nonArrayWarnedRef = useRef(false);
+    const attemptsRef = useRef([]);
 
-    const fetchProjects = useCallback(async () => {
+    const load = useCallback(async () => {
         setLoading(true);
         setError(null);
-        try {
-            const response = await apiClient.get('/projects');
-            setProjects(response.data);
-        } catch (error) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
+        setProjects([]);
+        const { data, error: fetchErr, attempts } = await fetchJsonArray('projects');
+        attemptsRef.current = attempts;
+        if (fetchErr && data.length === 0) {
+            setError(
+                fetchErr +
+                ' Attempts: ' +
+                attempts.map(a => `[${a.note}@${a.url}]`).join(' ')
+            );
         }
+        setProjects(Array.isArray(data) ? data : []);
+        setLoading(false);
     }, []);
 
     useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
+        load();
+    }, [load]);
 
-    const nonArrayWarnedRef = useRef(false);
-    const safeProjects = Array.isArray(projects) ? projects : (() => {
-        if (projects && !nonArrayWarnedRef.current) {
-            // eslint-disable-next-line no-console
-            console.warn('[ProjectsPage] Expected array for projects but received:', projects);
-            nonArrayWarnedRef.current = true;
-        }
-        return [];
-    })();
+    const safeProjects = Array.isArray(projects)
+        ? projects
+        : (() => {
+            if (projects && !nonArrayWarnedRef.current) {
+                // eslint-disable-next-line no-console
+                console.warn('[ProjectsPage] Expected array for projects but received:', projects);
+                nonArrayWarnedRef.current = true;
+            }
+            return [];
+        })();
 
-    if (loading) return <div className="p-8">Loading projects...</div>;
-    if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
+    if (loading) return <div className="p-6">Loading projects...</div>;
+    if (error)
+        return (
+            <div className="p-6 text-red-600 space-y-4">
+                <div>Error: {error}</div>
+                <button
+                    onClick={load}
+                    className="px-4 py-2 border rounded text-sm hover:bg-red-50"
+                >
+                    Retry
+                </button>
+            </div>
+        );
 
     return (
-        <FadeIn>
-            <div className="p-8">
-                <h1 className="text-3xl font-bold mb-6">Projects</h1>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {safeProjects.map(project => (
-                        <div key={project.id} className="bg-white p-4 rounded-lg shadow">
-                            <h2 className="text-xl font-bold">{project.name}</h2>
-                            <p className="text-gray-600">{project.client}</p>
-                        </div>
-                    ))}
-                    {(!loading && !error && safeProjects.length === 0) && (
-                        <div className="text-sm text-gray-500 text-center py-8">
-                            No projects available.
-                        </div>
-                    )}
-                </div>
+        <div className="p-6 space-y-6">
+            <h1 className="text-2xl font-serif font-bold">Projects</h1>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {safeProjects.map((p, idx) => (
+                    <div
+                        key={p?.id || p?.slug || idx}
+                        className="border rounded-lg p-4 bg-white shadow-sm"
+                    >
+                        <h2 className="font-semibold text-soft-charcoal">
+                            {p?.name || p?.title || 'Untitled Project'}
+                        </h2>
+                        {p?.description && (
+                            <p className="mt-2 text-sm text-gray-600 line-clamp-4">
+                                {p.description}
+                            </p>
+                        )}
+                    </div>
+                ))}
+                {!safeProjects.length && (
+                    <div className="col-span-full text-center text-gray-500">
+                        No projects available.
+                    </div>
+                )}
             </div>
-        </FadeIn>
+        </div>
     );
 }

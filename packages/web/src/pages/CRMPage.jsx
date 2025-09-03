@@ -1,78 +1,88 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '../api/apiClient.js';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchJsonArray } from '@/utils/fetchJsonArray';
 import { FadeIn } from '../components/FadeIn';
 
 export default function CRMPage() {
-    const [contacts, setContacts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const nonArrayWarnedRef = useRef(false);
+  const attemptsRef = useRef([]);
 
-    const fetchContacts = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await apiClient.get('/crm/contacts');
-            setContacts(response.data);
-        } catch (error) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setRecords([]);
+    const { data, error: fetchErr, attempts } = await fetchJsonArray('crm'); // adjust endpoint if different
+    attemptsRef.current = attempts;
+    if (fetchErr && data.length === 0) {
+      setError(
+        fetchErr +
+          ' Attempts: ' +
+          attempts.map(a => `[${a.note}@${a.url}]`).join(' ')
+      );
+    }
+    setRecords(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const safeRecords = Array.isArray(records)
+    ? records
+    : (() => {
+        if (records && !nonArrayWarnedRef.current) {
+          // eslint-disable-next-line no-console
+            console.warn('[CRMPage] Expected array for CRM records but received:', records);
+          nonArrayWarnedRef.current = true;
         }
-    }, []);
+        return [];
+      })();
 
-    useEffect(() => {
-        fetchContacts();
-    }, [fetchContacts]);
-
-    const handleCall = (phone) => {
-        window.location.href = `tel:${phone}`;
-    };
-
-    const handleText = (phone) => {
-        window.location.href = `sms:${phone}`;
-    };
-
-    const handleEmail = (email) => {
-        window.location.href = `mailto:${email}`;
-    };
-
-    const handleEdit = (contactId) => {
-        // Here you would implement the logic to open an edit form
-        console.log('Edit contact:', contactId);
-    };
-
-    if (loading) return <div className="p-8">Loading contacts...</div>;
-    if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
-
+  if (loading) return <div className="p-6">Loading CRM data...</div>;
+  if (error)
     return (
-        <FadeIn>
-            <div className="p-8">
-                <h1 className="text-3xl font-bold mb-6">CRM Contacts</h1>
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <ul>
-                        {contacts.map(contact => (
-                            <li key={contact.id} className="py-4 border-b flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{contact.name}</p>
-                                    <p className="text-sm text-gray-600">{contact.email}</p>
-                                </div>
-                                <div className="space-x-2">
-                                    {contact.phone && (
-                                        <>
-                                            <button onClick={() => handleCall(contact.phone)} className="px-3 py-1 text-sm font-semibold rounded-md bg-blue-500 text-white hover:bg-blue-600">Call</button>
-                                            <button onClick={() => handleText(contact.phone)} className="px-3 py-1 text-sm font-semibold rounded-md bg-green-500 text-white hover:bg-green-600">Text</button>
-                                        </>
-                                    )}
-                                    {contact.email && (
-                                        <button onClick={() => handleEmail(contact.email)} className="px-3 py-1 text-sm font-semibold rounded-md bg-red-500 text-white hover:bg-red-600">Email</button>
-                                    )}
-                                    <button onClick={() => handleEdit(contact.id)} className="px-3 py-1 text-sm font-semibold rounded-md bg-yellow-500 text-white hover:bg-yellow-600">Edit</button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        </FadeIn>
+      <div className="p-6 text-red-600 space-y-4">
+        <div>Error: {error}</div>
+        <button
+          onClick={load}
+          className="px-4 py-2 border rounded text-sm hover:bg-red-50"
+        >
+          Retry
+        </button>
+      </div>
     );
+
+  return (
+    <FadeIn>
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-serif font-bold">CRM</h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {safeRecords.map((r, idx) => (
+            <div
+              key={r?.id || r?.email || idx}
+              className="border rounded-lg p-4 bg-white shadow-sm"
+            >
+              <h2 className="font-semibold text-soft-charcoal">
+                {r?.name || r?.full_name || 'Unnamed'}
+              </h2>
+              {r?.email && (
+                <p className="text-xs mt-1 text-gray-600">{r.email}</p>
+              )}
+              {r?.company && (
+                <p className="text-xs mt-1 text-gray-500 italic">{r.company}</p>
+              )}
+            </div>
+          ))}
+          {!safeRecords.length && (
+            <div className="col-span-full text-center text-gray-500">
+              No CRM records available.
+            </div>
+          )}
+        </div>
+      </div>
+    </FadeIn>
+  );
 }
