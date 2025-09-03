@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { seedBlogPosts } from '@/data/seedContent';
+import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent'; // ADD packages/projects seeds
 import { FadeIn } from '../components/FadeIn';
 import { useLocation } from 'react-router-dom'; // NEW
 
@@ -103,16 +103,14 @@ export default function ContentManagerPage() {
     const local = loadLocal();
     const map = new Map();
     if (collection === 'posts') {
-      [...seedBlogPosts, ...local].forEach(p => map.set(p.id, p));
+      [...seedBlogPosts, ...local].forEach(p => p && map.set(p.id, p));
     } else if (collection === 'packages') {
-      const { seedPackages } = require('@/data/seedContent');
-      [...seedPackages, ...local].forEach(p => map.set(p.id, p));
+      [...seedPackages, ...local].forEach(p => p && map.set(p.id, p));
     } else if (collection === 'projects') {
-      const { seedProjects } = require('@/data/seedContent');
-      [...seedProjects, ...local].forEach(p => map.set(p.id, p));
+      [...seedProjects, ...local].forEach(p => p && map.set(p.id, p));
     }
-    return Array.from(map.values()).sort((a,b)=>
-      (b.created_at||'').localeCompare(a.created_at||'')
+    return Array.from(map.values()).sort(
+      (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
     );
   }, [collection, loadLocal]);
 

@@ -1,4 +1,4 @@
-import { API_BASE } from '@config/env';
+import { API_BASE } from '@/config/env'; // FIX alias
 import { getSeedForPath } from '@/data/seedContent';
 
 const ENABLED = import.meta.env.VITE_ENABLE_API_SHIM === '1';
