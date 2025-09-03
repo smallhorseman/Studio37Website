@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -18,6 +18,12 @@ const ToolsPage = lazy(() => import('./pages/ToolsPage'));
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const CRMPage = lazy(() => import('./pages/CRMPage'));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
+const ContentManagerPage = lazy(() => import('./pages/ContentManagerPage'));
+const AdminUpdatePage = lazy(() => import('./pages/AdminUpdatePage'));
+const TodoPage = lazy(() => import('./pages/TodoPage'));
 
 // Minimal ResourceSection (re‑introduced for pages importing from '@/App')
 export const ResourceSection = ({
@@ -108,6 +114,48 @@ const Layout = () => (
   </div>
 );
 
+// Minimal protected gate (auth stub currently always unauthenticated; adjust later)
+const Protected = ({ children }) => {
+  const { isAuthenticated, isReady, loading } = useAuth();
+  if (!isReady || loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
+
+// Tools layout (subdomain tools.*)
+const ToolsLayout = () => (
+  <div className="min-h-screen flex flex-col bg-gray-50">
+    <nav className="bg-gray-800 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <Link to="/"><span className="font-semibold tracking-wide">Studio37 Tools</span></Link>
+        <div className="flex gap-4 text-sm">
+          <Link to="/dashboard" className="hover:underline">Dashboard</Link>
+          <Link to="/crm" className="hover:underline">CRM</Link>
+          <Link to="/projects" className="hover:underline">Projects</Link>
+          <Link to="/cms" className="hover:underline">CMS</Link>
+          <Link to="/todos" className="hover:underline">To‑Dos</Link>
+          <Link to="/admin-update" className="hover:underline">Admin</Link>
+        </div>
+      </div>
+    </nav>
+    <main className="flex-1 max-w-6xl mx-auto px-4 py-10">
+      <Routes>
+        <Route path="/login" element={<div className="max-w-md mx-auto"><LoginPage /></div>} />
+        {/* Wrap sensitive routes later with <Protected> when real auth returns */}
+        <Route index element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="crm" element={<CRMPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="cms" element={<ContentManagerPage />} />
+        <Route path="todos" element={<TodoPage />} />
+        <Route path="admin-update" element={<AdminUpdatePage />} />
+        <Route path="*" element={<div className="text-center text-gray-600">Not Found</div>} />
+      </Routes>
+    </main>
+    <footer className="text-center text-xs text-gray-500 py-4 border-t">Tools &copy; {new Date().getFullYear()}</footer>
+  </div>
+);
+
 const Fallback = () => (
   <div className="max-w-6xl mx-auto px-4 py-12 text-center text-soft-charcoal animate-pulse">
     Loading...
@@ -115,12 +163,14 @@ const Fallback = () => (
 );
 
 export default function App() {
+  const isToolsSite = typeof window !== 'undefined' && window.location.hostname.includes('tools.');
+
   return (
     <AuthProvider>
       <ErrorBoundary>
         <Router>
           <Suspense fallback={<Fallback />}>
-            <Layout />
+            {isToolsSite ? <ToolsLayout /> : <Layout />}
           </Suspense>
         </Router>
       </ErrorBoundary>
