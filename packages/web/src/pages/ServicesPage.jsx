@@ -8,6 +8,22 @@ export default function ServicesPage() {
     useMemo(() => listFetcher('/services'), [])
   );
 
+  const renderService = (svc, idx) => {
+    if (!svc || typeof svc !== 'object') {
+      return (
+        <div key={`invalid-${idx}`} className="p-4 border rounded text-sm text-red-500">
+          Invalid service entry
+        </div>
+      );
+    }
+    return (
+      <div key={svc.id || svc.slug || idx} className="p-4 border rounded">
+        <h3 className="card-title">{svc.name || 'Untitled'}</h3>
+        <p className="muted">{svc.description || 'Description pending.'}</p>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="page-header">
@@ -18,12 +34,7 @@ export default function ServicesPage() {
         title="Available Services"
         hookResult={servicesHook}
         emptyMessage="Services will appear soon."
-        renderItem={(svc, i) => (
-          <div key={svc.id || svc.name || i} className="card">
-            <h3 className="card-title">{svc.name || 'Untitled'}</h3>
-            <p className="muted">{svc.description || 'Description pending.'}</p>
-          </div>
-        )}
+        renderItem={renderService}
       />
     </>
   );

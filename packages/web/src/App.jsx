@@ -36,13 +36,23 @@ export const ResourceSection = ({
   const data = hookResult?.data;
   const loading = hookResult?.loading;
   const error = hookResult?.error;
-  const isEmpty =
-    !loading &&
-    !error &&
-    (
-      data == null ||
-      (Array.isArray(data) && data.length === 0)
-    );
+
+  // Normalize data to an array to avoid runtime .map errors
+  let list;
+  if (Array.isArray(data)) {
+    list = data;
+  } else if (data == null) {
+    list = [];
+  } else {
+    if (!ResourceSection._warned && typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.warn('[ResourceSection] Expected array but received:', data);
+      ResourceSection._warned = true;
+    }
+    list = [];
+  }
+
+  const isEmpty = !loading && !error && list.length === 0;
 
   return (
     <section className="mt-12">
@@ -81,7 +91,7 @@ export const ResourceSection = ({
 
       {!loading && !error && !isEmpty && (
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.isArray(data) ? data.map(renderItem) : renderItem?.(data)}
+          {list.map(renderItem)}
         </div>
       )}
     </section>
