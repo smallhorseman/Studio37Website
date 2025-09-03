@@ -188,7 +188,6 @@ export default function ContentManagerPage() {
     );
   }, [collection, loadLocal]);
 
-  // attemptSyncAll: ensure it uses new helpers (replace any previous version)
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState(null);
   const [lastSyncAt, setLastSyncAt] = useState(null);
