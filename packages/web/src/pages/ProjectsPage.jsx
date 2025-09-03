@@ -12,13 +12,14 @@ export default function ProjectsPage() {
         setLoading(true);
         setError(null);
         setProjects([]);
-        const { data, error: fetchErr, attempts } = await fetchJsonArray('projects');
+        const { data, error: fetchErr, attempts } = await fetchJsonArray('projects', {
+            override: import.meta.env.VITE_PROJECTS_ENDPOINT
+        });
         attemptsRef.current = attempts;
         if (fetchErr && data.length === 0) {
             setError(
-                fetchErr +
-                ' Attempts: ' +
-                attempts.map(a => `[${a.note}@${a.url}]`).join(' ')
+                fetchErr + ' Attempts: ' +
+                attempts.map(a => `[${a.classification}@${a.url}]`).join(' ')
             );
         }
         setProjects(Array.isArray(data) ? data : []);

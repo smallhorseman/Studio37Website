@@ -173,6 +173,12 @@ const Fallback = () => (
   </div>
 );
 
+// Optional small diagnostic badge (commented out)
+// function DataDiag({ message }) {
+//   if (!message) return null;
+//   return <div className="fixed bottom-2 right-2 text-[10px] bg-red-600 text-white px-2 py-1 rounded shadow">{message}</div>;
+// }
+
 export default function App() {
   const isToolsSite = typeof window !== 'undefined' && window.location.hostname.includes('tools.');
 

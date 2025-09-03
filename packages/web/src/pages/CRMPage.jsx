@@ -13,13 +13,14 @@ export default function CRMPage() {
     setLoading(true);
     setError(null);
     setRecords([]);
-    const { data, error: fetchErr, attempts } = await fetchJsonArray('crm'); // adjust endpoint if different
+    const { data, error: fetchErr, attempts } = await fetchJsonArray('crm', {
+      override: import.meta.env.VITE_CRM_ENDPOINT
+    });
     attemptsRef.current = attempts;
     if (fetchErr && data.length === 0) {
       setError(
-        fetchErr +
-          ' Attempts: ' +
-          attempts.map(a => `[${a.note}@${a.url}]`).join(' ')
+        fetchErr + ' Attempts: ' +
+        attempts.map(a => `[${a.classification}@${a.url}]`).join(' ')
       );
     }
     setRecords(Array.isArray(data) ? data : []);

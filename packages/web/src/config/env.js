@@ -28,3 +28,5 @@ export const API_COMMON_PATHS = ['/services', '/cms/posts', '/packages'];
 export const FORCE_API_PROXY =
   (import.meta.env.VITE_FORCE_API_PROXY === '1' ||
    import.meta.env.VITE_FORCE_API_PROXY === 'true');
+
+export const PROJECTS_ENDPOINT_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim() || '';
