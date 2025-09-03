@@ -3,14 +3,21 @@ import { seedBlogPosts } from '@/data/seedContent';
 import { FadeIn } from '../components/FadeIn';
 import { useLocation } from 'react-router-dom'; // NEW
 
-const LS_KEY = 'cms_posts_local_v1';
+const LS_KEY_BASE = 'cms_collection_';
 
-function loadLocalEdits() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; }
+// REPLACE load/save helpers with collection‑aware versions
+function loadLocalEditsFor(collection) {
+  const key = `${LS_KEY_BASE}${collection}`;
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
 }
-function saveLocalEdits(posts) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(posts)); } catch { /* ignore */ }
+function saveLocalEditsFor(collection, posts) {
+  const key = `${LS_KEY_BASE}${collection}`;
+  try { localStorage.setItem(key, JSON.stringify(posts)); } catch { /* ignore */ }
 }
+// Update generic helpers to call collection versions
+// (keep old names for internal reuse by passing active collection)
+function loadLocalEdits() { return []; }
+function saveLocalEdits() { /* no-op (collection specific now) */ }
 
 async function tryApi(method, path, body) {
   try {
@@ -70,6 +77,7 @@ export default function ContentManagerPage() {
   const [syncing, setSyncing] = useState(false);               // NEW
   const [syncMsg, setSyncMsg] = useState(null);                // NEW ephemeral info
   const [lastSyncAt, setLastSyncAt] = useState(null);          // NEW
+  const [collection, setCollection] = useState('posts'); // NEW: 'posts' | 'packages' | 'projects'
   const location = useLocation(); // NEW
 
   const makeSlug = (v='') =>
@@ -90,116 +98,124 @@ export default function ContentManagerPage() {
     });
   }, []);
 
+  // UPDATE mergedPosts to branch by collection
   const mergedPosts = useCallback(() => {
-    const local = loadLocalEdits();
+    const local = loadLocal();
     const map = new Map();
-    [...seedBlogPosts, ...local].forEach(p => {
-      const pid = (p && typeof p.id === 'string' && p.id.trim()) ? p.id : `seed-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-      map.set(pid, { ...p, id: pid });
-    });
-    return normalizePosts(Array.from(map.values()))
-      .sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
-  }, [normalizePosts]);
+    if (collection === 'posts') {
+      [...seedBlogPosts, ...local].forEach(p => map.set(p.id, p));
+    } else if (collection === 'packages') {
+      const { seedPackages } = require('@/data/seedContent');
+      [...seedPackages, ...local].forEach(p => map.set(p.id, p));
+    } else if (collection === 'projects') {
+      const { seedProjects } = require('@/data/seedContent');
+      [...seedProjects, ...local].forEach(p => map.set(p.id, p));
+    }
+    return Array.from(map.values()).sort((a,b)=>
+      (b.created_at||'').localeCompare(a.created_at||'')
+    );
+  }, [collection, loadLocal]);
 
+  // UPDATE refresh: dynamic endpoints
   const refresh = useCallback(async () => {
     setLoading(true);
     setApiError(null);
-    setUnauthorized(false); // NEW reset
+    setUnauthorized(false);
     const attempts = [];
+    const baseSegments = {
+      posts: ['cms/posts'],
+      packages: ['packages'],
+      projects: ['projects']
+    }[collection];
     const candidates = [
-      '/api/cms/posts', '/api/cms/posts/',
-      '/cms/posts', '/cms/posts/',
+      `/api/${baseSegments[0]}`,
+      `/api/${baseSegments[0]}/`,
+      `/${baseSegments[0]}`,
+      `/${baseSegments[0]}/`
     ];
     let data = null;
     for (const url of candidates) {
       try {
         const res = await fetch(url, { credentials:'include', headers:{ Accept:'application/json' } });
         const ct = res.headers.get('content-type') || '';
-        if (res.status === 401) {         // NEW: auth short‑circuit
+        if (res.status === 401) {
           attempts.push({ url, note:'unauthorized' });
-            setUnauthorized(true);
-            break;
+          setUnauthorized(true);
+          break;
         }
-        if (!res.ok) {
-          attempts.push({ url, note:`status_${res.status}` });
-          continue;
-        }
-        if (!/json/i.test(ct)) {
-          attempts.push({ url, note:'non_json' });
-          continue;
-        }
+        if (!res.ok) { attempts.push({ url, note:`status_${res.status}` }); continue; }
+        if (!/json/i.test(ct)) { attempts.push({ url, note:'non_json' }); continue; }
         const json = await res.json();
         if (Array.isArray(json)) { data = json; attempts.push({ url, note:'ok' }); break; }
         if (json && Array.isArray(json.results)) { data = json.results; attempts.push({ url, note:'ok_nested' }); break; }
         attempts.push({ url, note:'unexpected_shape' });
-      } catch (e) {
+      } catch {
         attempts.push({ url, note:'fetch_err' });
         continue;
       }
     }
     setAttemptLog(attempts);
     if (!data) {
-      // Fallback merge seeds + local edits (still show content even if unauthorized)
       data = mergedPosts();
-      if (!unauthorized) {
-        setApiError('Remote API unavailable (using local seed + edits).');
-      }
+      if (!unauthorized) setApiError(`Remote ${collection} API unavailable (using local seed + edits).`);
     } else {
-      // Merge remote with local overrides
-      const local = loadLocalEdits();
-      const map = new Map();
-      data.forEach(p => map.set(p.id, p));
-      local.forEach(p => map.set(p.id, p));
-      data = normalizePosts(Array.from(map.values()));
+      const local = loadLocal();
+      const m = new Map();
+      data.forEach(p => m.set(p.id, p));
+      local.forEach(p => m.set(p.id, p));
+      data = Array.from(m.values());
     }
     setPosts(data);
     setLoading(false);
-  }, [mergedPosts, unauthorized, normalizePosts]);
+  }, [collection, mergedPosts, unauthorized, loadLocal]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  // UPDATE effect dependencies
+  useEffect(()=>{ refresh(); }, [refresh, collection]);
 
   const startCreate = () => {
-    setEditing({
+    const base = {
       id: '',
-      title: '',
-      slug: '',
-      excerpt: '',
-      body: '',
-      created_at: new Date().toISOString(),
-      author: 'You'
-    });
+      created_at: new Date().toISOString()
+    };
+    if (collection === 'posts') {
+      setEditing({ ...base, title:'', slug:'', excerpt:'', body:'', author:'You' });
+    } else if (collection === 'packages') {
+      setEditing({ ...base, name:'', price:'', description:'', slug:'' });
+    } else {
+      setEditing({ ...base, name:'', imageUrl:'', description:'', slug:'' });
+    }
   };
 
   const startEdit = (p) => setEditing({ ...p });
 
   const cancelEdit = () => setEditing(null);
 
+  // UPDATE handleChange: map generic fields
   const handleChange = (field, value) =>
     setEditing(e => {
-      if (!e) return e; // guard
+      if (!e) return e;
       const next = { ...e, [field]: value };
-      // Auto-generate slug while creating (only if slug still empty or matches previous auto pattern)
-      if (field === 'title' && (!e.slug || e.slug === makeSlug(e.title || ''))) {
-        next.slug = makeSlug(value);
-      }
-      if (field === 'slug') {
-        next.slug = makeSlug(value);
+      if (collection === 'posts') {
+        if (field === 'title' && (!e.slug || e.slug === makeSlug(e.title||''))) next.slug = makeSlug(value);
+        if (field === 'slug') next.slug = makeSlug(value);
+      } else {
+        // for packages/projects use name -> slug
+        if (field === 'name' && (!e.slug || e.slug === makeSlug(e.name||''))) next.slug = makeSlug(value);
+        if (field === 'slug') next.slug = makeSlug(value);
       }
       return next;
     });
 
-  const upsertLocal = (post) => {
-    const local = loadLocalEdits();
-    const idx = local.findIndex(p => p.id === post.id);
-    if (idx >= 0) local[idx] = post; else local.push(post);
-    saveLocalEdits(local);
+  // UPDATE upsert/delete to use collection storage
+  const upsertLocal = (item) => {
+    const local = loadLocal();
+    const idx = local.findIndex(p => p.id === item.id);
+    if (idx >= 0) local[idx] = item; else local.push(item);
+    saveLocal(local);
   };
-
   const deleteLocal = (id) => {
-    const local = loadLocalEdits().filter(p => p.id !== id);
-    saveLocalEdits(local);
+    const local = loadLocal().filter(p => p.id !== id);
+    saveLocal(local);
   };
 
   // NEW: attempt to push unsynced drafts
@@ -278,51 +294,56 @@ export default function ContentManagerPage() {
     }
   }, [loading, unauthorized, attemptSyncAll]);
 
+  // UPDATE onSave: dynamic endpoint + normalization
   const onSave = async () => {
     if (!editing) return;
     setSaving(true);
-    let isNew = !editing.id;
-    const provisionalId = editing.id || `local-${Date.now()}`;
+    const isPosts = collection === 'posts';
+    const resourcePath = isPosts ? '/api/cms/posts' :
+      collection === 'packages' ? '/api/packages' : '/api/projects';
+    const isNew = !editing.id;
+    const baseSlugSource =
+      editing.slug ||
+      editing.title ||
+      editing.name ||
+      `item-${Date.now()}`;
     const payload = {
       ...editing,
-      id: editing.id || provisionalId,
-      created_at: editing.created_at || new Date().toISOString(),
-      slug: editing.slug ? makeSlug(editing.slug) : makeSlug(editing.title || `post-${Date.now()}`)
+      slug: makeSlug(baseSlugSource)
     };
+    // Normalize fields for posts view
+    if (collection !== 'posts') {
+      // map name/description to post-like keys for UI reuse
+      payload.title = payload.name;
+      payload.excerpt = payload.description || payload.excerpt || '';
+    }
+    const provisionalId = editing.id || `local-${Date.now()}`;
+    payload.id = editing.id || provisionalId;
+
     let remoteOk = false;
     try {
-      let saved = null;
-      if (isNew) {
-        try {
-          saved = await tryApi('POST', '/api/cms/posts', payload);
-          remoteOk = true;
-        } catch {
-          saved = markUnsynced({ ...payload });
-        }
-      } else {
-        try {
-          saved = await tryApi('PUT', `/api/cms/posts/${editing.id}`, payload);
-          remoteOk = true;
-        } catch {
-          saved = markUnsynced({ ...payload });
-        }
+      let saved;
+      try {
+        saved = await tryApi(isNew ? 'POST' : 'PUT',
+          isNew ? resourcePath : `${resourcePath}/${editing.id}`,
+          payload
+        );
+        remoteOk = true;
+      } catch {
+        saved = { ...payload, _unsynced:true };
       }
       if (!saved.id) saved.id = payload.id;
       upsertLocal(saved);
       setEditing(null);
       setPosts(ps => {
-        const map = new Map(ps.map(p => [p.id, p]));
-        map.set(saved.id, saved);
-        return Array.from(map.values());
+        const m = new Map(ps.map(p=>[p.id,p]));
+        m.set(saved.id, saved);
+        return Array.from(m.values());
       });
       refresh();
       if (!remoteOk) {
-        setApiError('Draft saved locally (offline / auth issue). It will auto-sync when possible.');
+        setApiError('Draft saved locally (offline/auth). Will auto-sync.');
         setTimeout(()=>setApiError(null), 6000);
-      } else {
-        setApiError(null);
-        setSyncMsg('Post saved.');
-        setTimeout(()=>setSyncMsg(null), 2500);
       }
     } finally {
       setSaving(false);
@@ -344,14 +365,18 @@ export default function ContentManagerPage() {
     if (editing && editing.id === pid) setEditing(null);
   };
 
+  // UPDATE filtered to include name/description for other collections
   const filtered = posts.filter(p => {
-    if (!filter) return true;
     const f = filter.toLowerCase();
-    return (p.title || '').toLowerCase().includes(f) || (p.slug || '').toLowerCase().includes(f);
+    if (!f) return true;
+    return [
+      p.title, p.slug, p.name, p.excerpt, p.description
+    ].some(v => (v||'').toLowerCase().includes(f));
   });
 
   const unsyncedCount = getUnsynced().length; // NEW count
 
+  // --- UI CHANGES (toolbar + list + editor) ---
   return (
     <FadeIn>
       <div className="p-8">
@@ -388,12 +413,22 @@ export default function ContentManagerPage() {
         )}
          <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex flex-wrap gap-3 items-center mb-4">
+              {/* NEW collection picker */}
+              <div className="flex gap-1 text-xs">
+                {['posts','packages','projects'].map(c => (
+                  <button
+                    key={c}
+                    onClick={()=> { setCollection(c); setEditing(null); }}
+                    className={`px-3 py-1 rounded border ${collection===c?'bg-faded-teal text-white':'bg-white hover:bg-gray-50'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={startCreate}
                 className="px-4 py-2 bg-faded-teal text-white rounded hover:bg-soft-charcoal transition text-sm"
-              >
-                New Post
-              </button>
+              >New {collection.slice(0,-1)}</button>
               <input
                 placeholder="Filter..."
                 value={filter}
@@ -433,97 +468,128 @@ export default function ContentManagerPage() {
               <div className="md:col-span-2 space-y-3">
                 {loading && <div className="text-sm text-gray-500">Loading...</div>}
                   {!loading && filtered.map((p, idx) => {
-                    const isLocal = typeof p.id === 'string' && p.id.startsWith('local-');
-                    const isUnsynced = p._unsynced || isLocal;
+                    const localFlag = typeof p.id === 'string' && p.id.startsWith('local-');
+                    const unsynced = p._unsynced;
                     return (
-                      <div
-                        key={p.id || `row-${idx}`}
-                        className="border rounded p-4 bg-white flex flex-col gap-2 shadow-sm"
-                      >
+                      <div key={p.id || idx} className="border rounded p-4 bg-white flex flex-col gap-2 shadow-sm">
                         <div className="flex justify-between items-center gap-3">
                           <h2 className="font-semibold text-soft-charcoal truncate">
-                            {p.title || '(Untitled)'}
+                            {p.title || p.name || '(Untitled)'}
                           </h2>
                           <div className="flex gap-2">
-                            <button
-                              onClick={()=>startEdit(p)}
-                              className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
-                            >Edit</button>
-                            <button
-                              onClick={()=>onDelete(p)}
-                              className="text-xs px-2 py-1 border rounded text-red-600 hover:bg-red-50"
-                            >Delete</button>
+                            <button onClick={()=>startEdit(p)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50">Edit</button>
+                            <button onClick={()=>onDelete(p)} className="text-xs px-2 py-1 border rounded text-red-600 hover:bg-red-50">Delete</button>
                           </div>
                         </div>
                         <div className="text-xs text-gray-500 flex flex-wrap gap-2 items-center">
-                          <span>{p.slug}</span>
-                          {isUnsynced && (
-                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">
-                              {syncing ? 'syncing...' : 'unsynced'}
-                            </span>
-                          )}
-                          {(!p.id || typeof p.id !== 'string') && (
-                            <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">no-id</span>
-                          )}
+                          {p.slug && <span>{p.slug}</span>}
+                          {collection === 'packages' && p.price && <span>${p.price}</span>}
+                          {collection === 'projects' && p.imageUrl && <span className="truncate max-w-[120px]">{p.imageUrl}</span>}
+                          {unsynced && <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">unsynced</span>}
+                          {localFlag && !unsynced && <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded">local</span>}
                         </div>
-                        <p className="text-xs text-gray-600 line-clamp-2">{p.excerpt}</p>
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {p.excerpt || p.description || ''}
+                        </p>
                       </div>
                     );
                   })}
                   {!loading && !filtered.length && (
-                    <div className="text-sm text-gray-400">No posts match.</div>
+                    <div className="text-sm text-gray-400">No {collection} match.</div>
                   )}
               </div>
 
               <div className="md:col-span-1">
                 {!editing && (
                   <div className="border rounded p-4 bg-white text-sm text-gray-600">
-                    <p>Select a post or create a new one.</p>
+                    <p>Select or create {collection === 'posts' ? 'a post' : collection === 'packages' ? 'a package' : 'a project'}.</p>
                     <p className="mt-3 text-xs">
-                      Offline mode: changes stored locally and merged with seeds
-                      until API becomes available.
+                      Drafts are kept locally if offline and sync later.
                     </p>
                   </div>
                 )}
                 {editing && (
                   <div className="border rounded p-4 bg-white flex flex-col gap-3">
                     <h3 className="font-semibold text-soft-charcoal mb-1 text-sm">
-                      {editing.id ? 'Edit Post' : 'New Post'}
+                      {editing.id ? `Edit ${collection.slice(0,-1)}` : `New ${collection.slice(0,-1)}`}
                     </h3>
-                    <label className="text-xs font-medium">
-                      Title
-                      <input
-                        className="mt-1 w-full border rounded px-2 py-1 text-sm"
-                        value={editing.title}
-                        onChange={e=>handleChange('title', e.target.value)}
-                      />
-                    </label>
-                    <label className="text-xs font-medium">
-                      Slug
-                      <input
-                        className="mt-1 w-full border rounded px-2 py-1 text-sm"
-                        value={editing.slug}
-                        onChange={e=>handleChange('slug', e.target.value)}
-                      />
-                    </label>
-                    <label className="text-xs font-medium">
-                      Excerpt
-                      <textarea
-                        rows={2}
-                        className="mt-1 w-full border rounded px-2 py-1 text-sm"
-                        value={editing.excerpt}
-                        onChange={e=>handleChange('excerpt', e.target.value)}
-                      />
-                    </label>
-                    <label className="text-xs font-medium">
-                      Body
-                      <textarea
-                        rows={6}
-                        className="mt-1 w-full border rounded px-2 py-1 text-sm font-mono"
-                        value={editing.body}
-                        onChange={e=>handleChange('body', e.target.value)}
-                      />
-                    </label>
+
+                    {/* Conditional fields */}
+                    {collection === 'posts' && (
+                      <>
+                        <label className="text-xs font-medium">Title
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.title}
+                            onChange={e=>handleChange('title', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Slug
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.slug}
+                            onChange={e=>handleChange('slug', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Excerpt
+                          <textarea rows={2} className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.excerpt}
+                            onChange={e=>handleChange('excerpt', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Body
+                          <textarea rows={6} className="mt-1 w-full border rounded px-2 py-1 text-sm font-mono"
+                            value={editing.body}
+                            onChange={e=>handleChange('body', e.target.value)} />
+                        </label>
+                      </>
+                    )}
+
+                    {collection === 'packages' && (
+                      <>
+                        <label className="text-xs font-medium">Name
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.name}
+                            onChange={e=>handleChange('name', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Price
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.price}
+                            onChange={e=>handleChange('price', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Slug
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.slug}
+                            onChange={e=>handleChange('slug', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Description
+                          <textarea rows={5} className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.description || ''}
+                            onChange={e=>handleChange('description', e.target.value)} />
+                        </label>
+                      </>
+                    )}
+
+                    {collection === 'projects' && (
+                      <>
+                        <label className="text-xs font-medium">Name
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.name}
+                            onChange={e=>handleChange('name', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Image URL
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.imageUrl || ''}
+                            onChange={e=>handleChange('imageUrl', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Slug
+                          <input className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.slug}
+                            onChange={e=>handleChange('slug', e.target.value)} />
+                        </label>
+                        <label className="text-xs font-medium">Description
+                          <textarea rows={5} className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={editing.description || ''}
+                            onChange={e=>handleChange('description', e.target.value)} />
+                        </label>
+                      </>
+                    )}
+
                     <div className="flex gap-2 pt-2">
                       <button
                         onClick={onSave}
@@ -542,7 +608,7 @@ export default function ContentManagerPage() {
                     </div>
                     {editing.id && editing.id.startsWith('local-') && (
                       <div className="text-[10px] text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
-                        Local-only draft (not yet synced).
+                        Local-only draft.
                       </div>
                     )}
                   </div>
