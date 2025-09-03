@@ -5,6 +5,58 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import './App.css';
+import { API_BASE } from '@config/env'; // ensures correct base host
+// Packages fetch fallback: retries failed absolute API_BASE packages calls through /api proxy (temporary CORS workaround)
+if (typeof window !== 'undefined' && !window.__packages_fetch_shim_installed__) {
+  window.__packages_fetch_shim_installed__ = true;
+  const originalFetch = window.fetch.bind(window);
+  const apiHost = (() => { try { return new URL(API_BASE).host; } catch { return null; } })();
+  const allowRelative = import.meta.env.VITE_ALLOW_PROD_RELATIVE === '1' || import.meta.env.VITE_ALLOW_PROD_RELATIVE === 'true';
+
+  window.fetch = async function patchedFetch(input, init) {
+    const reqUrl = typeof input === 'string' ? input : input?.url || '';
+    const isPackages =
+      /\/packages\/?(\?|$)/.test(reqUrl) &&
+      (reqUrl.startsWith(API_BASE) || (apiHost && reqUrl.includes(apiHost)));
+
+    if (!allowRelative || !isPackages) {
+      return originalFetch(input, init);
+    }
+
+    // First attempt (absolute)
+    try {
+      const res = await originalFetch(input, init);
+      const ct = res.headers.get('content-type') || '';
+      const looksHtml = ct.includes('text/html');
+      if (!res.ok && looksHtml) {
+        // likely SPA shell – try relative
+        const rel = toRelativePackages(reqUrl);
+        if (rel) return originalFetch(rel, init);
+      }
+      // If 404 with no CORS headers we may still get a valid Response; let caller decide.
+      return res;
+    } catch (e) {
+      // Network/CORS error -> retry relative
+      const rel = toRelativePackages(reqUrl);
+      if (rel) {
+        try { return await originalFetch(rel, init); }
+        catch { /* swallow second failure */ }
+      }
+      throw e;
+    }
+  };
+
+  function toRelativePackages(fullUrl) {
+    try {
+      const u = new URL(fullUrl, window.location.href);
+      const path = u.pathname.replace(/\/+$/, '');
+      if (!/\/packages$/.test(path)) return null;
+      return `/api/packages${u.search}`;
+    } catch {
+      return null;
+    }
+  }
+}
 
 // Static (eager) page imports to avoid dynamic chunk fetch failures
 import HomePage from './pages/HomePage';

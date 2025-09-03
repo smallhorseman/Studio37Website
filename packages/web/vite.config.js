@@ -22,7 +22,11 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'https://sem37-api.onrender.com'),
     'import.meta.env.VITE_AUTH_BASE_URL': JSON.stringify(process.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com'),
-    'import.meta.env.VITE_ALLOW_PROD_RELATIVE': JSON.stringify(process.env.VITE_ALLOW_PROD_RELATIVE || ''),
+    'import.meta.env.VITE_ALLOW_PROD_RELATIVE': JSON.stringify(
+      process.env.VITE_ALLOW_PROD_RELATIVE === undefined
+        ? '1'           // default ON to allow /api fallback for CORS while backend is fixed
+        : process.env.VITE_ALLOW_PROD_RELATIVE
+    ),
     'import.meta.env.VITE_PACKAGES_ENDPOINT': JSON.stringify(process.env.VITE_PACKAGES_ENDPOINT || '')
   },
   esbuild: {
