@@ -17,6 +17,7 @@ const stripInvalidVendors = () => ({
 });
 stripInvalidVendors.postcss = true;
 
+// (No further changes – order already correct; ensured plugin last)
 export default {
   plugins: [
     tailwindcss(),

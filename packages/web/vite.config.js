@@ -35,7 +35,7 @@ export default defineConfig({
     jsxDev: process.env.NODE_ENV !== 'production'
   },
   build: {
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
     target: 'es2022',
     rollupOptions: {
       external: OPTIONAL_EXTERNALS,
