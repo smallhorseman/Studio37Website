@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn.jsx';
+import { seedTasks } from '@/data/seedContent';
 
 export default function TodoPage() {
     const [tasks, setTasks] = useState([]);
@@ -25,6 +26,25 @@ export default function TodoPage() {
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    useEffect(() => {
+        (async () => {
+            const endpoints = ['/api/tasks', '/tasks'];
+            let data = null;
+            for (const u of endpoints) {
+                try {
+                    const r = await fetch(u, { credentials: 'include', headers: { Accept: 'application/json' } });
+                    const ct = (r.headers.get('content-type') || '').toLowerCase();
+                    if (!r.ok || !ct.includes('json')) continue;
+                    const j = await r.json();
+                    if (Array.isArray(j)) { data = j; break; }
+                } catch { continue; }
+            }
+            if (!data) data = seedTasks;
+            setTasks(data);
+            setLoading(false);
+        })();
+    }, []);
 
     const getProjectName = (projectId) => projects.find(p => p.id === projectId)?.name || 'Unknown Project';
 

@@ -19,9 +19,8 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     { re: /\/services\/?(\?|$)/, rel: '/api/services' },
     { re: /\/projects\/?(\?|$)/, rel: '/api/projects' },
     { re: /\/cms\/posts\/?(\?|$)/, rel: '/api/cms/posts' },
-    // NEW: tools endpoints (no seed for crm/tasks yet unless provided below)
-    { re: /\/crm\/?(\?|$)/, rel: '/api/crm' },
-    { re: /\/tasks\/?(\?|$)/, rel: '/api/tasks' }
+    { re: /\/crm\/?(\?|$)/, rel: '/api/crm' },     // NEW
+    { re: /\/tasks\/?(\?|$)/, rel: '/api/tasks' }  // NEW
   ];
 
   window.fetch = async function patchedFetch(input, init) {

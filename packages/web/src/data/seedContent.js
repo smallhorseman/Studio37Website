@@ -101,7 +101,6 @@ export const seedCrm = [
   { id: 'lead-demo-1', name: 'Acme Corp', status: 'lead', contact: 'jane@acme.com' },
   { id: 'lead-demo-2', name: 'Bright Health', status: 'prospect', contact: 'ops@bright.example' }
 ];
-
 export const seedTasks = [
   { id: 'task-demo-1', title: 'Prepare proposal draft', done: false },
   { id: 'task-demo-2', title: 'Upload portfolio images', done: true }

@@ -64,13 +64,15 @@ export default function BlogPostPage() {
     if (error) return <div className="bg-white px-6 py-32 lg:px-8 text-red-500">Error: {error}</div>;
     if (!post) return <div className="bg-white px-6 py-32 lg:px-8">Post not found.</div>;
 
+    const displayBody = post.content || post.body || post.excerpt || '';
+
     return (
         <div className="bg-white px-6 py-32 lg:px-8">
             <div className="mx-auto max-w-3xl text-base leading-7 text-gray-700">
                 <FadeIn>
-                    <p className="text-base font-semibold leading-7 text-[#468289]">{post.category}</p>
+                    <p className="text-base font-semibold leading-7 text-[#468289]">{post.category || 'Article'}</p>
                     <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#36454F] sm:text-4xl font-serif">{post.title}</h1>
-                    <p className="mt-6 text-xl leading-8">{post.content}</p>
+                    <p className="mt-6 text-xl leading-8 whitespace-pre-wrap">{displayBody}</p>
                 </FadeIn>
                 <div className="mt-16">
                     <button onClick={() => navigate('/blog')} className="text-sm font-semibold leading-6 text-[#468289]">&larr; Back to Blog</button>

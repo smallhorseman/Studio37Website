@@ -128,11 +128,33 @@ export async function parseJson(res) {
 
 const runningOnTools = (typeof window !== 'undefined') && window.location.hostname.includes('tools.');
 if (runningOnTools) {
-  // Force relative proxy to avoid cross-origin CORS
-  axiosApiClient.defaults.baseURL = '/api';
+  axiosApiClient.defaults.baseURL = '/api'; // ensure proxy usage
 }
 
 export function enableProxyMode() {
   forceProxy = true;
   if (axiosApiClient) axiosApiClient.defaults.baseURL = '/api';
+}
+
+export async function getJson(path) { // NEW helper
+  const seq = runningOnTools ? ['/api', ''] : ['', '/api'];
+  let lastErr;
+  for (const prefix of seq) {
+    try {
+      const res = await fetch(prefix + path, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' }
+      });
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      if (!res.ok || !ct.includes('json')) {
+        lastErr = new Error(`Bad response ${res.status} ${prefix}${path}`);
+        continue;
+      }
+      return await res.json();
+    } catch (e) {
+      lastErr = e;
+      continue;
+    }
+  }
+  throw lastErr || new Error('Failed getJson');
 }

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { fetchJsonArray } from '@/utils/fetchJsonArray';
 import { FadeIn } from '../components/FadeIn';
+import { seedCrm } from '@/data/seedContent';
 
 export default function CRMPage() {
   const [records, setRecords] = useState([]);
@@ -29,6 +30,26 @@ export default function CRMPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const candidates = ['/api/crm','/crm'];
+      let data = null;
+      for (const url of candidates) {
+        try {
+          const r = await fetch(url, { credentials:'include', headers:{Accept:'application/json'} });
+          const ct = (r.headers.get('content-type')||'').toLowerCase();
+            if (!r.ok || !ct.includes('json')) continue;
+            const j = await r.json();
+            if (Array.isArray(j)) { data = j; break; }
+        } catch { continue; }
+      }
+      if (!data) data = seedCrm;
+      if (!cancelled) { setRecords(data); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  
   const safeRecords = Array.isArray(records)
     ? records
     : (() => {

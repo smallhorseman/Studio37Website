@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Header from './components/Header';
@@ -168,11 +168,15 @@ if (typeof window !== 'undefined' && window.location.hostname.includes('tools.')
 // Auth gate (updated to break login loop by checking token directly)
 const Protected = ({ children }) => {
   const { isAuthenticated, isReady, loading } = useAuth();
+  const location = useLocation(); // NEW
   const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
   // If hook not ready but token exists, treat as loading then allow
   if (!isReady && token) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Initializing session...</div>;
   if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;
-  if (!isAuthenticated && !token) return <Navigate to="/login" replace />;
+  if (!isAuthenticated && !token) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   return children;
 };
 

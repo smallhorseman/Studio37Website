@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, EnsureAuthProvider } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Studio37Logo from '../components/Studio37Logo';
 
 function LoginPageInner() {
   const { login, loading, authError, isAuthenticated } = useAuth();
   const [form, setForm] = useState({ username: '', password: '' });
+  const location = useLocation();
   const navigate = useNavigate();
+  const [nextPath, setNextPath] = useState('/internal-dashboard');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const np = params.get('next');
+    if (np) setNextPath(np);
+  }, [location.search]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     await login(form.username, form.password);
-    navigate('/internal-dashboard');
+    navigate(nextPath || '/internal-dashboard', { replace: true });
   };
 
   if (isAuthenticated) {
