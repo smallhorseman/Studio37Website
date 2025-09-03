@@ -1,3 +1,4 @@
-/api/*  https://sem37-api.onrender.com/api/:splat  200
-/auth/* https://auth-3778.onrender.com/:splat      200
-/cms/*  https://sem37-api.onrender.com/cms/:splat  200
+/api/*    https://sem37-api.onrender.com/api/:splat    200
+/auth/*   https://auth-3778.onrender.com/:splat        200
+/cms/*    https://sem37-api.onrender.com/cms/:splat    200
+/*        /index.html                                  200

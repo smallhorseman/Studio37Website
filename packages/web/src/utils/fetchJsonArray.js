@@ -19,6 +19,15 @@ export async function fetchJsonArray(logical, opts = {}) {
     const { override, extraCandidates = [] } = opts;
     const attempts = [];
 
+    // FIX: define host + forced relative mode before usage
+    const sameHost =
+      typeof window !== 'undefined' &&
+      window.location &&
+      /studio37\.cc$/i.test(window.location.host);
+
+    // Will prefer /api/* relative first when hosting on studio37.cc or env forces it (bypasses CORS on raw API origin)
+    const forceRelativeMode = FORCE_REL || sameHost;
+
     const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
     const base = baseRaw.replace(/\/+$/,'');
     const candidates = new Set();
