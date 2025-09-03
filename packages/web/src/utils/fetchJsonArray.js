@@ -106,6 +106,36 @@ export async function fetchJsonArray(logical, opts = {}) {
     }
   }
 
+  // NEW: all attempts 404 -> explicit final remote retry (idempotent safeguard)
+  const all404 = attempts.length && attempts.every(a => String(a.status).startsWith('404'));
+  if (all404) {
+    const canonical = `https://sem37-api.onrender.com/api/${logical}`;
+    const alreadyTried = attempts.some(a => a.url === canonical);
+    if (!alreadyTried) {
+      try {
+        const token = (() => { try { return localStorage.getItem('jwt_token') || localStorage.getItem('token'); } catch { return null; } })();
+        const res = await fetch(canonical, {
+          credentials: 'include',
+            headers:{
+              Accept:'application/json',
+              'X-Requested-With':'XMLHttpRequest',
+              ...(token ? { Authorization:`Bearer ${token}` } : {})
+            }
+        });
+        const ct = (res.headers.get('content-type')||'').toLowerCase();
+        if (res.ok && ct.includes('json')) {
+          const j = await res.json();
+          if (Array.isArray(j)) return { data:j, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
+          if (j && typeof j==='object' && Array.isArray(j.results))
+            return { data:j.results, error:null, attempts:[...attempts, { url:canonical, status:res.status, classification:'late_retry_ok' }] };
+        }
+        attempts.push({ url:canonical, status:res.status, classification:`late_retry_${res.status}` });
+      } catch (e) {
+        attempts.push({ url:canonical, status:'n/a', classification:`late_retry_error:${e?.message||e}` });
+      }
+    }
+  }
+
   return {
     data: [],
     error: buildHint(logical, attempts),

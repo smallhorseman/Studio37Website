@@ -162,6 +162,23 @@ export default function ContentManagerPage() {
     }
     setPosts(data);
     setLoading(false);
+
+    // NEW remote canonical fallback if every attempt was 404
+    if (!data && attempts.length && attempts.every(a => a.status === 404)) {
+      const canonical = `https://sem37-api.onrender.com/api/${collection}`;
+      try {
+        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+        const r = await fetch(canonical, {
+          credentials:'include',
+          headers:{ Accept:'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) }
+        });
+        const ct = (r.headers.get('content-type')||'').toLowerCase();
+        if (r.ok && ct.includes('json')) {
+          const j = await r.json();
+          if (Array.isArray(j)) data = j;
+        }
+      } catch { /* ignore */ }
+    }
   }, [collection, mergedPosts, unauthorized, loadLocal]);
 
   // UPDATE effect dependencies

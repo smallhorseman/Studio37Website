@@ -28,6 +28,26 @@ if (typeof window !== 'undefined' && !window.__api_auth_fetch_patch__) {
   };
 }
 
+// NEW: 404 monitor for /api/* indicating missing redirects
+if (typeof window !== 'undefined' && !window.__api_404_probe__) {
+  window.__api_404_probe__ = true;
+  const origFetch = window.fetch;
+  window.fetch = async (i, init) => {
+    const res = await origFetch(i, init);
+    try {
+      const urlStr = typeof i === 'string' ? i : i?.url || '';
+      if (/\/api\//.test(urlStr) && res.status === 404) {
+        window.__api_404_count = (window.__api_404_count || 0) + 1;
+        if (window.__api_404_count === 3) {
+          // eslint-disable-next-line no-console
+          console.warn('[API] Repeated 404s on /api/* - ensure Netlify redirects or set VITE_API_URL to external API host.');
+        }
+      }
+    } catch { /* ignore */ }
+    return res;
+  };
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
