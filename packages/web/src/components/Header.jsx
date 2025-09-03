@@ -37,6 +37,11 @@ const Header = () => {
                     </a>
                 </div>
             </nav>
+            <div className="max-w-7xl mx-auto px-6 py-4">
+                <span className="text-xs text-gray-500">
+                    Based in Houston, TX 77362
+                </span>
+            </div>
         </header>
     );
 };

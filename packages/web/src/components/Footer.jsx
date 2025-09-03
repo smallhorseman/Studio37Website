@@ -61,6 +61,9 @@ const Footer = () => {
                     <p className="text-xs text-gray-500 mb-2">
                         Studio 37 offers professional portrait, event, and product photography services in Houston, Texas, and surrounding communities. We proudly serve clients in The Woodlands, Spring, Conroe, Humble, Kingwood, Cypress, Tomball, and throughout Montgomery and Harris County. If you're looking for a trusted photographer within a 100-mile radius of 77363, contact us for your next project.
                     </p>
+                    <p className="text-xs text-gray-500">
+                        Studio37 • Houston, TX 77362
+                    </p>
                     <p className="text-xs text-gray-500">&copy; 2025 Studio 37. All rights reserved.</p>
                 </div>
             </div>
