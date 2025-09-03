@@ -14,46 +14,37 @@ export default function CRMPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNote(null);
     setRecords([]);
-    const { data, error: fetchErr, attempts } = await fetchJsonArray('crm', {
+    const { data, error: fetchErr } = await fetchJsonArray('crm', {
       override: import.meta.env.VITE_CRM_ENDPOINT
     });
-    attemptsRef.current = attempts;
-    if (fetchErr && data.length === 0) {
-      setError(fetchErr + ' Attempts: ' +
-        attempts.map(a => `[${a.classification}@${a.url}]`).join(' '));
-    }
-    setRecords(Array.isArray(data) ? data : []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    let final = data;
+    if ((!final || !final.length) && fetchErr) {
+      // manual fallback endpoints
       const candidates = ['/api/crm','/crm'];
-      let data = null;
       for (const url of candidates) {
         try {
           const r = await fetch(url, { credentials:'include', headers:{Accept:'application/json'} });
           const ct = (r.headers.get('content-type')||'').toLowerCase();
-            if (!r.ok || !ct.includes('json')) continue;
-            const j = await r.json();
-            if (Array.isArray(j)) { data = j; break; }
+          if (!r.ok || !ct.includes('json')) continue;
+          const j = await r.json();
+          if (Array.isArray(j)) { final = j; break; }
         } catch { continue; }
       }
-      if (!data) {
-        data = seedCrm;
+      if (!final || !final.length) {
+        final = seedCrm;
         setNote('Using seed CRM data (API unavailable).');
       }
-      if (!cancelled) { setRecords(data); setLoading(false); }
-    })();
-    return () => { cancelled = true; };
+      if (fetchErr && (!final || final === seedCrm))
+        setError(null); // suppress noisy combined error now that we have seed
+    }
+    setRecords(Array.isArray(final) ? final : []);
+    setLoading(false);
   }, []);
-  
+
+  useEffect(() => { load(); }, [load]);
+
   const safeRecords = Array.isArray(records)
     ? records
     : (() => {

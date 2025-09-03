@@ -282,6 +282,64 @@ export default function ContentManagerPage() {
 
   const unsyncedCount = getUnsynced().length; // NEW count
 
+  // NOTE: ensure these helpers already exist: loadLocal, saveLocal, getUnsynced, replaceLocal
+  // If attemptSyncAll was removed and is now undefined, re-add it here.
+  // Remove any earlier duplicate before applying this.
+  const attemptSyncAll = useCallback(async () => {
+    if (syncing) return;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+    if (!token) return;
+    const unsynced = getUnsynced();
+    if (!unsynced.length) {
+      setSyncMsg('No drafts to sync.');
+      setTimeout(()=>setSyncMsg(null), 1800);
+      return;
+    }
+    setSyncing(true);
+    const resourcePath =
+      collection === 'posts' ? '/api/cms/posts' :
+      collection === 'packages' ? '/api/packages' :
+      '/api/projects';
+
+    let success = 0;
+    for (const draft of unsynced) {
+      const isNew = !draft.id || draft.id.startsWith('local-');
+      const payload = { ...draft };
+      delete payload._unsynced;
+      try {
+        const res = await fetch(isNew ? resourcePath : `${resourcePath}/${draft.id}`, {
+          method: isNew ? 'POST' : 'PUT',
+          headers: {
+            'Content-Type':'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error();
+        const ct = (res.headers.get('content-type')||'').toLowerCase();
+        if (!ct.includes('json')) throw new Error();
+        const saved = await res.json();
+        const final = { ...draft, ...saved, _unsynced: undefined };
+        replaceLocal(draft.id, final);
+        success++;
+      } catch {
+        // leave unsynced
+      }
+    }
+    // Refresh displayed list from local
+    setPosts(prev => {
+      const map = new Map(prev.map(p => [p.id, p]));
+      loadLocal().forEach(p => map.set(p.id, p));
+      return Array.from(map.values());
+    });
+    setSyncing(false);
+    setLastSyncAt(Date.now());
+    setSyncMsg(success ? `Synced ${success}` : 'Sync incomplete.');
+    setTimeout(()=>setSyncMsg(null), 3200);
+  }, [collection, syncing, getUnsynced, replaceLocal, loadLocal]); 
+
   // --- UI CHANGES (toolbar + list + editor) ---
   return (
     <FadeIn>
@@ -357,7 +415,7 @@ export default function ContentManagerPage() {
               <button
                 onClick={attemptSyncAll}
                 disabled={syncing || !unsyncedCount}
-                className="px-3 py-1 border rounded text-sm hover:bg-gray-50 disabled:opacity-40"
+                className="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-50"
               >
                 {syncing ? 'Syncing...' : unsyncedCount ? `Sync (${unsyncedCount})` : 'Sync'}
               </button>

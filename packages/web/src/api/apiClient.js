@@ -19,7 +19,7 @@ const axiosApiClient = axios.create({
 
 // Inject token + auto /api prefix
 axiosApiClient.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // CHANGED
   if (token) cfg.headers.Authorization = `Bearer ${token}`;
   if (cfg.url) {
     if (
@@ -57,7 +57,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // CHANGED
   if (token) cfg.headers.Authorization = `Bearer ${token}`;
   if (cfg.url) {
     if (
