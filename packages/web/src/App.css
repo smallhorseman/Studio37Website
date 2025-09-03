@@ -4,6 +4,6 @@
 /* Lean mode: styling via inline Tailwind utilities */
 @layer base {
   html {
-    -webkit-text-size-adjust: 100%; /* valid value (previous invalid parses were logged) */
+    -webkit-text-size-adjust: 100%;
   }
 }
