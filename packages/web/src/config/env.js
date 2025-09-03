@@ -18,4 +18,9 @@ export const isSameOrigin = (urlStr) => {
   }
 };
 
-export const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : new Date().toISOString();
+export const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined'
+  ? __BUILD_TIME__
+  : new Date().toISOString();
+
+// Paths that often get called without /api prefix - we retry through proxy if 404 / CORS
+export const API_COMMON_PATHS = ['/services', '/cms/posts', '/packages'];
