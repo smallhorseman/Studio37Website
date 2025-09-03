@@ -7,6 +7,7 @@ export default function CRMPage() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [note, setNote] = useState(null);
   const nonArrayWarnedRef = useRef(false);
   const attemptsRef = useRef([]);
 
@@ -44,7 +45,10 @@ export default function CRMPage() {
             if (Array.isArray(j)) { data = j; break; }
         } catch { continue; }
       }
-      if (!data) data = seedCrm;
+      if (!data) {
+        data = seedCrm;
+        setNote('Using seed CRM data (API unavailable).');
+      }
       if (!cancelled) { setRecords(data); setLoading(false); }
     })();
     return () => { cancelled = true; };
@@ -79,6 +83,7 @@ export default function CRMPage() {
     <FadeIn>
       <div className="p-6 space-y-6">
         <h1 className="text-2xl font-serif font-bold">CRM</h1>
+        {note && <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-300 px-2 py-1 rounded">{note}</div>}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {safeRecords.map((r, idx) => (
             <div
