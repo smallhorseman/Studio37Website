@@ -1,10 +1,11 @@
+// Blog seed
 export const seedBlogPosts = [
   {
     id: 'welcome-post',
     slug: 'welcome-to-studio37',
     title: 'Welcome to Studio37',
     excerpt: 'An introduction to our creative studio and what we do.',
-    body: 'This is placeholder content for the Studio37 blog. Replace with real CMS data.',
+    body: 'Placeholder article content. Replace with CMS-managed markdown or rich text.',
     author: 'Studio37',
     created_at: '2025-01-01T00:00:00Z',
     tags: ['intro', 'studio']
@@ -14,78 +15,99 @@ export const seedBlogPosts = [
     slug: 'our-design-process',
     title: 'Our Design Process',
     excerpt: 'How we approach design challenges with clarity and creativity.',
-    body: 'Template article describing design phases: discovery, ideation, execution, refinement.',
+    body: 'Template explaining phases: discovery → ideation → execution → refinement.',
     author: 'Design Team',
     created_at: '2025-01-05T00:00:00Z',
     tags: ['design', 'process']
   }
 ];
 
+// Portfolio / Projects seed (enriched)
 export const seedProjects = [
   {
-    id: 'proj-1',
-    name: 'Concept Brand Board',
-    imageUrl: 'https://via.placeholder.com/600x800?text=Brand+Board',
-    description: 'A sample branding composition showcasing typography and color.'
+    id: 'proj-brand-system',
+    slug: 'brand-system-refresh',
+    name: 'Brand System Refresh',
+    category: 'Brand Identity',
+    tags: ['branding', 'identity', 'visual'],
+    imageUrl: 'https://via.placeholder.com/800x1000?text=Brand+System',
+    description: 'Exploration of typography, palette, spacing scale and iconography.',
+    caseStudy: {
+      challenge: 'Outdated fragmented brand visuals across channels.',
+      approach: 'Audit → component inventory → iterative mood boards → system tokens.',
+      outcome: 'Consistent rollout kit (logos, color tokens, typography guidelines).'
+    }
   },
   {
-    id: 'proj-2',
-    name: 'Poster Exploration',
-    imageUrl: 'https://via.placeholder.com/600x800?text=Poster+Exploration',
-    description: 'Exploratory poster layout with bold headline treatment.'
+    id: 'proj-ui-wireframe',
+    slug: 'saas-dashboard-wireframe',
+    name: 'SaaS Dashboard Wireframes',
+    category: 'UI / UX',
+    tags: ['ux', 'wireframe', 'product'],
+    imageUrl: 'https://via.placeholder.com/800x1000?text=Dashboard+Wireframes',
+    description: 'Low‑fidelity structural screens optimizing task efficiency.',
+    caseStudy: {
+      challenge: 'Users struggled to locate core metrics quickly.',
+      approach: 'Workflow interviews + task mapping + iterative grayscale layouts.',
+      outcome: '35% reduction in average task navigation depth.'
+    }
   },
   {
-    id: 'proj-3',
-    name: 'UI Wireframe',
-    imageUrl: 'https://via.placeholder.com/600x800?text=UI+Wireframe',
-    description: 'Low‑fidelity wireframe mockup for a sample product screen.'
+    id: 'proj-marketing-campaign',
+    slug: 'seasonal-campaign-assets',
+    name: 'Seasonal Campaign Assets',
+    category: 'Content / Visual',
+    tags: ['campaign', 'social', 'content'],
+    imageUrl: 'https://via.placeholder.com/800x1000?text=Campaign+Assets',
+    description: 'Cross‑platform asset kit (social tiles, landing hero, email header).',
+    caseStudy: {
+      challenge: 'Inconsistent visual tone across campaign surfaces.',
+      approach: 'Single creative direction board, adaptive layout templates.',
+      outcome: 'Unified launch pack delivered in 3 days; higher engagement readiness.'
+    }
+  },
+  {
+    id: 'proj-illustration-set',
+    slug: 'custom-illustration-pack',
+    name: 'Custom Illustration Pack',
+    category: 'Illustration',
+    tags: ['illustration', 'vector', 'brand'],
+    imageUrl: 'https://via.placeholder.com/800x1000?text=Illustrations',
+    description: 'Scalable vector illustration style adaptable to dark/light modes.',
+    caseStudy: {
+      challenge: 'Stock imagery lacked cohesion with brand palette.',
+      approach: 'Shape language exploration + limited accent hues + export pipeline.',
+      outcome: 'Reusable library (SVG + Lottie) with consistent tone.'
+    }
   }
 ];
 
+// Packages seed
 export const seedPackages = [
-  {
-    id: 'pkg-starter',
-    name: 'Starter Package',
-    description: 'Ideal for small ideas getting off the ground. Includes basic design consult.',
-    price: 499
-  },
-  {
-    id: 'pkg-growth',
-    name: 'Growth Package',
-    description: 'For scaling initiatives needing consistent creative support.',
-    price: 1499
-  },
-  {
-    id: 'pkg-premium',
-    name: 'Premium Package',
-    description: 'Full creative partnership with iterative strategy sessions.',
-    price: 2999
-  }
+  { id: 'pkg-starter', name: 'Starter Package', description: 'Foundational guidance + light design support.', price: 499 },
+  { id: 'pkg-growth', name: 'Growth Package', description: 'Expanded creative iteration & monthly refinements.', price: 1499 },
+  { id: 'pkg-premium', name: 'Premium Package', description: 'Full embedded creative partner experience.', price: 2999 }
 ];
 
+// Services seed
 export const seedServices = [
-  {
-    id: 'svc-brand',
-    name: 'Brand Identity',
-    description: 'Logo systems, palettes, typography, foundational brand assets.'
-  },
-  {
-    id: 'svc-uiux',
-    name: 'UI / UX Design',
-    description: 'User flows, wireframes, interfaces, prototypes with usability focus.'
-  },
-  {
-    id: 'svc-content',
-    name: 'Content & Visual',
-    description: 'Creative copy, layout direction, image strategy, presentation polish.'
-  }
+  { id: 'svc-brand', name: 'Brand Identity', description: 'Logos, palettes, typography, core assets.' },
+  { id: 'svc-uiux', name: 'UI / UX Design', description: 'Flows, wireframes, prototypes, interaction polish.' },
+  { id: 'svc-content', name: 'Content & Visual', description: 'Copy direction, imagery guidelines, presentation.' }
 ];
 
-// Convenience resolver
+// Helper for API shim path mapping
 export function getSeedForPath(pathname) {
   if (/\/cms\/posts\/?$/.test(pathname)) return seedBlogPosts;
   if (/\/projects\/?$/.test(pathname)) return seedProjects;
   if (/\/packages\/?$/.test(pathname)) return seedPackages;
   if (/\/services\/?$/.test(pathname)) return seedServices;
   return null;
+}
+
+// Optional accessor for a single project by slug / id (can be used later)
+export function findSeedProject(identifier) {
+  return seedProjects.find(
+    p => p.id === identifier || p.slug === identifier
+  ) || null;
 }
