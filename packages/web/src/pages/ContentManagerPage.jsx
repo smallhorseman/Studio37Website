@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { seedBlogPosts } from '@/data/seedContent';
 import { FadeIn } from '../components/FadeIn';
+import { useLocation } from 'react-router-dom'; // NEW
 
 const LS_KEY = 'cms_posts_local_v1';
 
@@ -36,6 +37,8 @@ export default function ContentManagerPage() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState(''); // was []
   const [attemptLog, setAttemptLog] = useState([]);
+  const [unauthorized, setUnauthorized] = useState(false); // NEW
+  const location = useLocation(); // NEW
 
   const makeSlug = (v='') =>
     v.toLowerCase()
@@ -54,6 +57,7 @@ export default function ContentManagerPage() {
   const refresh = useCallback(async () => {
     setLoading(true);
     setApiError(null);
+    setUnauthorized(false); // NEW reset
     const attempts = [];
     const candidates = [
       '/api/cms/posts', '/api/cms/posts/',
@@ -64,6 +68,11 @@ export default function ContentManagerPage() {
       try {
         const res = await fetch(url, { credentials:'include', headers:{ Accept:'application/json' } });
         const ct = res.headers.get('content-type') || '';
+        if (res.status === 401) {         // NEW: auth short‑circuit
+          attempts.push({ url, note:'unauthorized' });
+            setUnauthorized(true);
+            break;
+        }
         if (!res.ok) {
           attempts.push({ url, note:`status_${res.status}` });
           continue;
@@ -83,11 +92,13 @@ export default function ContentManagerPage() {
     }
     setAttemptLog(attempts);
     if (!data) {
-      // Fallback merge seeds + local edits
+      // Fallback merge seeds + local edits (still show content even if unauthorized)
       data = mergedPosts();
-      setApiError('Remote API unavailable (using local seed + edits).');
+      if (!unauthorized) {
+        setApiError('Remote API unavailable (using local seed + edits).');
+      }
     } else {
-      // Merge remote with local overrides (local wins for same id)
+      // Merge remote with local overrides
       const local = loadLocalEdits();
       const map = new Map();
       data.forEach(p => map.set(p.id, p));
@@ -96,7 +107,7 @@ export default function ContentManagerPage() {
     }
     setPosts(data);
     setLoading(false);
-  }, [mergedPosts]);
+  }, [mergedPosts, unauthorized]);
 
   useEffect(() => {
     refresh();
@@ -203,7 +214,21 @@ export default function ContentManagerPage() {
     <FadeIn>
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">Content Manager</h1>
-        {apiError && (
+        {unauthorized && (
+          <div className="mb-4 p-3 text-sm border border-red-400 bg-red-50 text-red-700 rounded flex flex-wrap gap-3 items-center">
+            <span>Authentication required to load live posts.</span>
+            <button
+              onClick={() => {
+                const next = encodeURIComponent(location.pathname);
+                window.location.href = `/login?next=${next}`;
+              }}
+              className="px-3 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              Login
+            </button>
+          </div>
+        )}
+        {apiError && !unauthorized && (
           <div className="mb-4 p-3 text-sm border border-yellow-400 bg-yellow-50 text-yellow-800 rounded">
             {apiError}
           </div>
