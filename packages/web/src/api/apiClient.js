@@ -155,11 +155,6 @@ export async function parseJson(res) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-const runningOnTools = (typeof window !== 'undefined') && window.location.hostname.includes('tools.');
-if (runningOnTools) {
-  axiosApiClient.defaults.baseURL = '/api'; // ensure proxy usage
-}
-
 export function enableProxyMode() {
   forceProxy = true;
   try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
