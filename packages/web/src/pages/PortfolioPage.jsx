@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '@/config/env';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from '../components/PolaroidImage';
@@ -13,67 +14,74 @@ export default function PortfolioPage() {
 
   // One‑time HTML response warning limiter
   const htmlWarnedRef = React.useRef(false);
-  const lastTriedRef = React.useRef(null);
 
-  // Candidate endpoints (ordered). Adjust/remove those not relevant to your backend.
-  const PROJECT_ENDPOINT_CANDIDATES = [
-    '/api/projects',
-    '/api/projects/',
-    '/api/public/projects',
-    '/projects',
-    '/projects/',
+  const endpointCandidates = [
+    `${API_BASE}/projects`,
+    `${API_BASE}/projects/`,
+    `${API_BASE}/api/projects`,
+    `${API_BASE}/api/projects/`
   ];
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     setProjects([]);
-    let found = false;
-    let lastErrMsg = 'No valid project endpoint responded with JSON.';
-    for (const ep of PROJECT_ENDPOINT_CANDIDATES) {
-      lastTriedRef.current = ep;
-      try {
-        const response = await apiClient.get(ep, { validateStatus: () => true });
-        const ct = (response.headers?.['content-type'] || '').toLowerCase();
-        const payload = response.data;
 
-        // Reject HTML or unexpected content-type
-        if (ct.includes('text/html') || (typeof payload === 'string' && payload.toLowerCase().includes('<!doctype'))) {
+    let lastErr = 'No project endpoint returned JSON.';
+    for (const url of endpointCandidates) {
+      try {
+        const res = await fetch(url, { credentials: 'include' });
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+
+        if (!res.ok) {
+          lastErr = `HTTP ${res.status} @ ${url}`;
+          continue;
+        }
+
+        // Reject obvious HTML
+        if (ct.includes('text/html')) {
           if (!htmlWarnedRef.current) {
             // eslint-disable-next-line no-console
-            console.warn(`[PortfolioPage] Endpoint ${ep} returned HTML (likely SPA index).`);
+            console.warn(`[PortfolioPage] HTML received from ${url} (likely wrong path / CORS proxy fallback).`);
             htmlWarnedRef.current = true;
           }
-          lastErrMsg = `Endpoint ${ep} returned HTML instead of JSON.`;
-          continue; // try next endpoint
+          lastErr = `HTML (not JSON) from ${url}`;
+          continue;
         }
 
-        // Accept array directly
-        if (Array.isArray(payload)) {
-          setProjects(payload);
-          found = true;
-          break;
+        // Attempt JSON parse
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          lastErr = `Invalid JSON from ${url}`;
+          continue;
         }
 
-        // Accept wrapped results array
-        if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
-            setProjects(payload.results);
-            found = true;
-            break;
+        // Accept direct array
+        if (Array.isArray(data)) {
+          setProjects(data);
+          setLoading(false);
+          return;
         }
 
-        lastErrMsg = `Endpoint ${ep} responded but payload was not an array.`;
+        // Accept {results: []}
+        if (data && typeof data === 'object' && Array.isArray(data.results)) {
+          setProjects(data.results);
+          setLoading(false);
+          return;
+        }
+
+        lastErr = `Unexpected structure from ${url}`;
       } catch (e) {
-        lastErrMsg = `Fetch failed for ${ep}: ${e.message || e}`;
+        lastErr = `Fetch failed for ${url}: ${e.message || e}`;
         continue;
       }
     }
 
-    if (!found) {
-      setError(lastErrMsg);
-    }
+    setError(lastErr);
     setLoading(false);
-  }, []);
+  }, [endpointCandidates]);
 
   useEffect(() => {
     fetchProjects();
