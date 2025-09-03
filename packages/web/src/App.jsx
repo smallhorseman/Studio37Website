@@ -106,17 +106,27 @@ function Layout() {
       <main id="main" className="flex-1">
         <Routes>
           <Route index element={<Page><HomePage /></Page>} />
-            <Route path="login" element={<Page narrow><LoginPage /></Page>} />
-            <Route path="about" element={<Page><AboutPage /></Page>} />
-            <Route path="services" element={<Page><ServicesPage /></Page>} />
-            <Route path="packages" element={<Page><PackagesPage /></Page>} />
-            <Route path="portfolio" element={<Page><PortfolioPage /></Page>} />
-            <Route path="blog" element={<Page><BlogPage /></Page>} />
-            <Route path="blog/:slug" element={<Page><BlogPostPage /></Page>} />
-            <Route path="contact" element={<Page narrow><ContactPage /></Page>} />
-            <Route path="admin" element={<Page><AdminPage /></Page>} />
-            <Route path="admin/tools" element={<Page><ToolsPage /></Page>} />
-            <Route path="*" element={<Page><div className="text-center text-gray-600">404 Not Found</div></Page>} />
+          <Route path="login" element={<Page narrow><LoginPage /></Page>} />
+          {/* NEW: target for post-login navigate('/internal-dashboard') */}
+          <Route path="internal-dashboard" element={<Page><DashboardPage /></Page>} />
+          {/* Protect admin now */}
+          <Route
+            path="admin"
+            element={
+              <Protected>
+                <Page><AdminPage /></Page>
+              </Protected>
+            }
+          />
+          <Route path="about" element={<Page><AboutPage /></Page>} />
+          <Route path="services" element={<Page><ServicesPage /></Page>} />
+          <Route path="packages" element={<Page><PackagesPage /></Page>} />
+          <Route path="portfolio" element={<Page><PortfolioPage /></Page>} />
+          <Route path="blog" element={<Page><BlogPage /></Page>} />
+          <Route path="blog/:slug" element={<Page><BlogPostPage /></Page>} />
+          <Route path="contact" element={<Page narrow><ContactPage /></Page>} />
+          <Route path="admin/tools" element={<Page><ToolsPage /></Page>} />
+          <Route path="*" element={<Page><div className="text-center text-gray-600">404 Not Found</div></Page>} />
         </Routes>
       </main>
       <Footer />
