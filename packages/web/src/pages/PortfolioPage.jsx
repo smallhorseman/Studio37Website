@@ -11,33 +11,54 @@ export default function PortfolioPage() {
   const [error, setError] = useState(null);
   const [index, setIndex] = useState(-1);
 
+  // One‑time HTML response warning limiter
+  const htmlWarnedRef = React.useRef(false);
+
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/projects');
+      // Force proxy path so we do NOT hit the SPA index (which returned HTML)
+      const response = await apiClient.get('/api/projects');
       const payload = response?.data;
 
-      // If backend sent HTML (likely CORS / 404 fallback), treat as error
-      if (typeof payload === 'string' && payload.toLowerCase().includes('<!doctype')) {
-        console.warn('[PortfolioPage] Received HTML instead of JSON array for /projects');
-        setProjects([]);
-        setError('Unexpected response format from server.');
-        return;
+      if (typeof payload === 'string') {
+        const lowered = payload.toLowerCase();
+        if (lowered.includes('<!doctype') || lowered.includes('<html')) {
+          if (!htmlWarnedRef.current) {
+            // eslint-disable-next-line no-console
+            console.warn('[PortfolioPage] Received HTML instead of JSON from /api/projects');
+            htmlWarnedRef.current = true;
+          }
+          setProjects([]);
+          setError('Unexpected (HTML) response from server. Check API route or proxy.');
+          return;
+        }
+        // Attempt to parse accidental JSON-in-string
+        try {
+          const parsed = JSON.parse(payload);
+          if (Array.isArray(parsed)) {
+            setProjects(parsed);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // ignore parse attempt
+        }
       }
 
       if (Array.isArray(payload)) {
         setProjects(payload);
       } else if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
-        // If API wraps results
         setProjects(payload.results);
       } else {
-        console.warn('[PortfolioPage] Non-array payload:', payload);
+        // eslint-disable-next-line no-console
+        console.warn('[PortfolioPage] Non-array payload structure:', payload);
         setProjects([]);
         setError('Projects data unavailable.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to load projects.');
+      setError(err?.message || 'Failed to load projects.');
       setProjects([]);
     } finally {
       setLoading(false);
