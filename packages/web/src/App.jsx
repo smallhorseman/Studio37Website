@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -6,34 +6,25 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ApiFetchFallback from './components/ApiFetchFallback';
 import './App.css';
-import { lazyPage, warmPreload } from '@/utils/pageLoader';
-import { installChunkErrorReload } from '@/utils/lazy';
 
-// Install global chunk error handler
-installChunkErrorReload();
-
-// Replace previous per-file lazy imports with glob-based lazyPage
-const HomePage = lazyPage('HomePage');
-const ServicesPage = lazyPage('ServicesPage');
-const PackagesPage = lazyPage('PackagesPage');
-const PortfolioPage = lazyPage('PortfolioPage');
-const BlogPage = lazyPage('BlogPage');
-const AboutPage = lazyPage('AboutPage');
-const AdminPage = lazyPage('AdminPage');
-const ToolsPage = lazyPage('ToolsPage');
-const BlogPostPage = lazyPage('BlogPostPage');
-const ContactPage = lazyPage('ContactPage');
-const LoginPage = lazyPage('LoginPage');
-const DashboardPage = lazyPage('DashboardPage');
-const CRMPage = lazyPage('CRMPage');
-const ProjectsPage = lazyPage('ProjectsPage');
-const ContentManagerPage = lazyPage('ContentManagerPage');
-const AdminUpdatePage = lazyPage('AdminUpdatePage');
-const TodoPage = lazyPage('TodoPage');
-
-// Optional: eager preload AFTER first paint to mitigate stale chunk 404s
-// (Uncomment if you prefer aggressive warm-up)
-// React.useEffect(() => { warmPreload(); }, []);
+// Static (eager) page imports to avoid dynamic chunk fetch failures
+import HomePage from './pages/HomePage';
+import ServicesPage from './pages/ServicesPage';
+import PackagesPage from './pages/PackagesPage';
+import PortfolioPage from './pages/PortfolioPage';
+import BlogPage from './pages/BlogPage';
+import AboutPage from './pages/AboutPage';
+import AdminPage from './pages/AdminPage';
+import ToolsPage from './pages/ToolsPage';
+import BlogPostPage from './pages/BlogPostPage';
+import ContactPage from './pages/ContactPage';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import CRMPage from './pages/CRMPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ContentManagerPage from './pages/ContentManagerPage';
+import AdminUpdatePage from './pages/AdminUpdatePage';
+import TodoPage from './pages/TodoPage';
 
 // Minimal ResourceSection (re‑introduced for pages importing from '@/App')
 export const ResourceSection = ({
