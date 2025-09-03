@@ -24,3 +24,7 @@ export const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined'
 
 // Paths that often get called without /api prefix - we retry through proxy if 404 / CORS
 export const API_COMMON_PATHS = ['/services', '/cms/posts', '/packages'];
+
+export const FORCE_API_PROXY =
+  (import.meta.env.VITE_FORCE_API_PROXY === '1' ||
+   import.meta.env.VITE_FORCE_API_PROXY === 'true');

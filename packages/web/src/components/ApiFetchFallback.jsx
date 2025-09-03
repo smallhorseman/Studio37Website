@@ -3,8 +3,27 @@ import {
   REMOTE_API_BASE,
   PROXY_API_BASE,
   API_COMMON_PATHS,
-  isSameOrigin
+  FORCE_API_PROXY
 } from '@/config/env';
+
+function toProxyPath(remoteUrl) {
+  try {
+    const u = new URL(remoteUrl, window.location.href);
+    // Prevent double rewriting
+    if (u.pathname.startsWith('/api/')) return u.pathname + u.search;
+    // If the original already includes /api segment deeper, keep path as-is
+    let path = u.pathname;
+    if (API_COMMON_PATHS.some(p => path === p || path.startsWith(p + '/'))) {
+      path = '/api' + path;
+    } else if (!path.startsWith('/api/')) {
+      // Generic fallback: prefix /api only if FORCE_API_PROXY is enabled
+      if (FORCE_API_PROXY) path = '/api' + path;
+    }
+    return path + u.search;
+  } catch {
+    return remoteUrl;
+  }
+}
 
 export default function ApiFetchFallback() {
   useEffect(() => {
@@ -13,62 +32,85 @@ export default function ApiFetchFallback() {
     })();
     if (!remoteOrigin) return;
 
-    const originalFetch = window.fetch;
-
-    window.fetch = async function patchedFetch(input, init) {
+    // -------- Fetch patch --------
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const reqUrl = typeof input === 'string' ? input : input.url;
+      let useProxy = FORCE_API_PROXY;
       try {
-        const request = typeof input === 'string' ? input : input.url;
-        const urlObj = new URL(request, window.location.href);
-        const isRemote = remoteOrigin && urlObj.origin === remoteOrigin;
+        const u = new URL(reqUrl, window.location.href);
+        if (u.origin === remoteOrigin) useProxy = true;
+      } catch {
+        // ignore
+      }
 
-        // If not hitting remote API, just proceed
-        if (!isRemote) {
-          return await originalFetch(input, init);
-        }
+      if (useProxy) {
+        const proxyPath = toProxyPath(reqUrl);
+        return originalFetch(proxyPath, init);
+      }
 
-        // Try remote first
-        let res;
-        try {
-            res = await originalFetch(request, init);
-        } catch (e) {
-          res = e;
-        }
-
-        const shouldRetry =
-          // Network / thrown error (no response)
-          !(res instanceof Response) ||
-          // CORS blocked (opaque) or 404 missing CORS (status 404 + no access to body fields)
-          (res instanceof Response && (res.type === 'opaque' || res.status === 0)) ||
-          (res instanceof Response && res.status === 404);
-
-        if (!shouldRetry || !(res instanceof Response)) {
-          if (res instanceof Response) return res;
-        }
-
-        // Build fallback path:
-        // If original path already has /api, just proxy as-is (strip domain)
-        const path = urlObj.pathname + urlObj.search;
-
-        let proxyPath = path;
-        if (!proxyPath.startsWith('/api/')) {
-          // For common top-level endpoints missing /api prefix, add it
-            if (API_COMMON_PATHS.some(p => proxyPath.startsWith(p))) {
-            proxyPath = '/api' + proxyPath;
+      // Try normal request first; if it fails with CORS/network, retry via proxy
+      try {
+        const res = await originalFetch(reqUrl, init);
+        if (res.status === 404 || res.type === 'opaque') {
+          const proxyPath = toProxyPath(reqUrl);
+          if (proxyPath !== reqUrl) {
+            return originalFetch(proxyPath, init);
           }
         }
-
-        // Retry through proxy (relative) – preserves credentials if set
-        const proxyUrl = proxyPath;
-        const second = await originalFetch(proxyUrl, init);
-
-        return second;
-      } catch (finalError) {
-        return Promise.reject(finalError);
+        return res;
+      } catch {
+        const proxyPath = toProxyPath(reqUrl);
+        if (proxyPath !== reqUrl) return originalFetch(proxyPath, init);
+        throw;
       }
     };
 
+    // -------- XMLHttpRequest patch (basic) --------
+    const OriginalXHR = window.XMLHttpRequest;
+    function PatchedXHR() {
+      const xhr = new OriginalXHR();
+      const origOpen = xhr.open;
+      xhr.open = function(method, url, ...rest) {
+        try {
+          const u = new URL(url, window.location.href);
+          if (u.origin === remoteOrigin || FORCE_API_PROXY) {
+            const proxied = toProxyPath(url);
+            return origOpen.call(xhr, method, proxied, ...rest);
+          }
+        } catch {
+          // ignore
+        }
+        return origOpen.call(xhr, method, url, ...rest);
+      };
+      return xhr;
+    }
+    window.XMLHttpRequest = PatchedXHR;
+
+    // -------- Axios patch (if loaded later) --------
+    const patchAxios = () => {
+      if (!window.axios || window.axios.__studio37_patched) return;
+      window.axios.__studio37_patched = true;
+      window.axios.interceptors.request.use(cfg => {
+        try {
+          const u = new URL(cfg.url, cfg.baseURL || window.location.href);
+          if (u.origin === remoteOrigin || FORCE_API_PROXY) {
+            cfg.url = toProxyPath(u.href);
+            cfg.baseURL = ''; // ensure relative
+          }
+        } catch {
+          // ignore
+        }
+        return cfg;
+      });
+    };
+    patchAxios();
+    const axiosInterval = setInterval(patchAxios, 500);
+    setTimeout(() => clearInterval(axiosInterval), 5000); // stop after 5s
+
     return () => {
       window.fetch = originalFetch;
+      window.XMLHttpRequest = OriginalXHR;
     };
   }, []);
 
