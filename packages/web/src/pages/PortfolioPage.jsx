@@ -13,56 +13,66 @@ export default function PortfolioPage() {
 
   // One‑time HTML response warning limiter
   const htmlWarnedRef = React.useRef(false);
+  const lastTriedRef = React.useRef(null);
+
+  // Candidate endpoints (ordered). Adjust/remove those not relevant to your backend.
+  const PROJECT_ENDPOINT_CANDIDATES = [
+    '/api/projects',
+    '/api/projects/',
+    '/api/public/projects',
+    '/projects',
+    '/projects/',
+  ];
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      // Force proxy path so we do NOT hit the SPA index (which returned HTML)
-      const response = await apiClient.get('/api/projects');
-      const payload = response?.data;
+    setProjects([]);
+    let found = false;
+    let lastErrMsg = 'No valid project endpoint responded with JSON.';
+    for (const ep of PROJECT_ENDPOINT_CANDIDATES) {
+      lastTriedRef.current = ep;
+      try {
+        const response = await apiClient.get(ep, { validateStatus: () => true });
+        const ct = (response.headers?.['content-type'] || '').toLowerCase();
+        const payload = response.data;
 
-      if (typeof payload === 'string') {
-        const lowered = payload.toLowerCase();
-        if (lowered.includes('<!doctype') || lowered.includes('<html')) {
+        // Reject HTML or unexpected content-type
+        if (ct.includes('text/html') || (typeof payload === 'string' && payload.toLowerCase().includes('<!doctype'))) {
           if (!htmlWarnedRef.current) {
             // eslint-disable-next-line no-console
-            console.warn('[PortfolioPage] Received HTML instead of JSON from /api/projects');
+            console.warn(`[PortfolioPage] Endpoint ${ep} returned HTML (likely SPA index).`);
             htmlWarnedRef.current = true;
           }
-          setProjects([]);
-          setError('Unexpected (HTML) response from server. Check API route or proxy.');
-          return;
+          lastErrMsg = `Endpoint ${ep} returned HTML instead of JSON.`;
+          continue; // try next endpoint
         }
-        // Attempt to parse accidental JSON-in-string
-        try {
-          const parsed = JSON.parse(payload);
-          if (Array.isArray(parsed)) {
-            setProjects(parsed);
-            setLoading(false);
-            return;
-          }
-        } catch {
-          // ignore parse attempt
-        }
-      }
 
-      if (Array.isArray(payload)) {
-        setProjects(payload);
-      } else if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
-        setProjects(payload.results);
-      } else {
-        // eslint-disable-next-line no-console
-        console.warn('[PortfolioPage] Non-array payload structure:', payload);
-        setProjects([]);
-        setError('Projects data unavailable.');
+        // Accept array directly
+        if (Array.isArray(payload)) {
+          setProjects(payload);
+          found = true;
+          break;
+        }
+
+        // Accept wrapped results array
+        if (payload && typeof payload === 'object' && Array.isArray(payload.results)) {
+            setProjects(payload.results);
+            found = true;
+            break;
+        }
+
+        lastErrMsg = `Endpoint ${ep} responded but payload was not an array.`;
+      } catch (e) {
+        lastErrMsg = `Fetch failed for ${ep}: ${e.message || e}`;
+        continue;
       }
-    } catch (err) {
-      setError(err?.message || 'Failed to load projects.');
-      setProjects([]);
-    } finally {
-      setLoading(false);
     }
+
+    if (!found) {
+      setError(lastErrMsg);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
