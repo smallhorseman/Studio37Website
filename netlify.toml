@@ -1,0 +1,13 @@
+[build]
+  base = "packages/web"
+  command = "npm run build"
+  publish = "packages/web/dist"
+
+# (Optional) explicitly pin Node (matches lock expectations)
+[build.environment]
+  NODE_VERSION = "20"
+
+# Disable automatic UI-added plugins that may pull bad deps.
+# If you still need 'neon', re-add after @netlify/blobs publishes a valid version.
+[[plugins]]
+package = ""  # No plugins for now
