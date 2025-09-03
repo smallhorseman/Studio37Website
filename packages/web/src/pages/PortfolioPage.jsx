@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '@/config/env';
-import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from '../components/PolaroidImage';
 import Lightbox from "yet-another-react-lightbox";
@@ -15,46 +14,91 @@ export default function PortfolioPage() {
   // One‑time HTML response warning limiter
   const htmlWarnedRef = React.useRef(false);
 
-  const endpointCandidates = [
+  // Added: optional explicit override via env (VITE_PROJECTS_ENDPOINT)
+  const PROJECTS_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim();
+
+  // Rebuilt candidate list (absolute first, then relative proxy versions)
+  const endpointCandidates = Array.from(new Set([
+    ...(PROJECTS_OVERRIDE ? [PROJECTS_OVERRIDE] : []),
+    `${API_BASE}/api/projects`,
     `${API_BASE}/projects`,
     `${API_BASE}/projects/`,
-    `${API_BASE}/api/projects`,
-    `${API_BASE}/api/projects/`
-  ];
+    // Fallback to relative (will go through dev/proxy if configured)
+    '/api/projects',
+    '/api/projects/'
+  ]));
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     setProjects([]);
 
-    let lastErr = 'No project endpoint returned JSON.';
+    const attemptDetails = [];
+    const isHtmlText = (txt = '') => {
+      const lower = txt.slice(0, 300).toLowerCase();
+      return lower.includes('<!doctype') || lower.includes('<html');
+    };
+
     for (const url of endpointCandidates) {
+      let classification = 'unknown';
       try {
-        const res = await fetch(url, { credentials: 'include' });
+        const res = await fetch(url, {
+          credentials: 'include',
+            headers: {
+              'Accept': 'application/json, text/plain;q=0.5, */*;q=0.2'
+            }
+        });
+
+        const status = res.status;
         const ct = (res.headers.get('content-type') || '').toLowerCase();
 
+        // Non-OK status: record and continue
         if (!res.ok) {
-          lastErr = `HTTP ${res.status} @ ${url}`;
+          classification = `http_${status}`;
+          attemptDetails.push({ url, status, classification });
           continue;
         }
 
-        // Reject obvious HTML
+        // Quick HTML detection based on content-type
         if (ct.includes('text/html')) {
           if (!htmlWarnedRef.current) {
             // eslint-disable-next-line no-console
-            console.warn(`[PortfolioPage] HTML received from ${url} (likely wrong path / CORS proxy fallback).`);
+            console.warn(`[PortfolioPage] HTML content-type from ${url}`);
             htmlWarnedRef.current = true;
           }
-          lastErr = `HTML (not JSON) from ${url}`;
+          classification = 'html_content_type';
+          attemptDetails.push({ url, status, classification });
+          continue;
+        }
+
+        // Try reading body once (clone not needed because we won't reuse)
+        let bodyText;
+        try {
+          bodyText = await res.text();
+        } catch {
+          classification = 'body_read_failed';
+          attemptDetails.push({ url, status, classification });
+          continue;
+        }
+
+        if (isHtmlText(bodyText)) {
+          if (!htmlWarnedRef.current) {
+            // eslint-disable-next-line no-console
+            console.warn(`[PortfolioPage] HTML snippet detected in response from ${url}`);
+            htmlWarnedRef.current = true;
+          }
+          classification = 'html_snippet';
+          attemptDetails.push({ url, status, classification });
           continue;
         }
 
         // Attempt JSON parse
         let data;
         try {
-          data = await res.json();
+          data = JSON.parse(bodyText);
         } catch {
-          lastErr = `Invalid JSON from ${url}`;
+          classification = 'invalid_json';
+          attemptDetails.push({ url, status, classification });
           continue;
         }
 
@@ -72,14 +116,22 @@ export default function PortfolioPage() {
           return;
         }
 
-        lastErr = `Unexpected structure from ${url}`;
+        classification = 'unexpected_structure';
+        attemptDetails.push({ url, status, classification });
       } catch (e) {
-        lastErr = `Fetch failed for ${url}: ${e.message || e}`;
+        classification = `fetch_error:${e?.message || e}`;
+        attemptDetails.push({ url, status: 'n/a', classification });
         continue;
       }
     }
 
-    setError(lastErr);
+    // If we reach here, all candidates failed
+    setError(
+      `Projects unavailable. Attempts: ` +
+      attemptDetails
+        .map(a => `[${a.classification}@${a.url}]`)
+        .join(' ')
+    );
     setLoading(false);
   }, [endpointCandidates]);
 
@@ -98,16 +150,17 @@ export default function PortfolioPage() {
 
   if (loading) return <div className="py-24 sm:py-32">Loading portfolio...</div>;
   if (error) return (
-    <div className="py-24 sm:py-32 text-red-500">
-      Error: {error}
-      <div className="mt-4">
-        <button
-          onClick={fetchProjects}
-          className="px-4 py-2 border rounded text-sm hover:bg-red-50"
-        >
-          Retry
-        </button>
+    <div className="py-24 sm:py-32 text-red-500 space-y-4">
+      <div>Error: {error}</div>
+      <div className="text-xs text-gray-500">
+        Set VITE_PROJECTS_ENDPOINT to a known JSON array endpoint (e.g. https://api.example.com/api/projects)
       </div>
+      <button
+        onClick={fetchProjects}
+        className="px-4 py-2 border rounded text-sm hover:bg-red-50"
+      >
+        Retry
+      </button>
     </div>
   );
 
