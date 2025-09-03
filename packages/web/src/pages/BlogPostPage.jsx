@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient.js';
 import { FadeIn } from '../components/FadeIn';
+import { seedBlogPosts } from '@/data/seedContent';
+
+function loadLocalEdits() {
+  try { return JSON.parse(localStorage.getItem('cms_posts_local_v1')) || []; } catch { return []; }
+}
 
 export default function BlogPostPage() {
     const navigate = useNavigate();
-    const { id } = useParams(); // Get the post ID from the URL
+    const { slug } = useParams(); // FIX: was { id }
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -14,17 +19,46 @@ export default function BlogPostPage() {
         const fetchPost = async () => {
             setLoading(true);
             setError(null);
-            try {
-                const response = await apiClient.get(`/cms/posts/${id}`);
-                setPost(response.data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+            let found = null;
+            // Try direct endpoints first
+            const directCandidates = [
+                `/api/cms/posts/${slug}`,
+                `/cms/posts/${slug}`
+            ];
+            for (const url of directCandidates) {
+                try {
+                    const res = await fetch(url, { credentials:'include', headers:{ Accept:'application/json' } });
+                    if (!res.ok) continue;
+                    const ct = (res.headers.get('content-type') || '').toLowerCase();
+                    if (!ct.includes('json')) continue;
+                    const json = await res.json();
+                    // Accept object or {data:{}} etc.
+                    if (json && !Array.isArray(json)) {
+                        found = json.data || json;
+                        break;
+                    }
+                } catch { continue; }
             }
+
+            if (!found) {
+                // Fallback: search merged seed + local by slug or id
+                const local = loadLocalEdits();
+                const map = new Map();
+                [...seedBlogPosts, ...local].forEach(p => map.set(p.id, p));
+                const merged = Array.from(map.values());
+                found = merged.find(p => p.slug === slug || p.id === slug) || null;
+            }
+
+            if (!found) {
+                setError('Post not found (offline / API error).');
+                setPost(null);
+            } else {
+                setPost(found);
+            }
+            setLoading(false);
         };
         fetchPost();
-    }, [id]);
+    }, [slug]);
 
     if (loading) return <div className="bg-white px-6 py-32 lg:px-8">Loading post...</div>;
     if (error) return <div className="bg-white px-6 py-32 lg:px-8 text-red-500">Error: {error}</div>;

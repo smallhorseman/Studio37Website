@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../api/apiClient.js';
+import { seedBlogPosts } from '@/data/seedContent';
 import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from "../components/PolaroidImage.jsx";
 
@@ -10,22 +10,52 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchPosts = useCallback(async () => {
+  const loadPosts = React.useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const response = await apiClient.get('/cms/posts');
-      setPosts(response.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    let data = null;
+    const attempts = [];
+    const candidates = [
+      '/api/cms/posts',
+      '/api/cms/posts/',
+      '/cms/posts',
+      '/cms/posts/'
+    ];
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { credentials: 'include', headers: { Accept: 'application/json' } });
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if (!res.ok) { attempts.push(`[${res.status}@${url}]`); continue; }
+        if (!ct.includes('json')) { attempts.push(`[nonjson@${url}]`); continue; }
+        const json = await res.json();
+        if (Array.isArray(json)) { data = json; break; }
+        if (json && Array.isArray(json.results)) { data = json.results; break; }
+        attempts.push(`[shape@${url}]`);
+      } catch (e) {
+        attempts.push(`[err@${url}]`);
+        continue;
+      }
     }
+    if (!data) {
+      // Merge seed + local (if any from CMS draft editing)
+      let local = [];
+      try { local = JSON.parse(localStorage.getItem('cms_posts_local_v1')) || []; } catch { /* ignore */ }
+      const map = new Map();
+      [...seedBlogPosts, ...local].forEach(p => map.set(p.id, p));
+      data = Array.from(map.values());
+      if (!data.length) {
+        setError('Unable to load posts ' + attempts.join(' '));
+        setLoading(false);
+        return;
+      }
+    }
+    setPosts(data);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    loadPosts();
+  }, [loadPosts]);
 
   if (loading) return <div className="p-8">Loading blog posts...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
