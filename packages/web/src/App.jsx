@@ -168,8 +168,12 @@ if (typeof window !== 'undefined' && window.location.hostname.includes('tools.')
 // Auth gate (updated to break login loop by checking token directly)
 const Protected = ({ children }) => {
   const { isAuthenticated, isReady, loading } = useAuth();
-  const location = useLocation(); // NEW
-  const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
+  const location = useLocation();
+  // CHANGED: look for jwt_token first (AuthContext uses this)
+  const token =
+    (typeof window !== 'undefined')
+      ? (localStorage.getItem('jwt_token') || localStorage.getItem('token'))
+      : null;
   // If hook not ready but token exists, treat as loading then allow
   if (!isReady && token) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Initializing session...</div>;
   if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;

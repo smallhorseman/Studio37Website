@@ -14,9 +14,14 @@ function saveLocalEdits(posts) {
 
 async function tryApi(method, path, body) {
   try {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // NEW
     const res = await fetch(path, {
       method,
-      headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+      headers: {
+        'Content-Type':'application/json',
+        'Accept':'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}) // NEW
+      },
       credentials: 'include',
       body: body ? JSON.stringify(body) : undefined
     });
@@ -159,28 +164,46 @@ export default function ContentManagerPage() {
     if (!editing) return;
     setSaving(true);
     let isNew = !editing.id;
+    // NEW: ensure a local id early (so UI updates even if remote fails)
+    const provisionalId = editing.id || `local-${Date.now()}`;
     const payload = {
       ...editing,
+      id: editing.id || provisionalId,
+      created_at: editing.created_at || new Date().toISOString(),
       slug: editing.slug ? makeSlug(editing.slug) : makeSlug(editing.title || `post-${Date.now()}`)
     };
+    let remoteOk = false;
     try {
       let saved = null;
       if (isNew) {
-        saved = await tryApi('POST', '/api/cms/posts', payload)
-          .catch(()=> null);
-        if (!saved) {
-          // offline/local fallback
-          saved = { ...payload, id:`local-${Date.now()}` };
+        try {
+          saved = await tryApi('POST', '/api/cms/posts', payload);
+          remoteOk = true;
+        } catch {
+          // remote failed; keep local
+          saved = { ...payload };
         }
       } else {
-        saved = await tryApi('PUT', `/api/cms/posts/${editing.id}`, payload)
-          .catch(()=> null);
-        if (!saved) saved = payload; // local override
+        try {
+          saved = await tryApi('PUT', `/api/cms/posts/${editing.id}`, payload);
+          remoteOk = true;
+        } catch {
+          saved = { ...payload }; // keep local override
+        }
       }
-      if (!saved.id) saved.id = payload.id || `local-${Date.now()}`;
+      if (!saved.id) saved.id = payload.id;
       upsertLocal(saved);
       setEditing(null);
+      // Force local state update immediately (optimistic), then refresh
+      setPosts(ps => {
+        const map = new Map(ps.map(p => [p.id, p]));
+        map.set(saved.id, saved);
+        return Array.from(map.values());
+      });
       refresh();
+      if (!remoteOk) {
+        setApiError('Saved locally (offline / auth / network issue). Will sync when API is reachable.');
+      }
     } finally {
       setSaving(false);
     }
@@ -377,6 +400,11 @@ export default function ContentManagerPage() {
               </div>
             </div>
          </div>
+         {saving && (
+          <div className="mb-2 text-xs text-gray-500">
+            Saving{apiError ? ' (with issues)' : '...'}
+          </div>
+        )}
       </div>
     </FadeIn>
   );
