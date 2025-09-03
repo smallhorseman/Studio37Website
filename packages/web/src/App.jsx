@@ -169,7 +169,16 @@ function ToolsLayout() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="crm" element={<CRMPage />} />
           <Route path="projects" element={<ProjectsPage />} />
-          <Route path="cms" element={<ContentManagerPage />} />
+          <Route path="cms" element={
+            <Protected>
+              <ContentManagerPage />
+            </Protected>
+          } />
+          <Route path="cms/new" element={
+            <Protected>
+              <ContentManagerPage />
+            </Protected>
+          } />
           <Route path="todos" element={<TodoPage />} />
           <Route path="admin-update" element={<AdminUpdatePage />} />
           <Route path="*" element={<div className="text-center text-gray-600">Not Found</div>} />
