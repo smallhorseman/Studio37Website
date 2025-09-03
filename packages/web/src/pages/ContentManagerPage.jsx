@@ -188,10 +188,6 @@ export default function ContentManagerPage() {
     );
   }, [collection, loadLocal]);
 
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState(null);
-  const [lastSyncAt, setLastSyncAt] = useState(null);
-
   const attemptSyncAll = useCallback(async () => {
     if (syncing) return;
     const authToken = localStorage.getItem('jwt_token') || localStorage.getItem('token');
