@@ -26,6 +26,9 @@ function LoginPageInner() {
     if (ok) navigate(nextPath || '/internal-dashboard', { replace: true });
   };
 
+  const authHost = (import.meta.env.VITE_AUTH_URL || 'https://auth-3778.onrender.com')
+    .replace(/\/+$/,'');
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 max-w-md w-full bg-white rounded-lg shadow-md">
@@ -52,6 +55,9 @@ function LoginPageInner() {
             />
           </div>
           {authError && <div className="text-xs text-red-600">{authError}</div>}
+          <div className="text-[10px] text-gray-400 -mt-1">
+            Auth host: {authHost}
+          </div>
           <button
             type="submit"
             disabled={loading}

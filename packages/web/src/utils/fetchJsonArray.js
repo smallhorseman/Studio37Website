@@ -1,4 +1,4 @@
-import { API_BASE, PROJECTS_ENDPOINT_OVERRIDE, IS_PROD, PACKAGES_ENDPOINT_OVERRIDE, ALLOW_PROD_RELATIVE, SERVICES_ENDPOINT_OVERRIDE } from '@/config/env';
+import { PROJECTS_ENDPOINT_OVERRIDE, IS_PROD, PACKAGES_ENDPOINT_OVERRIDE, ALLOW_PROD_RELATIVE, SERVICES_ENDPOINT_OVERRIDE } from '@/config/env';
 
 const HTML_SIGNATURE_RE = /<!doctype|<html/i;
 const APP_SHELL_HINT_RE = /<div id="root">|vite/i;
@@ -12,7 +12,8 @@ export async function fetchJsonArray(logical, opts = {}) {
   const { override, extraCandidates = [] } = opts;
   const attempts = [];
 
-  const base = API_BASE.replace(/\/+$/, '');
+  const baseRaw = (API_BASE || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
+  const base = baseRaw.replace(/\/+$/,'');
   const candidates = new Set();
 
   // Explicit overrides

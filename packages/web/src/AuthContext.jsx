@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 
+const AUTH_BASE = import.meta.env.VITE_AUTH_URL || 'https://auth-3778.onrender.com';
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -19,9 +21,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setAuthError(null);
     try {
-      // Try remote first, fall back to proxy/relative
       const endpoints = [
-        'https://auth-3778.onrender.com/login',
+        `${AUTH_BASE.replace(/\/+$/,'')}/login`,
         '/api/auth/login',
         '/auth/login'
       ];

@@ -11,7 +11,10 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     import.meta.env.VITE_ALLOW_PROD_RELATIVE === '1' ||
     import.meta.env.VITE_ALLOW_PROD_RELATIVE === 'true';
   let apiHost = null;
-  try { apiHost = new URL(API_BASE).host; } catch { /* ignore */ }
+  try {
+    const apiBaseResolved = (API_BASE || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com');
+    apiHost = new URL(apiBaseResolved).host;
+  } catch { /* ignore */ }
 
   const RESOURCE_ROOTS = [
     // NOTE: In production /api/* should be forwarded by Netlify _redirects (see /public/_redirects).

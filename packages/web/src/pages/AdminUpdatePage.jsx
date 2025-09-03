@@ -22,8 +22,11 @@ const AdminUpdatePage = () => {
       lastUpdated: new Date().toLocaleString(),
     };
 
+    const endpoint =
+      import.meta.env.VITE_ADMIN_UPDATE_ENDPOINT ||
+      '/api/update-gsc-data';
     try {
-      const response = await apiClient.post('/update-gsc-data', newData);
+      const response = await apiClient.post(endpoint, newData);
       
       if (response.status !== 200) {
         throw new Error(response.data.message || 'Failed to update data on the server.');

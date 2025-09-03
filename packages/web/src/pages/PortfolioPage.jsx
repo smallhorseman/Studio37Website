@@ -6,6 +6,7 @@ import { PolaroidImage } from '../components/PolaroidImage';
 export default function PortfolioPage() {
   const [projects,setProjects] = useState([]);
   const [loading,setLoading] = useState(true);
+  const [note,setNote] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -21,7 +22,7 @@ export default function PortfolioPage() {
           if (j && Array.isArray(j.results)) { data = j.results; break; }
         } catch { continue; }
       }
-      if (!data) data = seedProjects;
+      if (!data) { data = seedProjects; setNote('Using seed projects (API unavailable).'); }
       setProjects(Array.isArray(data)?data:[]);
       setLoading(false);
     })();
@@ -42,6 +43,7 @@ export default function PortfolioPage() {
             </p>
           </div>
         </FadeIn>
+        {note && <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-300 px-2 py-1 rounded inline-block mt-4">{note}</div>}
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8">
           {projects.map((p,i) => (
             <div key={p.id || i}>
