@@ -31,8 +31,15 @@ export default function PortfolioPage() {
   const hasFetchedRef = useRef(false);
 
   const fetchProjects = useCallback(async (opts = { manual: false }) => {
-    if (!opts.manual && hasFetchedRef.current) return; // keep initial guard
+    if (!opts.manual && hasFetchedRef.current) return;
     hasFetchedRef.current = true;
+    // NEW: if we previously fell back to seed this session, skip remote attempts unless manual
+    const seedLock = sessionStorage.getItem('portfolio_seed_lock');
+    if (seedLock && !opts.manual) {
+      setProjects(seedProjects);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -141,7 +148,8 @@ export default function PortfolioPage() {
     // Seed fallback (unchanged logic, moved slightly earlier if early-break)
     if (Array.isArray(seedProjects) && seedProjects.length) {
       // eslint-disable-next-line no-console
-      console.warn('[PortfolioPage] Using seedProjects fallback (remote attempts failed / CORS).');
+      if (import.meta.env.DEV) console.warn('[PortfolioPage] Using seedProjects fallback (remote attempts failed / CORS).');
+      sessionStorage.setItem('portfolio_seed_lock', '1'); // NEW: remember for this tab session
       setProjects(seedProjects);
       setLoading(false);
       return;

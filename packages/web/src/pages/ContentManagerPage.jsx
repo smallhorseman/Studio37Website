@@ -120,7 +120,7 @@ export default function ContentManagerPage() {
 
   const handleChange = (field, value) =>
     setEditing(e => {
-      if (!e) return e;
+      if (!e) return e; // guard
       const next = { ...e, [field]: value };
       // Auto-generate slug while creating (only if slug still empty or matches previous auto pattern)
       if (field === 'title' && (!e.slug || e.slug === makeSlug(e.title || ''))) {
@@ -227,6 +227,13 @@ export default function ContentManagerPage() {
                 onChange={e=>setFilter(e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
               />
+              {/* NEW clear filter */}
+              {filter && (
+                <button
+                  onClick={()=>setFilter('')}
+                  className="px-2 py-1 text-xs border rounded hover:bg-gray-50"
+                >Clear</button>
+              )}
               <button
                 onClick={refresh}
                 className="px-3 py-1 border rounded text-sm hover:bg-gray-50"

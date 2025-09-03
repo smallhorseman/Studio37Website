@@ -96,13 +96,26 @@ export const seedServices = [
   { id: 'svc-content', name: 'Content & Visual', description: 'Copy direction, imagery guidelines, presentation.' }
 ];
 
+// NEW: lightweight CRM & Tasks seeds (placeholder)
+export const seedCrm = [
+  { id: 'lead-demo-1', name: 'Acme Corp', status: 'lead', contact: 'jane@acme.com' },
+  { id: 'lead-demo-2', name: 'Bright Health', status: 'prospect', contact: 'ops@bright.example' }
+];
+
+export const seedTasks = [
+  { id: 'task-demo-1', title: 'Prepare proposal draft', done: false },
+  { id: 'task-demo-2', title: 'Upload portfolio images', done: true }
+];
+
 // Helper for API shim path mapping
 export function getSeedForPath(pathname) {
-  const p = pathname.replace(/^\/api(?=\/)/, ''); // NEW normalize
+  const p = pathname.replace(/^\/api(?=\/)/, ''); // normalize /api prefix
   if (/\/cms\/posts\/?$/.test(p)) return seedBlogPosts;
   if (/\/projects\/?$/.test(p)) return seedProjects;
   if (/\/packages\/?$/.test(p)) return seedPackages;
   if (/\/services\/?$/.test(p)) return seedServices;
+  if (/\/crm\/?$/.test(p)) return seedCrm;
+  if (/\/tasks\/?$/.test(p)) return seedTasks;
   return null;
 }
 

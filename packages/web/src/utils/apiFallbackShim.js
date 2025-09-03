@@ -19,6 +19,9 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
     { re: /\/services\/?(\?|$)/, rel: '/api/services' },
     { re: /\/projects\/?(\?|$)/, rel: '/api/projects' },
     { re: /\/cms\/posts\/?(\?|$)/, rel: '/api/cms/posts' },
+    // NEW: tools endpoints (no seed for crm/tasks yet unless provided below)
+    { re: /\/crm\/?(\?|$)/, rel: '/api/crm' },
+    { re: /\/tasks\/?(\?|$)/, rel: '/api/tasks' }
   ];
 
   window.fetch = async function patchedFetch(input, init) {
@@ -100,7 +103,6 @@ if (ENABLED && typeof window !== 'undefined' && !window.__api_fallback_shim_inst
   function safeSeed(fullUrl) {
     try {
       const u = new URL(fullUrl, window.location.href);
-      // NEW: normalize path by removing a leading /api (so /api/projects -> /projects)
       const normalizedPath = u.pathname.replace(/^\/api(?=\/)/, '');
       const data = getSeedForPath(normalizedPath);
       if (!data) return null;

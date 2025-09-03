@@ -125,3 +125,14 @@ export async function parseJson(res) {
   const text = await res.text();
   try { return JSON.parse(text); } catch { return text; }
 }
+
+const runningOnTools = (typeof window !== 'undefined') && window.location.hostname.includes('tools.');
+if (runningOnTools) {
+  // Force relative proxy to avoid cross-origin CORS
+  axiosApiClient.defaults.baseURL = '/api';
+}
+
+export function enableProxyMode() {
+  forceProxy = true;
+  if (axiosApiClient) axiosApiClient.defaults.baseURL = '/api';
+}
