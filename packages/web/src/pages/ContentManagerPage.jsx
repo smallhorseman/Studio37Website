@@ -1,21 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { FadeIn } from '../components/FadeIn';
 import { useLocation } from 'react-router-dom'; // NEW
+import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent';
 
-// Ensure seeds imported once (already present earlier)
-// import { seedBlogPosts, seedPackages, seedProjects } from '@/data/seedContent'; // keep
-
-// ==== BEGIN LOCAL STORAGE HELPERS (NEW / FIX) ====
+// /* === Local storage + utility helpers (ADD ONCE NEAR TOP, before component) === */
 const LS_KEY_BASE = 'cms_collection_';
 function storageKey(col) { return `${LS_KEY_BASE}${col}`; }
-function loadLocalRaw(col) {
+function readLocal(col) {
   try { return JSON.parse(localStorage.getItem(storageKey(col))) || []; } catch { return []; }
 }
-function saveLocalRaw(col, items) {
+function writeLocal(col, items) {
   try { localStorage.setItem(storageKey(col), JSON.stringify(items)); } catch { /* ignore */ }
 }
-// Replaces any previous loadLocalEdits()/saveLocalEdits()/loadLocal placeholders
-// ==== END LOCAL STORAGE HELPERS ====
+function genId(prefix, col) {
+  return `${prefix}-${col}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+}
+/* === END helpers === */
 
 export default function ContentManagerPage() {
   const [posts, setPosts] = useState([]);
@@ -26,11 +26,12 @@ export default function ContentManagerPage() {
   const [filter, setFilter] = useState(''); // was []
   const [attemptLog, setAttemptLog] = useState([]);
   const [unauthorized, setUnauthorized] = useState(false); // NEW
-  const [syncing, setSyncing] = useState(false);               // NEW
-  const [syncMsg, setSyncMsg] = useState(null);                // NEW ephemeral info
-  const [lastSyncAt, setLastSyncAt] = useState(null);          // NEW
   const [collection, setCollection] = useState('posts'); // NEW: 'posts' | 'packages' | 'projects'
   const location = useLocation(); // NEW
+
+  // DEFINE loadLocal (fixes runtime "loadLocal is not defined")
+  const loadLocal = useCallback(() => readLocal(collection), [collection]);
+  const saveLocal = useCallback(items => writeLocal(collection, items), [collection]);
 
   const makeSlug = (v='') =>
     v.toLowerCase()
@@ -50,7 +51,7 @@ export default function ContentManagerPage() {
     });
   }, []);
 
-  // UPDATED mergedPosts to use new helpers (removes require & old loadLocal)
+  // SINGLE mergedPosts (remove any duplicate definitions below)
   const mergedPosts = useCallback(() => {
     const local = loadLocal();
     const seedArr =
@@ -60,13 +61,42 @@ export default function ContentManagerPage() {
     const map = new Map();
     [...seedArr, ...local].forEach(p => {
       if (!p) return;
-      const id = (p.id && String(p.id).trim()) || `seed-${collection}-${Math.random().toString(36).slice(2)}`;
+      const id = (p.id && String(p.id).trim()) || genId('seed', collection);
       map.set(id, { ...p, id });
     });
     return Array.from(map.values()).sort(
       (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
     );
   }, [collection, loadLocal]);
+
+  // SYNC state (keep only one set)
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState(null);
+  const [lastSyncAt, setLastSyncAt] = useState(null);
+
+  // Unsynced + CRUD helpers
+  const isUnsynced = p => !!p && (p._unsynced || (typeof p.id === 'string' && p.id.startsWith('local-')));
+  const getUnsynced = useCallback(() => loadLocal().filter(isUnsynced), [loadLocal]);
+  const markUnsynced = useCallback(p => ({ ...p, _unsynced: true }), []);
+  const upsertLocal = useCallback(item => {
+    const list = loadLocal();
+    const i = list.findIndex(p => p.id === item.id);
+    if (i >= 0) list[i] = item; else list.push(item);
+    saveLocal(list);
+  }, [loadLocal, saveLocal]);
+  const deleteLocal = useCallback(id => {
+    saveLocal(loadLocal().filter(p => p.id !== id));
+  }, [loadLocal, saveLocal]);
+  const replaceLocal = useCallback((oldId, newPost) => {
+    let list = loadLocal();
+    list = list.filter(p =>
+      p.id !== oldId &&
+      !(newPost.slug && p.slug === newPost.slug && p.id !== newPost.id)
+    );
+    list.push(newPost);
+    saveLocal(list);
+    return list;
+  }, [loadLocal, saveLocal]);
 
   // UPDATE refresh: dynamic endpoints
   const refresh = useCallback(async () => {
@@ -157,77 +187,6 @@ export default function ContentManagerPage() {
       }
       return next;
     });
-
-  // UPDATE upsert / delete to use saveLocal
-  const upsertLocal = useCallback(item => {
-    const all = loadLocal();
-    const i = all.findIndex(p => p.id === item.id);
-    if (i >= 0) all[i] = item; else all.push(item);
-    saveLocal(all);
-  }, [loadLocal, saveLocal]);
-
-  const deleteLocal = useCallback(id => {
-    saveLocal(loadLocal().filter(p => p.id !== id));
-  }, [loadLocal, saveLocal]);
-
-  const attemptSyncAll = useCallback(async () => {
-    if (syncing) return;
-    const authToken = localStorage.getItem('jwt_token') || localStorage.getItem('token');
-    if (!authToken) return;
-    const resourcePath =
-      collection === 'posts' ? '/api/cms/posts' :
-      collection === 'packages' ? '/api/packages' :
-      '/api/projects';
-
-    const unsynced = getUnsynced();
-    if (!unsynced.length) {
-      setSyncMsg('No drafts to sync.');
-      setTimeout(()=>setSyncMsg(null), 2500);
-      return;
-    }
-    setSyncing(true);
-    let success = 0;
-    for (const draft of unsynced) {
-      const isNew = !draft.id || draft.id.startsWith('local-');
-      const payload = { ...draft };
-      delete payload._unsynced;
-      try {
-        const method = isNew ? 'POST' : 'PUT';
-        const url = isNew ? resourcePath : `${resourcePath}/${draft.id}`;
-        const token = authToken;
-        const res = await fetch(url, {
-          method,
-            headers: {
-              'Content-Type':'application/json',
-              Accept:'application/json',
-              ...(token ? { Authorization:`Bearer ${token}` } : {})
-            },
-            credentials:'include',
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error();
-        const ct = (res.headers.get('content-type')||'').toLowerCase();
-        if (!ct.includes('json')) throw new Error();
-        const saved = await res.json();
-        const final = { ...draft, ...saved, _unsynced: undefined };
-        replaceLocal(draft.id, final);
-        success++;
-      } catch {
-        // leave unsynced
-        continue;
-      }
-    }
-    // Refresh posts state from merged local + seeds + remote fallback
-    setPosts(ps => {
-      const map = new Map(ps.map(p => [p.id, p]));
-      loadLocal().forEach(p => map.set(p.id, p));
-      return Array.from(map.values());
-    });
-    setSyncing(false);
-    setLastSyncAt(Date.now());
-    setSyncMsg(success ? `Synced ${success}` : 'Sync failed (offline/auth).');
-    setTimeout(()=>setSyncMsg(null), 3500);
-  }, [collection, getUnsynced, loadLocal, replaceLocal, syncing]);
 
   // Ensure onSave uses markUnsynced & upsertLocal (patch existing version)
   // Find existing onSave and replace its core remote logic with:
