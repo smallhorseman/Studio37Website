@@ -170,24 +170,6 @@ export default function ContentManagerPage() {
     saveLocal(loadLocal().filter(p => p.id !== id));
   }, [loadLocal, saveLocal]);
 
-  // mergedPosts (remove any require usage)
-  const mergedPosts = useCallback(() => {
-    const local = loadLocal();
-    const seedArr =
-      collection === 'posts' ? seedBlogPosts :
-      collection === 'packages' ? seedPackages :
-      seedProjects;
-    const map = new Map();
-    [...seedArr, ...local].forEach(p => {
-      if (!p) return;
-      const id = (p.id && String(p.id).trim()) || `seed-${collection}-${Math.random().toString(36).slice(2)}`;
-      map.set(id, { ...p, id });
-    });
-    return Array.from(map.values()).sort(
-      (a,b)=>(b?.created_at||'').localeCompare(a?.created_at||'')
-    );
-  }, [collection, loadLocal]);
-
   const attemptSyncAll = useCallback(async () => {
     if (syncing) return;
     const authToken = localStorage.getItem('jwt_token') || localStorage.getItem('token');
