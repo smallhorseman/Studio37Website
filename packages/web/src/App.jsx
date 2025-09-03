@@ -6,30 +6,34 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ApiFetchFallback from './components/ApiFetchFallback';
 import './App.css';
-import { lazyWithRetry, installChunkErrorReload } from '@/utils/lazy';
+import { lazyPage, warmPreload } from '@/utils/pageLoader';
+import { installChunkErrorReload } from '@/utils/lazy';
 
-// Install global chunk failure reload (once)
+// Install global chunk error handler
 installChunkErrorReload();
 
-// Replace previous React.lazy(...) calls with retry-enabled versions
-// Pages (lazy) – reverted to static specifiers (no query params)
-const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
-const ServicesPage = lazyWithRetry(() => import('./pages/ServicesPage'));
-const PackagesPage = lazyWithRetry(() => import('./pages/PackagesPage'));
-const PortfolioPage = lazyWithRetry(() => import('./pages/PortfolioPage'));
-const BlogPage = lazyWithRetry(() => import('./pages/BlogPage'));
-const AboutPage = lazyWithRetry(() => import('./pages/AboutPage'));
-const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'));
-const ToolsPage = lazyWithRetry(() => import('./pages/ToolsPage'));
-const BlogPostPage = lazyWithRetry(() => import('./pages/BlogPostPage'));
-const ContactPage = lazyWithRetry(() => import('./pages/ContactPage'));
-const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
-const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage'));
-const CRMPage = lazyWithRetry(() => import('./pages/CRMPage'));
-const ProjectsPage = lazyWithRetry(() => import('./pages/ProjectsPage'));
-const ContentManagerPage = lazyWithRetry(() => import('./pages/ContentManagerPage'));
-const AdminUpdatePage = lazyWithRetry(() => import('./pages/AdminUpdatePage'));
-const TodoPage = lazyWithRetry(() => import('./pages/TodoPage'));
+// Replace previous per-file lazy imports with glob-based lazyPage
+const HomePage = lazyPage('HomePage');
+const ServicesPage = lazyPage('ServicesPage');
+const PackagesPage = lazyPage('PackagesPage');
+const PortfolioPage = lazyPage('PortfolioPage');
+const BlogPage = lazyPage('BlogPage');
+const AboutPage = lazyPage('AboutPage');
+const AdminPage = lazyPage('AdminPage');
+const ToolsPage = lazyPage('ToolsPage');
+const BlogPostPage = lazyPage('BlogPostPage');
+const ContactPage = lazyPage('ContactPage');
+const LoginPage = lazyPage('LoginPage');
+const DashboardPage = lazyPage('DashboardPage');
+const CRMPage = lazyPage('CRMPage');
+const ProjectsPage = lazyPage('ProjectsPage');
+const ContentManagerPage = lazyPage('ContentManagerPage');
+const AdminUpdatePage = lazyPage('AdminUpdatePage');
+const TodoPage = lazyPage('TodoPage');
+
+// Optional: eager preload AFTER first paint to mitigate stale chunk 404s
+// (Uncomment if you prefer aggressive warm-up)
+// React.useEffect(() => { warmPreload(); }, []);
 
 // Minimal ResourceSection (re‑introduced for pages importing from '@/App')
 export const ResourceSection = ({
