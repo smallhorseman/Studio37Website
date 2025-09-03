@@ -2,24 +2,35 @@ import axios from 'axios';
 import { API_BASE } from '@/config/env';
 import { REMOTE_API_BASE, PROXY_API_BASE, isSameOrigin } from '@/config/env';
 
+const runningOnTools = (typeof window !== 'undefined') && window.location.hostname.includes('tools.');
+const KNOWN_RESOURCE_PREFIXES = ['/services','/packages','/projects','/cms/posts','/crm','/tasks'];
+let forceProxy = false;
+
+// NEW: decide if remote is cross-origin
+const remoteIsCross = (() => {
+  try { return !isSameOrigin(REMOTE_API_BASE); } catch { return true; }
+})();
+
+// PRIMARY AXIOS CLIENT
 const axiosApiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: runningOnTools ? '/api' : API_BASE,
   timeout: 15000,
 });
 
-// Attach token to requests if available
-axiosApiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token'); // or get from context/hook
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Inject token + auto /api prefix
+axiosApiClient.interceptors.request.use(cfg => {
+  const token = localStorage.getItem('token');
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  if (cfg.url) {
+    if (
+      KNOWN_RESOURCE_PREFIXES.some(p => cfg.url.startsWith(p)) &&
+      !cfg.url.startsWith('/api/')
+    ) {
+      cfg.url = '/api' + (cfg.url.startsWith('/') ? '' : '/') + cfg.url;
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
   }
-);
+  return cfg;
+});
 
 // Optional: Handle 401/404 errors globally
 axiosApiClient.interceptors.response.use(
@@ -39,61 +50,80 @@ axiosApiClient.interceptors.response.use(
   }
 );
 
-// Example usage:
-// axiosApiClient.get('/services') will request https://sem37-api.onrender.com/api/services
-// axiosApiClient.get('/packages') will request https://sem37-api.onrender.com/api/packages
-
-export default axiosApiClient;
-
+// SECONDARY (legacy) axios instance kept but aligned
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: runningOnTools ? '/api' : API_BASE,
   timeout: 15000,
 });
 
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token');
   if (token) cfg.headers.Authorization = `Bearer ${token}`;
+  if (cfg.url) {
+    if (
+      KNOWN_RESOURCE_PREFIXES.some(p => cfg.url.startsWith(p)) &&
+      !cfg.url.startsWith('/api/')
+    ) {
+      cfg.url = '/api' + (cfg.url.startsWith('/') ? '' : '/') + cfg.url;
+    }
+  }
   return cfg;
 });
 
+// EXPORT main axios client
+export default axiosApiClient;
 export { api };
 
-let forceProxy = false;
+// --- SMART FETCH LAYER (fetch-based) ---
+
+function prefixIfNeeded(path) {
+  if (path.startsWith('/api/')) return path;
+  if (KNOWN_RESOURCE_PREFIXES.some(p => path.startsWith(p))) {
+    return '/api' + (path.startsWith('/') ? '' : '/') + path;
+  }
+  return path;
+}
 
 async function tryFetch(base, path, options) {
-  const url = `${base}${path}`;
+  const url = base + path;
   return fetch(url, options);
+}
+
+function shouldProxyFirst() {
+  // Proxy first when tools subdomain, forced, or remote is cross-origin
+  return runningOnTools || forceProxy || remoteIsCross;
 }
 
 async function smartFetch(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
+  // Always normalize path for proxy attempt
+  const normalized = prefixIfNeeded(path.startsWith('/') ? path : '/' + path);
 
-  // Always try remote first unless previously forced to proxy
-  const sequence = forceProxy
+  const sequence = shouldProxyFirst()
     ? [PROXY_API_BASE, REMOTE_API_BASE]
     : [REMOTE_API_BASE, PROXY_API_BASE];
 
   let lastError;
   for (const base of sequence) {
-    // Skip remote if cross-origin & we already forced proxy
-    if (base === REMOTE_API_BASE && forceProxy && !isSameOrigin(REMOTE_API_BASE)) continue;
+    const isProxy = base === PROXY_API_BASE;
+    const finalPath = isProxy ? normalized : path; // only prefix for proxy leg
     try {
-      const res = await tryFetch(base, path, options);
-      // If CORS blocked, status may be 0 (network) or we may miss headers — treat non-accessible as failure
+      const res = await tryFetch(base, finalPath, {
+        ...options,
+        method,
+        credentials: options.credentials || 'include'
+      });
       if (!res) throw new Error('No response object');
       if (!res.ok) {
-        // 404 at remote with missing CORS headers also triggers fallback attempt
-        if (base === REMOTE_API_BASE && !isSameOrigin(REMOTE_API_BASE) && res.status === 404) {
-          // Continue to proxy; store error but don't break
-          lastError = new Error(`Remote 404 (possible CORS): ${res.status}`);
+        // Continue to next strategy on 404 / CORS-like remote
+        if (!isProxy && remoteIsCross && (res.status === 404 || res.status === 403)) {
+          lastError = new Error(`Remote ${res.status}`);
           continue;
         }
-        return res; // surface non-OK for caller to handle (other than forced fallback)
+        // Return non-OK to caller (proxy errors surfaced)
+        return res;
       }
-      // Success
-      if (base === PROXY_API_BASE && !isSameOrigin(REMOTE_API_BASE)) {
-        forceProxy = true; // persist preference after a proxy success
-      }
+      if (isProxy) forceProxy = true; // lock future ordering
       return res;
     } catch (e) {
       lastError = e;
@@ -105,7 +135,7 @@ async function smartFetch(path, options = {}) {
 
 export const apiClient = {
   async get(path, init = {}) {
-    const res = await smartFetch(path, { ...init, method: 'GET', credentials: init.credentials || 'include' });
+    const res = await smartFetch(path, { ...init, method: 'GET' });
     return res;
   },
   async post(path, body, init = {}) {
@@ -113,8 +143,7 @@ export const apiClient = {
       ...init,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
-      body: JSON.stringify(body),
-      credentials: init.credentials || 'include'
+      body: JSON.stringify(body)
     });
     return res;
   }
@@ -133,21 +162,30 @@ if (runningOnTools) {
 
 export function enableProxyMode() {
   forceProxy = true;
-  if (axiosApiClient) axiosApiClient.defaults.baseURL = '/api';
+  try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
+  try { api.defaults.baseURL = '/api'; } catch { /* ignore */ }
 }
 
-export async function getJson(path) { // NEW helper
-  const seq = runningOnTools ? ['/api', ''] : ['', '/api'];
+// NEW: hard force everything through proxy immediately (can be called after first successful proxy call)
+export function forceProxyAll() {
+  enableProxyMode();
+}
+
+// getJson helper updated to reuse prefix logic
+export async function getJson(path) {
+  const candidates = shouldProxyFirst()
+    ? [prefixIfNeeded(path), path]
+    : [path, prefixIfNeeded(path)];
   let lastErr;
-  for (const prefix of seq) {
+  for (const p of candidates) {
     try {
-      const res = await fetch(prefix + path, {
+      const res = await fetch(p, {
         credentials: 'include',
         headers: { Accept: 'application/json' }
       });
       const ct = (res.headers.get('content-type') || '').toLowerCase();
       if (!res.ok || !ct.includes('json')) {
-        lastErr = new Error(`Bad response ${res.status} ${prefix}${path}`);
+        lastErr = new Error(`Bad response ${res.status} ${p}`);
         continue;
       }
       return await res.json();
