@@ -18,24 +18,28 @@ export default function PortfolioPage() {
   // Added: optional explicit override via env (VITE_PROJECTS_ENDPOINT)
   const PROJECTS_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT?.trim();
 
-  // NEW: memoize candidate list so it doesn't change every render
+  // NEW: prefer relative (proxy) endpoints FIRST to avoid repeated cross-origin CORS failures
   const endpointCandidates = useMemo(() => Array.from(new Set([
-    ...(PROJECTS_OVERRIDE ? [PROJECTS_OVERRIDE] : []),
-    `${API_BASE}/api/projects`,
-    `${API_BASE}/projects`,
-    `${API_BASE}/projects/`,
     '/api/projects',
-    '/api/projects/'
-  ])), [PROJECTS_OVERRIDE]);
+    '/api/projects/',             // proxy (Netlify) or dev server
+    ...(PROJECTS_OVERRIDE ? [PROJECTS_OVERRIDE] : []),
+    `${API_BASE}/api/projects`,    // remote variations (may CORS fail)
+    `${API_BASE}/projects`,
+    `${API_BASE}/projects/`
+  ])), [PROJECTS_OVERRIDE]); // NOTE: API_BASE is build-time constant; safe to omit
 
-  const hasFetchedRef = useRef(false); // NEW guard for initial fetch (StrictMode/dev)
+  const hasFetchedRef = useRef(false);
 
-  const fetchProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async (opts = { manual: false }) => {
+    if (!opts.manual && hasFetchedRef.current) return; // keep initial guard
+    hasFetchedRef.current = true;
+
     setLoading(true);
     setError(null);
     setProjects([]);
 
     const attemptDetails = [];
+    let fetchErrorCount = 0;
     const isHtmlText = (txt = '') => {
       const lower = txt.slice(0, 300).toLowerCase();
       return lower.includes('<!doctype') || lower.includes('<html');
@@ -43,25 +47,28 @@ export default function PortfolioPage() {
 
     for (const url of endpointCandidates) {
       let classification = 'unknown';
+      // Abort each individual request after 8s
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 8000);
       try {
+        // eslint-disable-next-line no-console
+        console.debug('[PortfolioPage] attempt', url);
         const res = await fetch(url, {
           credentials: 'include',
-            headers: {
-              'Accept': 'application/json, text/plain;q=0.5, */*;q=0.2'
-            }
+          headers: { 'Accept': 'application/json, text/plain;q=0.5, */*;q=0.2' },
+          signal: ac.signal
         });
+        clearTimeout(timer);
 
         const status = res.status;
         const ct = (res.headers.get('content-type') || '').toLowerCase();
 
-        // Non-OK status: record and continue
         if (!res.ok) {
           classification = `http_${status}`;
           attemptDetails.push({ url, status, classification });
           continue;
         }
 
-        // Quick HTML detection based on content-type
         if (ct.includes('text/html')) {
           if (!htmlWarnedRef.current) {
             // eslint-disable-next-line no-console
@@ -73,7 +80,6 @@ export default function PortfolioPage() {
           continue;
         }
 
-        // Try reading body once (clone not needed because we won't reuse)
         let bodyText;
         try {
           bodyText = await res.text();
@@ -94,7 +100,6 @@ export default function PortfolioPage() {
           continue;
         }
 
-        // Attempt JSON parse
         let data;
         try {
           data = JSON.parse(bodyText);
@@ -104,14 +109,11 @@ export default function PortfolioPage() {
           continue;
         }
 
-        // Accept direct array
         if (Array.isArray(data)) {
           setProjects(data);
           setLoading(false);
           return;
         }
-
-        // Accept {results: []}
         if (data && typeof data === 'object' && Array.isArray(data.results)) {
           setProjects(data.results);
           setLoading(false);
@@ -121,32 +123,38 @@ export default function PortfolioPage() {
         classification = 'unexpected_structure';
         attemptDetails.push({ url, status, classification });
       } catch (e) {
-        classification = `fetch_error:${e?.message || e}`;
+        clearTimeout(timer);
+        classification = (e?.name === 'AbortError')
+          ? 'timeout_abort'
+          : `fetch_error:${e?.message || e}`;
         attemptDetails.push({ url, status: 'n/a', classification });
+        fetchErrorCount += 1;
+
+        // EARLY BREAK: after 2 network/cors style failures, use seed to avoid endless remote attempts
+        if (fetchErrorCount >= 2) {
+          break;
+        }
         continue;
       }
     }
 
-    // If we reach here, all candidates failed: try local seed before surfacing error
+    // Seed fallback (unchanged logic, moved slightly earlier if early-break)
     if (Array.isArray(seedProjects) && seedProjects.length) {
       // eslint-disable-next-line no-console
-      console.warn('[PortfolioPage] Using seedProjects fallback (all remote attempts failed).');
+      console.warn('[PortfolioPage] Using seedProjects fallback (remote attempts failed / CORS).');
       setProjects(seedProjects);
       setLoading(false);
       return;
     }
+
     setError(
       `Projects unavailable. Attempts: ` +
-      attemptDetails
-        .map(a => `[${a.classification}@${a.url}]`)
-        .join(' ')
+      attemptDetails.map(a => `[${a.classification}@${a.url}]`).join(' ')
     );
     setLoading(false);
   }, [endpointCandidates]);
 
   useEffect(() => {
-    if (hasFetchedRef.current) return;       // NEW guard
-    hasFetchedRef.current = true;
     fetchProjects();
   }, [fetchProjects]);
 
@@ -167,7 +175,7 @@ export default function PortfolioPage() {
         Set VITE_PROJECTS_ENDPOINT to a known JSON array endpoint (e.g. https://api.example.com/api/projects)
       </div>
       <button
-        onClick={fetchProjects}
+        onClick={() => fetchProjects({ manual: true })} // changed
         className="px-4 py-2 border rounded text-sm hover:bg-red-50"
       >
         Retry
