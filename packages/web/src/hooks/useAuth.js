@@ -30,3 +30,8 @@ export function useAuth() {
     getAuthHeader: () => ({})
   };
 }
+
+// Added: pass-through wrapper to satisfy existing imports
+export function EnsureAuthProvider({ children }) {
+  return children;
+}
