@@ -1,15 +1,13 @@
 const trim = (v = '') => v.replace(/\/+$/, '');
 
-export const REMOTE_API_BASE =
+export const API_BASE =
   trim(import.meta.env.VITE_API_BASE_URL || 'https://sem37-api.onrender.com');
+
+export const REMOTE_API_BASE = API_BASE;
+export const PROXY_API_BASE = '/api';
+
 export const REMOTE_AUTH_BASE =
   trim(import.meta.env.VITE_AUTH_BASE_URL || 'https://auth-3778.onrender.com');
-
-export const LOGIN_URL = `${REMOTE_AUTH_BASE}/login`;
-export const LOGOUT_URL = `${REMOTE_AUTH_BASE}/logout`;
-
-// Dev / Netlify proxy paths (must be configured in vite.config.js / Netlify)
-export const PROXY_API_BASE = '/api';
 export const PROXY_AUTH_BASE = '/auth';
 
 export const isSameOrigin = (urlStr) => {
