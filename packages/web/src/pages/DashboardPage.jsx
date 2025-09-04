@@ -17,12 +17,12 @@ export default function DashboardPage() {
             });
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`API Error: ${response.status} ${errText}`);
+                throw new Error(`API Error: ${response.status} ${errText || response.statusText}`);
             }
             const data = await response.json();
             setAnalysis(data);
-        } catch (error) {
-            setError(error.message);
+        } catch (err) {
+            setError(err.message);
         } finally {
             setLoading(false);
         }
