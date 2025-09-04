@@ -1,36 +1,39 @@
+/* Import Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
 
-/* Use the standard directives for Tailwind v4 */
+/* Standard Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base adjustments */
-html {
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-body {
-  @apply bg-vintage-cream text-soft-charcoal font-sans;
-}
-
-.font-handwriting {
-  font-family: var(--tw-font-handwriting, "Gochi Hand", cursive);
-}
-
-/* Optional container sizing */
-.container {
-  @apply mx-auto px-4;
-}
-
+/* Base styles */
 @layer base {
-  html { scroll-behavior: smooth; }
-  body {
-    background:#FFFDF6;
-    color:#36454F;
+  html {
+    @apply scroll-smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+  
+  body {
+    @apply bg-vintage-cream text-soft-charcoal font-sans;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .btn {
+    @apply px-4 py-2 rounded-md transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-faded-teal hover:bg-teal-600 text-white;
+  }
+
+  .font-handwriting {
+    font-family: 'Gochi Hand', cursive;
   }
 }

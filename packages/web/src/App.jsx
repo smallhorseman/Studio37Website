@@ -1,57 +1,46 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { lazyPage } from './utils/pageLoader';
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Direct (non-lazy) page imports (ensure these files exist)
-import HomePage from './pages/HomePage.jsx';
-import AboutPage from './pages/AboutPage.jsx';
-import PortfolioPage from './pages/PortfolioPage.jsx';
-import ServicesPage from './pages/ServicesPage.jsx';
-import PackagesPage from './pages/PackagesPage.jsx';
-import BlogPage from './pages/BlogPage.jsx';
-import ContactPage from './pages/ContactPage.jsx';
-import ProjectsPage from './pages/ProjectsPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import ToolsPage from './pages/ToolsPage.jsx';
-import AdminUpdatePage from './pages/AdminUpdatePage.jsx';
-import CRMPage from './pages/CRMPage.jsx';
-import TodoPage from './pages/TodoPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
+// Import utility for API fallback when API is unavailable
+import './utils/apiFallbackShim';
 
-console.log('[App.jsx] Loaded – expecting successful parse with closing tags');
+// Lazy load all pages to reduce initial bundle size
+const HomePage = lazyPage('HomePage');
+const AboutPage = lazyPage('AboutPage');
+const PortfolioPage = lazyPage('PortfolioPage');
+const ServicesPage = lazyPage('ServicesPage');
+const PackagesPage = lazyPage('PackagesPage');
+const ContactPage = lazyPage('ContactPage');
+const LoginPage = lazyPage('LoginPage');
 
-export default function App() {
+const fallback = <div className="flex items-center justify-center min-h-screen">
+  <div className="animate-pulse text-center">
+    <div className="text-sm text-gray-500">Loading...</div>
+  </div>
+</div>;
+
+function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <BrowserRouter>
-          <Layout>
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/portfolio" element={<PortfolioPage />} />
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/packages" element={<PackagesPage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              {/* Protected */}
-              <Route path="/internal-dashboard" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
-              <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
-              <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-              {/* Fallback */}
-              <Route path="*" element={<HomePage />} />
-            </Routes>
-          </Layout>
-        </BrowserRouter>
-      </AuthProvider>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <Suspense fallback={fallback}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<Layout><HomePage /></Layout>} />
+            <Route path="/about" element={<Layout><AboutPage /></Layout>} />
+            <Route path="/portfolio" element={<Layout><PortfolioPage /></Layout>} />
+            <Route path="/services" element={<Layout><ServicesPage /></Layout>} />
+            <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
+            <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
+            <Route path="*" element={<Layout><div className="text-center py-20"><h1 className="text-4xl">Page Not Found</h1></div></Layout>} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 }
+
+export default App;
