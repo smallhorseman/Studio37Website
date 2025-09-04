@@ -70,6 +70,10 @@ export default defineConfig({
       },
     },
   },
+  css: {
+    // Explicitly ensure PostCSS is configured for Vite
+    postcss: './postcss.config.js'
+  }
 });
 // Lean rebuild note: auth/tools proxies retained; remove if not needed in minimal mode.
 // Lean rebuild note: auth/tools proxies retained; remove if not needed in minimal mode.
