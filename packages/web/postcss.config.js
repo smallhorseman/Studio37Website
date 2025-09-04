@@ -1,8 +1,7 @@
-// For Tailwind CSS v4, we need to use a different approach:
-// Using autoprefixer directly alongside tailwindcss
+// Simple PostCSS config for Tailwind CSS v4
 export default {
   plugins: {
-    'tailwindcss/postcss': {}, // Use the internal postcss plugin
-    'autoprefixer': {}
+    tailwindcss: {},
+    autoprefixer: {}
   }
 };
