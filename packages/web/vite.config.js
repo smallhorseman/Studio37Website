@@ -72,6 +72,8 @@ export default defineConfig({
     },
   },
   css: {
+    // Remove explicit PostCSS configuration to prevent conflicts
+    // Let Vite use the tailwind.config.js file directly
     devSourcemap: true
   }
 });
