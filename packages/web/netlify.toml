@@ -1,12 +1,12 @@
 [build]
   base = "packages/web"
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps --include=dev && npm run build"
   publish = "dist"
 
-# Add Tailwind build environment variable 
+# Ensure dev dependencies are installed
 [build.environment]
   TAILWIND_MODE = "build"
-  NODE_ENV = "production"
+  NODE_ENV = "development"
 
 [[redirects]]
   from = "/api/*"
