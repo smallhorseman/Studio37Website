@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { lazyPage } from './utils/pageLoader';
 import Layout from './components/Layout';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Import utility for API fallback when API is unavailable
 import './utils/apiFallbackShim';
