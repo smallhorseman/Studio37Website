@@ -1,204 +1,66 @@
-import axios from 'axios';
 import { API_BASE } from '@/config/env';
 import { REMOTE_API_BASE, PROXY_API_BASE, isSameOrigin } from '@/config/env';
 
 const runningOnTools = (typeof window !== 'undefined') && window.location.hostname.includes('tools.');
 const KNOWN_RESOURCE_PREFIXES = ['/services','/packages','/projects','/cms/posts','/crm','/tasks'];
-let forceProxy = false;
 
-// NEW: decide if remote is cross-origin
-const remoteIsCross = (() => {
-  try { return !isSameOrigin(REMOTE_API_BASE); } catch { return true; }
-})();
-
-// PRIMARY AXIOS CLIENT
-const axiosApiClient = axios.create({
-  baseURL: runningOnTools ? '/api' : API_BASE,
-  timeout: 15000,
-});
-
-// Inject token + auto /api prefix
-axiosApiClient.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // CHANGED
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  if (cfg.url) {
-    if (
-      KNOWN_RESOURCE_PREFIXES.some(p => cfg.url.startsWith(p)) &&
-      !cfg.url.startsWith('/api/')
-    ) {
-      cfg.url = '/api' + (cfg.url.startsWith('/') ? '' : '/') + cfg.url;
-    }
+// Helper to determine the best API endpoint to use
+export function getEndpoint(path) {
+  // Strip leading slash if present
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  
+  // For same-origin requests, prefer the proxy to avoid CORS
+  if (isSameOrigin() || runningOnTools) {
+    return `${PROXY_API_BASE}/${cleanPath}`;
   }
-  return cfg;
-});
-
-// Optional: Handle 401/404 errors globally
-axiosApiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      if (error.response.status === 401) {
-        // Optional: broadcast logout
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-      }
-      if (error.response.status === 404) {
-        // Optionally handle not found
-        // e.g., show a toast or redirect
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-// SECONDARY (legacy) axios instance kept but aligned
-const api = axios.create({
-  baseURL: runningOnTools ? '/api' : API_BASE,
-  timeout: 15000,
-});
-
-api.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('jwt_token') || localStorage.getItem('token'); // CHANGED
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  if (cfg.url) {
-    if (
-      KNOWN_RESOURCE_PREFIXES.some(p => cfg.url.startsWith(p)) &&
-      !cfg.url.startsWith('/api/')
-    ) {
-      cfg.url = '/api' + (cfg.url.startsWith('/') ? '' : '/') + cfg.url;
-    }
-  }
-  return cfg;
-});
-
-// EXPORT main axios client
-export default axiosApiClient;
-export { api };
-
-// --- SMART FETCH LAYER (fetch-based) ---
-
-const API_DEBUG = import.meta?.env?.VITE_API_DEBUG === '1';
-const FORCE_REL = import.meta.env.VITE_FORCE_RELATIVE_API === '1' || import.meta.env.VITE_API_RELATIVE_ONLY === '1';
-
-function shouldProxyFirst() {
-  const sameHost =
-    typeof window !== 'undefined' &&
-    window.location &&
-    /studio37\.cc$/i.test(window.location.host);
-  return FORCE_REL || sameHost;
+  
+  // Otherwise use the remote API
+  return `${REMOTE_API_BASE}/api/${cleanPath}`;
 }
 
-function prefixIfNeeded(path) {
-  if (path.startsWith('/api/')) return path;
-  if (KNOWN_RESOURCE_PREFIXES.some(p => path.startsWith(p))) {
-    return '/api' + (path.startsWith('/') ? '' : '/') + path;
+// Main API client methods
+export async function fetchApi(path, options = {}) {
+  const url = getEndpoint(path);
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  
+  // Add authorization if available
+  const token = localStorage.getItem('jwt_token');
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
-  return path;
-}
-
-// NEW: generate fallback candidate paths for a logical resource request
-function buildPathCandidates(originalPath) {
-  const out = [];
-  const clean = originalPath.startsWith('/') ? originalPath : '/' + originalPath;
-
-  // First: original as‑is
-  out.push(clean);
-
-  // Ensure /api prefix variant
-  if (!clean.startsWith('/api/')) out.push('/api' + clean);
-
-  // If already /api/<resource> add cms variant
-  const m = clean.match(/^\/api\/([^/]+)(\/.*)?$/);
-  if (m) {
-    const resource = m[1];
-    // Add /api/cms/<resource> only for known content types
-    if (['packages','projects','services'].includes(resource)) {
-      out.push(`/api/cms/${resource}`);
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers
     }
-  } else {
-    // If not /api/ maybe it is /packages => add /api/packages
-    const seg = clean.split('/')[1];
-    if (['packages','projects','services'].includes(seg)) {
-      out.push(`/api/${seg}`);
-      out.push(`/api/cms/${seg}`);
+  });
+  
+  // Handle unauthorized responses
+  if (response.status === 401) {
+    window.dispatchEvent(new Event('auth:unauthorized'));
+    throw new Error('Unauthorized');
+  }
+  
+  // Handle successful responses
+  if (response.ok) {
+    // Handle empty responses
+    const text = await response.text();
+    if (!text) return null;
+    
+    // Parse JSON responses
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse API response as JSON', e);
+      return text;
     }
   }
-
-  // De‑duplicate while keeping order
-  return Array.from(new Set(out));
+  
+  // Handle error responses
+  throw new Error(`API error: ${response.status} ${response.statusText}`);
 }
-
-// Enhanced smartFetch to try fallback candidates if 404
-async function smartFetch(path, options = {}) {
-  const method = (options.method || 'GET').toUpperCase();
-  const primaryNormalized = prefixIfNeeded(path.startsWith('/') ? path : '/' + path);
-  const baseOrder = shouldProxyFirst()
-    ? [PROXY_API_BASE, REMOTE_API_BASE]
-    : [REMOTE_API_BASE, PROXY_API_BASE];
-
-  // Build path candidates (only used after a 404 on first pass)
-  const pathCandidates = buildPathCandidates(primaryNormalized);
-
-  let lastError;
-  for (const base of baseOrder) {
-    // For each base cycle through candidates (first candidate list may include original)
-    for (const candidate of pathCandidates) {
-      // For remote leg we keep candidate as is (remote may accept raw or prefixed)
-      // For proxy leg ensure api-prefixed candidate
-      const isProxy = base === PROXY_API_BASE;
-      const finalPath = isProxy ? prefixIfNeeded(candidate) : candidate;
-
-      try {
-        const res = await tryFetch(base, finalPath, {
-          ...options,
-            method,
-            credentials: options.credentials || 'include'
-        });
-
-        if (!res) throw new Error('No response object');
-
-        // If we hit a 404 on first candidate and there are alternates, loop continues
-        if (!res.ok) {
-          if (API_DEBUG) console.warn('[apiClient] non-OK', { base, path: finalPath, status: res.status });
-          // Special: PUT with slug that 404s -> degrade to POST attempt (creation) once
-          if (method === 'PUT' && res.status === 404 && /\/packages\/[^/]+$/.test(finalPath)) {
-            if (API_DEBUG) console.warn('[apiClient] downgrade PUT->POST for slug not found', finalPath);
-            // attempt create immediately (POST) then skip remaining candidates
-                        try {
-                          const createRes = await tryFetch(base, finalPath.replace(/\/([^/]+)$/, ''), {
-                            ...options,
-                            method: 'POST'
-                          });
-                          if (createRes?.ok) {
-                            return createRes;
-                          }
-                        } catch (e) {
-                          if (API_DEBUG) console.warn('[apiClient] downgrade create via POST failed', e);
-                          lastError = e;
-                        }
-                      }
-                      // 404 -> try next candidate
-                      if (res.status === 404) {
-                        lastError = res;
-                        continue;
-                      }
-                      // Other non-OK -> record and try next base/candidate
-                      lastError = res;
-                      continue;
-                    }
-            
-                    // Success path
-                    return res;
-            
-                  } catch (err) {
-                    lastError = err;
-                    if (API_DEBUG) console.warn('[apiClient] fetch error', { base, path: finalPath, err });
-                    continue;
-                  }
-                }
-              }
-            
-              if (lastError) throw lastError;
-              throw new Error('smartFetch: request failed without explicit error');
-            }
-            
-            export { smartFetch };
