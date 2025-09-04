@@ -265,4 +265,3 @@ function deriveHint(logical, attempts) {
   }
   return 'Checked endpoints: ' + attempts.length;
 }
-
