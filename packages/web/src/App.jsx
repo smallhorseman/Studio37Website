@@ -5,7 +5,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Direct imports (ensure each exists as a component)
+// Direct (non-lazy) page imports (ensure these files exist)
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import PortfolioPage from './pages/PortfolioPage.jsx';
@@ -21,7 +21,7 @@ import CRMPage from './pages/CRMPage.jsx';
 import TodoPage from './pages/TodoPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 
-console.log('[App.jsx] Loaded correct version with balanced tags');
+console.log('[App.jsx] Loaded – expecting successful parse with closing tags');
 
 export default function App() {
   return (
