@@ -1,252 +1,56 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext'; // UPDATED
-import { ErrorBoundary } from './components/ErrorBoundary';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
+import { lazyPage, warmPreload } from './utils/pageLoader';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import { installChunkErrorReload } from './utils/lazy';
 
-// Side-effect shim import (internally checks enable flag)
-import './utils/apiFallbackShim';
+// Install chunk error handler
+installChunkErrorReload();
 
-// Static page imports
-import HomePage from './pages/HomePage';
-import ServicesPage from './pages/ServicesPage';
-import PackagesPage from './pages/PackagesPage';
-import PortfolioPage from './pages/PortfolioPage';
-import BlogPage from './pages/BlogPage';
-import AboutPage from './pages/AboutPage';
-import AdminPage from './pages/AdminPage';
-import ToolsPage from './pages/ToolsPage';
-import BlogPostPage from './pages/BlogPostPage';
-import ContactPage from './pages/ContactPage';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import CRMPage from './pages/CRMPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ContentManagerPage from './pages/ContentManagerPage';
-import AdminUpdatePage from './pages/AdminUpdatePage';
-import TodoPage from './pages/TodoPage';
+// Lazy-load pages
+const HomePage = lazyPage('HomePage');
+const AboutPage = lazyPage('AboutPage');
+const PortfolioPage = lazyPage('PortfolioPage');
+const ServicesPage = lazyPage('ServicesPage');
+const LoginPage = lazyPage('LoginPage');
+const ToolsPage = lazyPage('ToolsPage');
+const AdminUpdatePage = lazyPage('AdminUpdatePage');
+const CRMPage = lazyPage('CRMPage');
+const TodoPage = lazyPage('TodoPage');
 
-import axiosApiClient from './api/apiClient'; // NEW early patch target
-import { API_BASE } from './config/env';      // NEW import for rewrite install
-
-// ResourceSection (unchanged logic)
-export const ResourceSection = React.memo(function ResourceSection({
-  title,
-  hookResult,
-  renderItem,
-  emptyMessage = 'No records found.'
-}) {
-  const data = hookResult?.data;
-  const loading = hookResult?.loading;
-  const error = hookResult?.error;
-  let list;
-  if (Array.isArray(data)) list = data;
-  else if (data == null) list = [];
-  else {
-    if (!ResourceSection._warned && typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
-      console.warn('[ResourceSection] Expected array but received:', data);
-      ResourceSection._warned = true;
-    }
-    list = [];
-  }
-  const isEmpty = !loading && !error && list.length === 0;
-  return (
-    <section className="mt-12">
-      {title && (
-        <h2 className="text-3xl font-serif tracking-tight text-soft-charcoal mb-6">
-          {title}
-        </h2>
-      )}
-      {loading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="p-4 border border-gray-200 rounded-lg animate-pulse space-y-3">
-              <div className="h-4 w-1/2 bg-gray-200 rounded" />
-              <div className="h-4 w-full bg-gray-200 rounded" />
-              <div className="h-3 w-2/3 bg-gray-200 rounded" />
-            </div>
-          ))}
-        </div>
-      )}
-      {error && (
-        <div className="text-center text-red-600">
-          {error.message || 'Error loading data.'}
-        </div>
-      )}
-      {isEmpty && (
-        <div className="text-center text-gray-500">
-          {emptyMessage}
-        </div>
-      )}
-      {!loading && !error && !isEmpty && (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map(renderItem)}
-        </div>
-      )}
-    </section>
-  );
-});
-
-// Simple loading fallback (in case future lazy reintroduced)
-const LoadingFallback = () => (
-  <div className="max-w-6xl mx-auto px-4 py-12 text-center text-soft-charcoal animate-pulse">
-    Loading...
-  </div>
-);
-
-const Page = ({ children, narrow }) => (
-  <div className={`${narrow ? 'max-w-3xl' : 'max-w-6xl'} mx-auto px-4 py-12`}>{children}</div>
-);
-
-// Main site layout
-function Layout() {
-  return (
-    <div className="font-sans bg-vintage-cream text-soft-charcoal min-h-screen flex flex-col">
-      <Header />
-      <main id="main" className="flex-1">
-        <Routes>
-          <Route index element={<Page><HomePage /></Page>} />
-          <Route path="login" element={<Page narrow><LoginPage /></Page>} />
-          {/* NEW: target for post-login navigate('/internal-dashboard') */}
-          <Route path="internal-dashboard" element={<Page><DashboardPage /></Page>} />
-          {/* Protect admin now */}
-          <Route
-            path="admin"
-            element={
-              <Protected>
-                <Page><AdminPage /></Page>
-              </Protected>
-            }
-          />
-          <Route path="about" element={<Page><AboutPage /></Page>} />
-          <Route path="services" element={<Page><ServicesPage /></Page>} />
-          <Route path="packages" element={<Page><PackagesPage /></Page>} />
-          <Route path="portfolio" element={<Page><PortfolioPage /></Page>} />
-          <Route path="blog" element={<Page><BlogPage /></Page>} />
-          <Route path="blog/:slug" element={<Page><BlogPostPage /></Page>} />
-          <Route path="contact" element={<Page narrow><ContactPage /></Page>} />
-          <Route path="admin/tools" element={<Page><ToolsPage /></Page>} />
-          <Route path="*" element={<Page><div className="text-center text-gray-600">404 Not Found</div></Page>} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
-// NEW: fetch rewrite installer (moved near top so we can invoke before initial effects)
-function installProxyFetchRewrite(API_BASE) {
-  if (typeof window === 'undefined') return;
-  if (window.__proxy_fetch_installed__) return;
-  window.__proxy_fetch_installed__ = true;
-  const remoteOrigin = (() => { try { return new URL(API_BASE).origin; } catch { return null; } })();
-  if (!remoteOrigin) return;
-  const origFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => {
-    let url = typeof input === 'string' ? input : (input && input.url) || '';
-    try {
-      const u = new URL(url, window.location.href);
-      if (u.origin === remoteOrigin) {
-        const pathQS = u.pathname + u.search + u.hash;
-        const proxied = pathQS.startsWith('/api/') ? pathQS : '/api' + pathQS;
-        return origFetch(proxied, init);
-      }
-    } catch { /* ignore */ }
-    return origFetch(input, init);
-  };
-}
-
-// NEW: early runtime patch (before first render) to avoid initial CORS errors
-if (typeof window !== 'undefined' && window.location.hostname.includes('tools.')) {
-  try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
-  installProxyFetchRewrite(API_BASE);
-}
-
-// Auth gate (updated to break login loop by checking token directly)
-const Protected = ({ children }) => {
-  const { isAuthenticated, isReady, loading } = useAuth();
-  const location = useLocation();
-  // CHANGED: look for jwt_token first (AuthContext uses this)
-  const token =
-    (typeof window !== 'undefined')
-      ? (localStorage.getItem('jwt_token') || localStorage.getItem('token'))
-      : null;
-  // If hook not ready but token exists, treat as loading then allow
-  if (!isReady && token) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Initializing session...</div>;
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse text-center">Checking access...</div>;
-  if (!isAuthenticated && !token) {
-    const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?next=${next}`} replace />;
-  }
-  return children;
-};
-
-// Tools subdomain layout
-function ToolsLayout() {
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-gray-800 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/"><span className="font-semibold tracking-wide">Studio37 Tools</span></Link>
-          <div className="flex gap-4 text-sm">
-            <Link to="/dashboard" className="hover:underline">Dashboard</Link>
-            <Link to="/crm" className="hover:underline">CRM</Link>
-            <Link to="/projects" className="hover:underline">Projects</Link>
-            <Link to="/cms" className="hover:underline">CMS</Link>
-            <Link to="/todos" className="hover:underline">To‑Dos</Link>
-            <Link to="/admin-update" className="hover:underline">Admin</Link>
-          </div>
-        </div>
-      </nav>
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-10">
-        <Routes>
-          <Route path="/login" element={<div className="max-w-md mx-auto"><LoginPage /></div>} />
-          <Route index element={<DashboardPage />} />
-          <Route path="internal-dashboard" element={<DashboardPage />} /> {/* NEW: match post-login redirect */}
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="crm" element={<CRMPage />} />
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="cms" element={
-            <Protected>
-              <ContentManagerPage />
-            </Protected>
-          } />
-          <Route path="cms/new" element={
-            <Protected>
-              <ContentManagerPage />
-            </Protected>
-          } />
-          <Route path="todos" element={<TodoPage />} />
-          <Route path="admin-update" element={<AdminUpdatePage />} />
-          <Route path="*" element={<div className="text-center text-gray-600">Not Found</div>} />
-        </Routes>
-      </main>
-      <footer className="text-center text-xs text-gray-500 py-4 border-t">Tools &copy; {new Date().getFullYear()}</footer>
-    </div>
-  );
-}
-
-function App() {
-  const isToolsSite = typeof window !== 'undefined' && window.location.hostname.includes('tools.');
-  // NOTE: effect kept for redundancy (already patched early above)
+export default function App() {
   React.useEffect(() => {
-    if (isToolsSite) {
-      try { axiosApiClient.defaults.baseURL = '/api'; } catch { /* ignore */ }
-      installProxyFetchRewrite(API_BASE);
-    }
-  }, [isToolsSite]);
+    // Preload page chunks after initial render for faster navigation
+    warmPreload();
+  }, []);
+
   return (
     <AuthProvider>
-      <ErrorBoundary>
-        <Router>
-          {isToolsSite ? <ToolsLayout /> : <Layout />}
-        </Router>
-      </ErrorBoundary>
+      <BrowserRouter>
+        <Layout>
+          <React.Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected Routes */}
+              <Route path="/internal-dashboard" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
+              <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
+              <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+
+              {/* Fallback for any other path */}
+              <Route path="*" element={<HomePage />} />
+            </Routes>
+          </React.Suspense>
+        </Layout>
+      </BrowserRouter>
     </AuthProvider>
   );
 }
-
-export default App;
