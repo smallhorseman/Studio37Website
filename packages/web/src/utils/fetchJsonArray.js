@@ -265,5 +265,4 @@ function deriveHint(logical, attempts) {
   }
   return 'Checked endpoints: ' + attempts.length;
 }
-  return 'Checked endpoints: ' + attempts.length;
-}
+
