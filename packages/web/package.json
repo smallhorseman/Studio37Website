@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "NODE_ENV=production vite build --debug",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^1.11.0",
+    "bootstrap": "^5.3.8",
     "framer-motion": "^12.23.12",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-native-web": "^0.19.10",
     "react-router-dom": "^7.8.2",
     "yet-another-react-lightbox": "^3.25.0"
   },

@@ -17,6 +17,7 @@ export default defineConfig({
       '@api': path.resolve(__dirname, 'src/api'),
       '@components': path.resolve(__dirname, 'src/components'),
       '@config': path.resolve(__dirname, 'src/config'),
+      'react-native': 'react-native-web'
     },
   },
   define: {
