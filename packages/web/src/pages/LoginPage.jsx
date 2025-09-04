@@ -55,8 +55,9 @@ function LoginPageInner() {
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Tools Login</h2>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
+            <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
             <input
+              id="username"
               value={form.username}
               onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
               className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-faded-teal"
@@ -64,8 +65,9 @@ function LoginPageInner() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
             <input
+              id="password"
               type="password"
               value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}

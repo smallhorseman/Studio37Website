@@ -35,21 +35,21 @@ const AdminUpdatePage = () => {
     const endpoint =
       import.meta.env.VITE_ADMIN_UPDATE_ENDPOINT ||
       '/api/update-gsc-data';
-try {
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(newData),
-  });
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(newData),
+      });
+      
+      const responseData = await response.json();
 
-  const responseData = await response.json();
-
-  if (!response.ok) {
-    throw new Error(responseData.message || 'Failed to update data on the server.');
-  }
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to update data on the server.');
+      }
 
       setStatus(responseData.message);
     } catch (error) {

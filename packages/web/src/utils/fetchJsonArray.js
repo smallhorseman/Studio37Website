@@ -42,7 +42,7 @@ export async function fetchJsonArray(logical, opts = {}) {
     // Will prefer /api/* relative first when hosting on studio37.cc or env forces it (bypasses CORS on raw API origin)
     const forceRelativeMode = FORCE_REL || sameHost;
 
-    const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem3-api.onrender.com').trim();
+    const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
     const base = baseRaw.replace(/\/+$/,'');
     const candidates = new Set();
 
