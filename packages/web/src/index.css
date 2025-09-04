@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
 
-/* Use tailwind directives in the recommended format for v4 */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* Use proper tailwind directives for v4 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Base adjustments */
 html {
