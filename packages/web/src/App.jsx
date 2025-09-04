@@ -23,6 +23,8 @@ const TodoPage = lazyPage('TodoPage');
 const PackagesPage = lazyPage('PackagesPage');
 const BlogPage = lazyPage('BlogPage');
 const ContactPage = lazyPage('ContactPage');
+const ProjectsPage = lazyPage('ProjectsPage');
+const DashboardPage = lazyPage('DashboardPage');
 
 export default function App() {
   React.useEffect(() => {
@@ -40,6 +42,7 @@ export default function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/portfolio" element={<PortfolioPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/services" element={<ServicesPage />} />
                 <Route path="/packages" element={<PackagesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
@@ -51,6 +54,7 @@ export default function App() {
                 <Route path="/admin" element={<ProtectedRoute><AdminUpdatePage /></ProtectedRoute>} />
                 <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
                 <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
 
                 {/* Fallback for any other path */}
                 <Route path="*" element={<HomePage />} />
