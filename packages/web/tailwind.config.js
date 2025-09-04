@@ -1,8 +1,8 @@
-/** Tailwind v4 config */
+/** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    './index.html',
-    './src/**/*.{js,jsx,ts,tsx}'
+    "./index.html",
+    "./src/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     extend: {
@@ -13,11 +13,11 @@ export default {
         'warm-tan': '#D2B48C'
       },
       fontFamily: {
-        sans: ['system-ui','Avenir','Helvetica','Arial','sans-serif'],
-        serif: ['Georgia','serif'],
-        handwriting: ['"Gochi Hand"','cursive']
+        'sans': ['system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
+        'serif': ['Georgia', 'serif'],
+        'handwriting': ['"Gochi Hand"', 'cursive']
       }
     }
   },
   plugins: []
-};
+}
