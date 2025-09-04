@@ -3,6 +3,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base adjustments */
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  @apply bg-vintage-cream text-soft-charcoal font-sans;
+}
+
+.font-handwriting {
+  font-family: var(--tw-font-handwriting, "Gochi Hand", cursive);
+}
+
+/* Optional container sizing */
+.container {
+  @apply mx-auto px-4;
+}
+
 @layer base {
   html { scroll-behavior: smooth; }
   body {
