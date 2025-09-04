@@ -1,34 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { seedProjects } from '@/data/seedContent';
+import { fetchJsonArray } from '@/utils/fetchJsonArray';
 import { FadeIn } from '../components/FadeIn';
 import { PolaroidImage } from '../components/PolaroidImage';
 
 export default function PortfolioPage() {
-  const [projects,setProjects] = useState([]);
-  const [loading,setLoading] = useState(true);
-  const [note,setNote] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [note, setNote] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      const endpoints = ['/api/projects','/projects'];
-      let data = null;
-      for (const u of endpoints) {
-        try {
-          const r = await fetch(u, { credentials:'include', headers:{Accept:'application/json'} });
-          const ct = (r.headers.get('content-type')||'').toLowerCase();
-          if (!r.ok || !ct.includes('json')) continue;
-          const j = await r.json();
-          if (Array.isArray(j)) { data = j; break; }
-          if (j && Array.isArray(j.results)) { data = j.results; break; }
-        } catch { continue; }
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    setNote(null);
+    const { data, error } = await fetchJsonArray('projects');
+
+    if (data && data.length > 0) {
+      setProjects(data);
+    } else {
+      setProjects(seedProjects);
+      setNote('Using seed projects (API unavailable or no projects found).');
+      if (error) {
+        console.warn('[PortfolioPage] API fetch error, using seed:', error);
       }
-      if (!data) { data = seedProjects; setNote('Using seed projects (API unavailable).'); }
-      setProjects(Array.isArray(data)?data:[]);
-      setLoading(false);
-    })();
+    }
+    setLoading(false);
   }, []);
 
-  if (loading) return <div className="py-24 sm:py-32">Loading portfolio...</div>;
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  if (loading) return <div className="py-24 sm:py-32 text-center">Loading portfolio...</div>;
 
   return (
     <div className="py-24 sm:py-32">
