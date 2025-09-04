@@ -11,8 +11,10 @@ export function lazyPage(name) {
   if (!loader) {
     // eslint-disable-next-line no-console
     console.warn(`[pageLoader] No module found for ${key}`);
-    // Fallback dummy component
-    return React.lazy(() => Promise.resolve({ default: () => <div>Missing page: {name}</div> }));
+    // Fallback dummy component - using createElement instead of JSX
+    return React.lazy(() => Promise.resolve({ 
+      default: () => React.createElement('div', null, `Missing page: ${name}`) 
+    }));
   }
   return lazyWithRetry(() => loader());
 }
