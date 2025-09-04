@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FadeIn } from '../components/FadeIn';
-import apiClient from '../api/apiClient.js';
 
 export default function DashboardPage() {
     const [domain, setDomain] = useState('studio37.cc');
@@ -13,8 +12,15 @@ export default function DashboardPage() {
         setError(null);
         setAnalysis(null);
         try {
-            const response = await apiClient.get(`/analyze-seo?url=${domain}`);
-            setAnalysis(response.data);
+            const response = await fetch(`/api/analyze-seo?url=${encodeURIComponent(domain)}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`API Error: ${response.status} ${errText}`);
+            }
+            const data = await response.json();
+            setAnalysis(data);
         } catch (error) {
             setError(error.message);
         } finally {
