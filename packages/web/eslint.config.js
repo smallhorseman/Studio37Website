@@ -2,8 +2,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
-import tailwindcss from 'eslint-plugin-tailwindcss'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
+import tailwindcss from '@tailwindcss/eslint-plugin'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -13,8 +12,7 @@ export default defineConfig([
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      'tailwindcss': tailwindcss,
-      'jsx-a11y': jsxA11y,
+      '@tailwindcss': tailwindcss,
     },
     languageOptions: {
       ecmaVersion: 2020,
@@ -27,10 +25,12 @@ export default defineConfig([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      ...jsxA11y.configs.recommended.rules,
+      ...tailwindcss.configs.recommended,
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
       'react-refresh/only-export-components': 'warn',
-      'tailwindcss/classnames-order': 'warn',
+    },
+  },
+])
       'tailwindcss/no-custom-classname': 'warn',
     },
   },
