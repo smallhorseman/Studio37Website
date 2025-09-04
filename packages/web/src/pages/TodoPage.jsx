@@ -1,29 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { seedTasks } from '@/data/seedContent';
+import { fetchJsonArray } from '@/utils/fetchJsonArray';
 
 export default function TodoPage() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [note, setNote] = useState(null);
 
-    useEffect(() => {
-        (async () => {
-            const endpoints = ['/api/tasks', '/tasks'];
-            let data = null;
-            for (const u of endpoints) {
-                try {
-                    const r = await fetch(u, { credentials: 'include', headers: { Accept: 'application/json' } });
-                    const ct = (r.headers.get('content-type') || '').toLowerCase();
-                    if (!r.ok || !ct.includes('json')) continue;
-                    const j = await r.json();
-                    if (Array.isArray(j)) { data = j; break; }
-                } catch { continue; }
-            }
-            if (!data) { data = seedTasks; setNote('Using seed tasks (API unavailable).'); }
+    const load = useCallback(async () => {
+        setLoading(true);
+        setNote(null);
+        const { data, error } = await fetchJsonArray('tasks');
+
+        if (data && data.length > 0) {
             setTasks(data);
-            setLoading(false);
-        })();
+        } else {
+            setTasks(seedTasks);
+            setNote('Using seed tasks (API unavailable or no tasks found).');
+            if (error) {
+                console.warn('[TodoPage] API fetch error, using seed:', error);
+            }
+        }
+        setLoading(false);
     }, []);
+
+    useEffect(() => {
+        load();
+    }, [load]);
 
     if (loading) return <div className="text-sm text-gray-500">Loading tasks...</div>;
 

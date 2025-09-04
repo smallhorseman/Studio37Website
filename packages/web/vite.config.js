@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import compiler from 'vite-plugin-react-compiler';
 import path from 'path';
 
 // Optional externals (can stay empty or list modules not to bundle)
@@ -7,7 +8,10 @@ const OPTIONAL_EXTERNALS = ['@netlify/blobs'];
 
 export default defineConfig({
   base: '/', // ensure absolute asset paths for Netlify
-  plugins: [react()],
+  plugins: [
+    react(),
+    compiler(),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

@@ -47,9 +47,8 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
     try {
       const endpoints = [
-        `${AUTH_BASE.replace(/\/+$/,'')}/login`,
-        '/api/auth/login',
-        '/auth/login'
+        '/auth/login', // Proxy first
+        `${AUTH_BASE.replace(/\/+$/, '')}/login`
       ];
       let got = null;
       for (const u of endpoints) {
