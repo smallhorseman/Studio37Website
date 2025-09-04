@@ -20,6 +20,9 @@ def analyze_on_page_seo(url):
         driver_path = ChromeDriverManager().install()
         driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
         
+        # FIX: Add a page load timeout to prevent indefinite hangs
+        driver.set_page_load_timeout(20) # 20 seconds
+
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
             
