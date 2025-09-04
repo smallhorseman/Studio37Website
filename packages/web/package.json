@@ -34,8 +34,8 @@
   },
   "overrides": {
     "@netlify/blobs": "10.0.8"
-  },
-  "engines": {
+  }
+}
     "node": ">=18 <21"
   }
 }
