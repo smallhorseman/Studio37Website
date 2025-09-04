@@ -6,9 +6,9 @@ export const IS_PROD = import.meta.env.PROD;
 export const API_BASE = (import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').replace(/\/+$/, '');
 
 // Optional explicit overrides (empty string means: not set)
-export const PROJECTS_ENDPOINT_OVERRIDE = (import.meta.env.VITE_PROJECTS_ENDPOINT || '').trim();
-export const PACKAGES_ENDPOINT_OVERRIDE = (import.meta.env.VITE_PACKAGES_ENDPOINT || '').trim();
-export const SERVICES_ENDPOINT_OVERRIDE = (import.meta.env.VITE_SERVICES_ENDPOINT || '').trim();
+export const PROJECTS_ENDPOINT_OVERRIDE = import.meta.env.VITE_PROJECTS_ENDPOINT || '';
+export const PACKAGES_ENDPOINT_OVERRIDE = import.meta.env.VITE_PACKAGES_ENDPOINT || '';
+export const SERVICES_ENDPOINT_OVERRIDE = import.meta.env.VITE_SERVICES_ENDPOINT || '';
 
 // Allow relative /api fallback in production (string '1' => true)
 export const ALLOW_PROD_RELATIVE = (import.meta.env.VITE_ALLOW_PROD_RELATIVE || '0') === '1';
