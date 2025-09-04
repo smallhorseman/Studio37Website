@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { fetchJsonArray } from '@/utils/fetchJsonArray';
+import { fetchJsonArray } from '@/utils/fetchJsonArray.js'; // FIX: explicit extension
 import { FadeIn } from '../components/FadeIn';
 import { seedCrm } from '@/data/seedContent';
 

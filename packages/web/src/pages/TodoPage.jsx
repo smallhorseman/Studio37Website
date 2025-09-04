@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { seedTasks } from '@/data/seedContent';
-import { fetchJsonArray } from '@/utils/fetchJsonArray';
+import { fetchJsonArray } from '@/utils/fetchJsonArray.js'; // FIX: explicit extension
 
 export default function TodoPage() {
     const [tasks, setTasks] = useState([]);
