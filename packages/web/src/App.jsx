@@ -5,21 +5,23 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// DIRECT (non-lazy) imports to rule out dynamic import side-effects while fixing syntax issue
+// Direct imports (ensure each exists as a component)
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
-import PortfolioPage from './pages/PortfolioPage.jsx'; // if missing, create a stub
+import PortfolioPage from './pages/PortfolioPage.jsx';
 import ServicesPage from './pages/ServicesPage.jsx';
+import PackagesPage from './pages/PackagesPage.jsx';
+import BlogPage from './pages/BlogPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ToolsPage from './pages/ToolsPage.jsx';
 import AdminUpdatePage from './pages/AdminUpdatePage.jsx';
 import CRMPage from './pages/CRMPage.jsx';
 import TodoPage from './pages/TodoPage.jsx';
-import PackagesPage from './pages/PackagesPage.jsx';
-import BlogPage from './pages/BlogPage.jsx';
-import ContactPage from './pages/ContactPage.jsx';
-import ProjectsPage from './pages/ProjectsPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx'; // if missing, create a stub
+import DashboardPage from './pages/DashboardPage.jsx';
+
+console.log('[App.jsx] Loaded correct version with balanced tags');
 
 export default function App() {
   return (
