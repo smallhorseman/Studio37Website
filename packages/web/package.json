@@ -35,7 +35,11 @@
     "vite": "^7.1.4"
   },
   "overrides": {
-    "@netlify/blobs": "10.0.8"
+    "@netlify/blobs": "10.0.8",
+    "react-native-web": {
+      "react": "^19.1.1",
+      "react-dom": "^19.1.1"
+    }
   },
   "engines": {
     "node": ">=18 <21"
