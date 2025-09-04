@@ -16,7 +16,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-vintage-cream">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="container py-4">

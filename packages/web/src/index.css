@@ -1,7 +1,7 @@
 /* Import Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
 
-/* Standard Tailwind directives */
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,7 +9,7 @@
 /* Base styles */
 @layer base {
   html {
-    @apply scroll-smooth;
+    scroll-smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -19,7 +19,7 @@
   }
 }
 
-/* Custom component styles */
+/* Component styles */
 @layer components {
   .container {
     @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
@@ -33,15 +33,15 @@
     @apply bg-faded-teal hover:bg-teal-600 text-white;
   }
   
-  .font-handwriting {
-    font-family: 'Gochi Hand', cursive;
-  }
-  
   .page-title {
     @apply text-3xl font-serif font-bold text-soft-charcoal;
   }
   
   .section {
     @apply py-12;
+  }
+  
+  .font-handwriting {
+    font-family: 'Gochi Hand', cursive;
   }
 }

@@ -1,4 +1,4 @@
-@tailwind base;
+/* This file is no longer needed - all styles are in index.css */
 @tailwind components;
 @tailwind utilities;
 /* Lean mode: styling via inline Tailwind utilities */

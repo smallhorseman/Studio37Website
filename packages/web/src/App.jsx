@@ -2,11 +2,11 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import Header from './components/Header';
-import Footer from './components/Footer';
 import { lazyPage } from './utils/pageLoader';
+// Import Layout
+import Layout from './components/Layout';
 
-// Direct imports of pages (static routes)
+// Pages
 const HomePage = lazyPage('HomePage');
 const AboutPage = lazyPage('AboutPage');
 const PortfolioPage = lazyPage('PortfolioPage');
@@ -32,18 +32,8 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Layout wrapper with header and footer
-const MainLayout = ({ children }) => (
-  <div className="flex flex-col min-h-screen">
-    <Header />
-    <main className="flex-grow">{children}</main>
-    <Footer />
-  </div>
-);
-
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
-  // This is a simplified version - implement proper auth check
   const isAuthenticated = Boolean(localStorage.getItem('jwt_token'));
   
   if (!isAuthenticated) {
@@ -65,47 +55,47 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              {/* Public routes with layout */}
-              <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
-              <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
-              <Route path="/portfolio" element={<MainLayout><PortfolioPage /></MainLayout>} />
-              <Route path="/services" element={<MainLayout><ServicesPage /></MainLayout>} />
-              <Route path="/packages" element={<MainLayout><PackagesPage /></MainLayout>} />
-              <Route path="/blog" element={<MainLayout><BlogPage /></MainLayout>} />
-              <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />
-              
               {/* Login page (no layout) */}
               <Route path="/login" element={<LoginPage />} />
+              
+              {/* Public routes with layout */}
+              <Route path="/" element={<Layout><HomePage /></Layout>} />
+              <Route path="/about" element={<Layout><AboutPage /></Layout>} />
+              <Route path="/portfolio" element={<Layout><PortfolioPage /></Layout>} />
+              <Route path="/services" element={<Layout><ServicesPage /></Layout>} />
+              <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
+              <Route path="/blog" element={<Layout><BlogPage /></Layout>} />
+              <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
               
               {/* Protected routes with layout */}
               <Route path="/internal-dashboard" element={
                 <ProtectedRoute>
-                  <MainLayout><ToolsPage /></MainLayout>
+                  <Layout><ToolsPage /></Layout>
                 </ProtectedRoute>
               } />
               <Route path="/admin" element={
                 <ProtectedRoute>
-                  <MainLayout><AdminUpdatePage /></MainLayout>
+                  <Layout><AdminUpdatePage /></Layout>
                 </ProtectedRoute>
               } />
               <Route path="/crm" element={
                 <ProtectedRoute>
-                  <MainLayout><CRMPage /></MainLayout>
+                  <Layout><CRMPage /></Layout>
                 </ProtectedRoute>
               } />
               <Route path="/todos" element={
                 <ProtectedRoute>
-                  <MainLayout><TodoPage /></MainLayout>
+                  <Layout><TodoPage /></Layout>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <MainLayout><DashboardPage /></MainLayout>
+                  <Layout><DashboardPage /></Layout>
                 </ProtectedRoute>
               } />
               
               {/* Fallback */}
-              <Route path="*" element={<MainLayout><HomePage /></MainLayout>} />
+              <Route path="*" element={<Layout><HomePage /></Layout>} />
             </Routes>
           </Suspense>
         </BrowserRouter>
