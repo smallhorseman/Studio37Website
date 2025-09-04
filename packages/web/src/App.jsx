@@ -1,46 +1,115 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { lazyPage } from './utils/pageLoader';
-import Layout from './components/Layout';
+import React, { Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import { lazyPage } from './utils/pageLoader';
 
-// Import utility for API fallback when API is unavailable
-import './utils/apiFallbackShim';
-
-// Lazy load all pages to reduce initial bundle size
+// Direct imports of pages (static routes)
 const HomePage = lazyPage('HomePage');
 const AboutPage = lazyPage('AboutPage');
 const PortfolioPage = lazyPage('PortfolioPage');
 const ServicesPage = lazyPage('ServicesPage');
 const PackagesPage = lazyPage('PackagesPage');
+const BlogPage = lazyPage('BlogPage');
 const ContactPage = lazyPage('ContactPage');
 const LoginPage = lazyPage('LoginPage');
 
-const fallback = <div className="flex items-center justify-center min-h-screen">
-  <div className="animate-pulse text-center">
-    <div className="text-sm text-gray-500">Loading...</div>
-  </div>
-</div>;
+// Protected routes
+const ToolsPage = lazyPage('ToolsPage');
+const AdminUpdatePage = lazyPage('AdminUpdatePage');
+const CRMPage = lazyPage('CRMPage');
+const TodoPage = lazyPage('TodoPage');
+const DashboardPage = lazyPage('DashboardPage');
 
-function App() {
+// Loading fallback
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-pulse text-center">
+      <p className="text-gray-500">Loading...</p>
+    </div>
+  </div>
+);
+
+// Layout wrapper with header and footer
+const MainLayout = ({ children }) => (
+  <div className="flex flex-col min-h-screen">
+    <Header />
+    <main className="flex-grow">{children}</main>
+    <Footer />
+  </div>
+);
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }) => {
+  // This is a simplified version - implement proper auth check
+  const isAuthenticated = Boolean(localStorage.getItem('jwt_token'));
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-500 mb-4">Please login to access this page</p>
+        <a href="/login" className="btn btn-primary">Login</a>
+      </div>
+    );
+  }
+  
+  return children;
+};
+
+export default function App() {
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <Suspense fallback={fallback}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Layout><HomePage /></Layout>} />
-            <Route path="/about" element={<Layout><AboutPage /></Layout>} />
-            <Route path="/portfolio" element={<Layout><PortfolioPage /></Layout>} />
-            <Route path="/services" element={<Layout><ServicesPage /></Layout>} />
-            <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
-            <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
-            <Route path="*" element={<Layout><div className="text-center py-20"><h1 className="text-4xl">Page Not Found</h1></div></Layout>} />
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Public routes with layout */}
+              <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
+              <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
+              <Route path="/portfolio" element={<MainLayout><PortfolioPage /></MainLayout>} />
+              <Route path="/services" element={<MainLayout><ServicesPage /></MainLayout>} />
+              <Route path="/packages" element={<MainLayout><PackagesPage /></MainLayout>} />
+              <Route path="/blog" element={<MainLayout><BlogPage /></MainLayout>} />
+              <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />
+              
+              {/* Login page (no layout) */}
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected routes with layout */}
+              <Route path="/internal-dashboard" element={
+                <ProtectedRoute>
+                  <MainLayout><ToolsPage /></MainLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <MainLayout><AdminUpdatePage /></MainLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/crm" element={
+                <ProtectedRoute>
+                  <MainLayout><CRMPage /></MainLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/todos" element={
+                <ProtectedRoute>
+                  <MainLayout><TodoPage /></MainLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <MainLayout><DashboardPage /></MainLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Fallback */}
+              <Route path="*" element={<MainLayout><HomePage /></MainLayout>} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
-
-export default App;
