@@ -1,49 +1,53 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Studio37Logo from './Studio37Logo';
+import { Link, NavLink } from 'react-router-dom';
 
-const navigation = [
-    { name: 'Services', page: '/services' },
-    { name: 'Packages', page: '/packages' },
-    { name: 'Portfolio', page: '/portfolio' },
-    { name: 'About', page: '/about' },
-    { name: 'Blog', page: '/blog' },
+const navItems = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/services', label: 'Services' },
+  { to: '/portfolio', label: 'Portfolio' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' }
 ];
 
-const Header = () => {
-    const navigate = useNavigate();
-
-    return (
-        <header className="header">
-            <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-                <Link to="/" className="w-32 flex-shrink-0">
-                    <Studio37Logo color="#36454F" />
-                </Link>
-                <div className="hidden lg:flex gap-x-10">
-                    {navigation.map((item) => (
-                        <Link key={item.name} to={item.page} className="text-base font-semibold text-[#36454F] hover:text-[#468289] transition">
-                            {item.name}
-                        </Link>
-                    ))}
-                </div>
-                <div className="hidden lg:flex flex-1 justify-end">
-                    <a
-                        href="http://tools.studio37.cc"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-md bg-[#468289] px-4 py-2 text-base font-semibold text-white shadow hover:bg-[#36454F] transition"
-                    >
-                        Admin Login
-                    </a>
-                </div>
-            </nav>
-            <div className="max-w-7xl mx-auto px-6 py-4">
-                <span className="text-xs text-gray-500">
-                    Based in Houston, TX 77362
-                </span>
-            </div>
-        </header>
-    );
-};
-
-export default Header;
+export default function Header() {
+  return (
+    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex-shrink-0">
+            <Link to="/" className="text-2xl font-serif font-bold tracking-tight text-soft-charcoal">
+              Studio37
+            </Link>
+          </div>
+          <nav className="hidden md:block">
+            <ul className="ml-10 flex items-baseline space-x-4">
+              {navItems.map(item => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive ? 'text-faded-teal bg-gray-100' : 'text-soft-charcoal hover:text-faded-teal hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="hidden md:block">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-soft-charcoal hover:text-faded-teal"
+            >
+              Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

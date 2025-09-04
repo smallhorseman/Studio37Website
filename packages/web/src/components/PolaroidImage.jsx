@@ -1,22 +1,10 @@
 import React from 'react';
-import { FadeIn } from './FadeIn';
 
-export const PolaroidImage = ({ src, alt, caption, rotation, className }) => {
-  const style = { transform: `rotate(${rotation || 0}deg)` };
-
+export function PolaroidImage({ src, alt, caption, rotation = 0, ...props }) {
   return (
-    <FadeIn>
-      <div 
-    className={`bg-white p-4 pb-16 shadow-lg rounded-xl relative inline-block transition-transform hover:scale-105 hover:z-10 ${className ? className : 'max-w-xs sm:max-w-sm lg:max-w-md'}`}
-        style={style}
-      >
-        <img src={src} alt={alt} className="w-full h-auto object-cover rounded" />
-        {caption && (
-          <p className="absolute bottom-4 left-4 right-4 text-center font-handwriting text-lg text-soft-charcoal">
-            {caption}
-          </p>
-        )}
-      </div>
-    </FadeIn>
+    <div className="p-4 bg-white shadow-lg" style={{ transform: `rotate(${rotation}deg)` }}>
+      <img src={src} alt={alt} {...props} />
+      {caption && <p className="text-center mt-2 font-handwriting">{caption}</p>}
+    </div>
   );
-};
+}

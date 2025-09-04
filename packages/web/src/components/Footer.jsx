@@ -69,7 +69,6 @@ const Footer = () => {
             </div>
         </footer>
     );
-// ...existing code...
 };
 
 export default Footer;
