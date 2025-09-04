@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from '../api/apiClient.js';
 
 const AdminUpdatePage = () => {
   const [clicks, setClicks] = useState('');
@@ -37,13 +36,22 @@ const AdminUpdatePage = () => {
       import.meta.env.VITE_ADMIN_UPDATE_ENDPOINT ||
       '/api/update-gsc-data';
     try {
-      const response = await apiClient.post(endpoint, newData);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(newData),
+      });
       
-      if (response.status !== 200) {
-        throw new Error(response.data.message || 'Failed to update data on the server.');
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to update data on the server.');
       }
 
-      setStatus(response.data.message);
+      setStatus(responseData.message);
     } catch (error) {
       setStatus(`Error: ${error.message}`);
     } finally {
