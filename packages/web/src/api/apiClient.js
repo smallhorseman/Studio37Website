@@ -77,6 +77,15 @@ export { api };
 // --- SMART FETCH LAYER (fetch-based) ---
 
 const API_DEBUG = import.meta?.env?.VITE_API_DEBUG === '1';
+const FORCE_REL = import.meta.env.VITE_FORCE_RELATIVE_API === '1' || import.meta.env.VITE_API_RELATIVE_ONLY === '1';
+
+function shouldProxyFirst() {
+  const sameHost =
+    typeof window !== 'undefined' &&
+    window.location &&
+    /studio37\.cc$/i.test(window.location.host);
+  return FORCE_REL || sameHost;
+}
 
 function prefixIfNeeded(path) {
   if (path.startsWith('/api/')) return path;

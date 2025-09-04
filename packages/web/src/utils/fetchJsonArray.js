@@ -42,7 +42,7 @@ export async function fetchJsonArray(logical, opts = {}) {
     // Will prefer /api/* relative first when hosting on studio37.cc or env forces it (bypasses CORS on raw API origin)
     const forceRelativeMode = FORCE_REL || sameHost;
 
-    const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem37-api.onrender.com').trim();
+    const baseRaw = ((typeof API_BASE !== 'undefined' && API_BASE) || import.meta.env.VITE_API_URL || 'https://sem3-api.onrender.com').trim();
     const base = baseRaw.replace(/\/+$/,'');
     const candidates = new Set();
 
@@ -73,7 +73,10 @@ export async function fetchJsonArray(logical, opts = {}) {
 
     if (forceRelativeMode) {
       relativeCandidates.forEach(c => candidates.add(c));
-      absoluteCandidates.forEach(c => candidates.add(c));
+      // Only add absolute as a fallback if not in a strict relative-only mode
+      if (import.meta.env.VITE_API_RELATIVE_ONLY !== '1') {
+        absoluteCandidates.forEach(c => candidates.add(c));
+      }
     } else {
       absoluteCandidates.forEach(c => candidates.add(c));
       if (!IS_PROD || ALLOW_PROD_RELATIVE) {
@@ -163,11 +166,6 @@ export async function fetchJsonArray(logical, opts = {}) {
         const msg = String(e?.message || '');
         if (/Failed to fetch|CORS|TypeError/i.test(msg)) {
           classification = 'cors_block';
-          // If CORS blocked on an absolute URL and we are not yet in forceRelativeMode, enqueue relative first for next iterations
-          if (!forceRelativeMode) {
-            if (!candidates.has(`/api/${logical}`)) candidates.add(`/api/${logical}`);
-            if (!candidates.has(`/api/${logical}/`)) candidates.add(`/api/${logical}/`);
-          }
         } else {
           classification = `fetch_error:${e?.message || e}`;
         }
@@ -265,5 +263,7 @@ function deriveHint(logical, attempts) {
   if (any404) {
     return 'Some 404 responses. Confirm correct path or set VITE_' + logical.toUpperCase() + '_ENDPOINT.';
   }
+  return 'Checked endpoints: ' + attempts.length;
+}
   return 'Checked endpoints: ' + attempts.length;
 }
