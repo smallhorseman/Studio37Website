@@ -1,5 +1,5 @@
 [build]
-  base = "packages/web"
+  base = "."
   command = "npm install --production=false && npm run build"
   publish = "dist"
   
@@ -8,8 +8,6 @@
   TAILWIND_MODE = "build"
   # Force relative API paths
   VITE_ALLOW_PROD_RELATIVE = "1"
-  # For comprehensive debugging if needed
-  # VITE_API_DEBUG = "1"
 
 # Handle API proxying to avoid CORS issues
 [[redirects]]
@@ -51,6 +49,8 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # Enable Lighthouse plugin for performance insights
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
 [[plugins]]

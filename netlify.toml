@@ -1,17 +1,13 @@
 [build]
   base = "packages/web"
-  command = "npm run build"
+  command = "npm install --production=false && npm run build"
   publish = "dist"
   
 [build.environment]
-  # Force NODE_ENV to be production during build
-  NODE_ENV = "production"
-  # Enable Tailwind in build mode
+  # Set Tailwind in build mode
   TAILWIND_MODE = "build"
   # Force relative API paths
   VITE_ALLOW_PROD_RELATIVE = "1"
-  # For comprehensive debugging if needed
-  # VITE_API_DEBUG = "1"
 
 # Handle API proxying to avoid CORS issues
 [[redirects]]
@@ -31,6 +27,10 @@
   force = true
 
 # SPA fallback - must be the last redirect
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 [[redirects]]
   from = "/*"
   to = "/index.html"
