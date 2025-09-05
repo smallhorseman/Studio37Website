@@ -1,4 +1,3 @@
-/* Import Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
 
 /* Tailwind directives */
@@ -9,9 +8,10 @@
 /* Base styles */
 @layer base {
   html {
-    scroll-smooth;
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #FFFDF6; /* vintage-cream */
   }
   
   body {

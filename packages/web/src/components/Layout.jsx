@@ -16,13 +16,13 @@ export default function Layout({ children }) {
   const location = useLocation();
   
   return (
-    <div className="min-h-screen flex flex-col bg-vintage-cream">
+    <div className="min-h-screen flex flex-col bg-vintage-cream text-soft-charcoal">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="container py-4">
+      <header className="bg-white shadow-sm py-4">
+        <div className="container mx-auto">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <Studio37Logo className="h-10 w-auto" />
+              <div className="text-3xl font-bold font-serif text-faded-teal">S37</div>
               <span className="font-handwriting text-2xl">Studio 37</span>
             </Link>
             
@@ -52,13 +52,13 @@ export default function Layout({ children }) {
       </header>
       
       {/* Main content */}
-      <main className="flex-grow container py-8">
+      <main className="flex-grow container mx-auto py-8">
         {children}
       </main>
       
       {/* Footer */}
       <footer className="bg-soft-charcoal text-white py-8">
-        <div className="container">
+        <div className="container mx-auto">
           <div className="text-center">
             <p className="font-handwriting text-2xl mb-2">Studio 37</p>
             <p className="text-sm">© {new Date().getFullYear()} Studio 37. All rights reserved.</p>
